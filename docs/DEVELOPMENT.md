@@ -1,339 +1,299 @@
-# Development Guide
+# LinkerApp Development Guide
 
-## Development Environment Setup
+## Prerequisites
 
-### Prerequisites
-- **Visual Studio 2022** (v17.8 or later) with .NET 9 support
-- **.NET 9 SDK** (9.0.0 or later)
+### Required Software
+- **.NET 9 SDK** or later
+- **Visual Studio 2022** (17.8+) or **Visual Studio Code** with C# extension
 - **Git** for version control
-- **SQLite** (included with .NET)
+- **Entity Framework Core CLI** tools
 
-### Recommended Extensions
-- **Entity Framework Core Tools**
-- **WPF Designer** (included with Visual Studio)
-- **NuGet Package Manager** (included)
+### Development Environment Setup
 
-## Project Structure Deep Dive
+1. **Install .NET 9 SDK**
+   ```bash
+   # Download from https://dotnet.microsoft.com/download/dotnet/9.0
+   # Verify installation
+   dotnet --version
+   ```
 
-### LinkerApp.Models
-Contains all domain models and enums.
+2. **Install Entity Framework Tools**
+   ```bash
+   dotnet tool install --global dotnet-ef
+   ```
 
-**Key Files:**
-- `Link.cs` - Main link entity with hierarchical relationships
-- `Tag.cs` - Tag entity for categorization
-- `AppSettings.cs` - Application settings model
-- `Enums/LinkType.cs` - Enumeration of supported link types
+3. **Clone and Setup Project**
+   ```bash
+   git clone <repository-url>
+   cd LinkerApp
+   dotnet restore
+   ```
 
-### LinkerApp.Data
-Data access layer with Entity Framework Core.
+## Project Structure
 
-**Key Files:**
-- `LinkerDbContext.cs` - Main database context
-- `Repositories/LinkRepository.cs` - Link data operations
-- `Repositories/TagRepository.cs` - Tag data operations
-- `Migrations/` - EF Core database migrations
-
-### LinkerApp.Core
-Business logic and service layer.
-
-**Key Directories:**
-- `Services/` - Business logic implementations
-- `Interfaces/` - Service contracts
-- `ServiceCollectionExtensions.cs` - DI registration
-
-### LinkerApp.UI
-WPF presentation layer with MVVM pattern.
-
-**Key Directories:**
-- `Views/` - XAML windows and user controls
-- `ViewModels/` - MVVM view models
-- `Controls/` - Custom WPF controls
-- `Converters/` - Value converters for data binding
-
-## Coding Standards
-
-### C# Style Guidelines
-Follow Microsoft's C# coding conventions:
-
-```csharp
-// Use PascalCase for public members
-public class LinkService : ILinkService
-{
-    // Use camelCase for private fields
-    private readonly ILinkRepository _linkRepository;
-    
-    // Use PascalCase for properties
-    public string Name { get; set; }
-    
-    // Use PascalCase for methods
-    public async Task<Link> CreateLinkAsync(Link link)
-    {
-        // Use camelCase for local variables
-        var createdLink = await _linkRepository.CreateAsync(link);
-        return createdLink;
-    }
-}
+```
+LinkerApp/
+├── src/
+│   ├── LinkerApp.UI/          # WPF Application (Main UI)
+│   ├── LinkerApp.Core/        # Business Logic Services
+│   ├── LinkerApp.Data/        # Data Access Layer & EF Context
+│   └── LinkerApp.Models/      # Data Models & Entities
+├── tests/                     # Unit & Integration Tests
+├── docs/                      # Documentation
+└── database/                  # Database files (local development)
 ```
 
-### XAML Guidelines
-- Use proper indentation (4 spaces)
-- Group related properties together
-- Use meaningful names for controls
-- Leverage data binding over code-behind
+## Development Commands
 
-```xml
-<Window x:Class="LinkerApp.UI.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="LinkerApp"
-        Width="1200"
-        Height="800">
-    
-    <Grid Margin="10">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-        
-        <!-- Search Bar -->
-        <TextBox Grid.Row="0"
-                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                 PlaceholderText="Search links..."
-                 Margin="0,0,0,10"/>
-        
-        <!-- Tree View -->
-        <TreeView Grid.Row="1"
-                  ItemsSource="{Binding RootLinks}"
-                  SelectedItem="{Binding SelectedLink}"/>
-    </Grid>
-</Window>
-```
+### Building the Solution
 
-## Database Development
-
-### Entity Framework Migrations
-
-**Adding a new migration:**
 ```bash
+# Build entire solution
+dotnet build
+
+# Build specific project
+dotnet build src/LinkerApp.UI
+
+# Build in Release mode
+dotnet build --configuration Release
+```
+
+### Running the Application
+
+```bash
+# Run from solution root
+dotnet run --project src/LinkerApp.UI
+
+# Or navigate to UI project
+cd src/LinkerApp.UI
+dotnet run
+```
+
+### Database Management
+
+```bash
+# Navigate to Data project for EF commands
 cd src/LinkerApp.Data
+
+# Create new migration
 dotnet ef migrations add <MigrationName>
+
+# Update database
+dotnet ef database update
+
+# Remove last migration
+dotnet ef migrations remove
+
+# Generate SQL script
+dotnet ef migrations script
+
+# Drop database (development only)
+dotnet ef database drop
 ```
 
-**Updating the database:**
+### Testing
+
 ```bash
+# Run all tests
+dotnet test
+
+# Run tests with coverage
+dotnet test --collect:"XPlat Code Coverage"
+
+# Run specific test project
+dotnet test tests/LinkerApp.Tests
+```
+
+### Package Management
+
+```bash
+# Add package to specific project
+dotnet add src/LinkerApp.UI package <PackageName>
+
+# Remove package
+dotnet remove src/LinkerApp.UI package <PackageName>
+
+# Update packages
+dotnet list package --outdated
+dotnet add package <PackageName> --version <Version>
+```
+
+## Development Workflow
+
+### 1. Setting Up Development Database
+
+The application uses SQLite with a local database file. On first run:
+
+```bash
+# Ensure you're in the Data project directory
+cd src/LinkerApp.Data
+
+# Create/update database with latest migrations
 dotnet ef database update
 ```
 
-**Rolling back a migration:**
+Database file location: `%APPDATA%/LinkerApp/linkerapp.db`
+
+### 2. Making Database Schema Changes
+
+1. Modify models in `LinkerApp.Models`
+2. Update DbContext if needed in `LinkerApp.Data`
+3. Create migration:
+   ```bash
+   cd src/LinkerApp.Data
+   dotnet ef migrations add YourMigrationName
+   ```
+4. Apply migration:
+   ```bash
+   dotnet ef database update
+   ```
+
+### 3. Adding New Features
+
+1. **Models**: Add/modify in `LinkerApp.Models`
+2. **Data Access**: Add repositories in `LinkerApp.Data/Repositories`
+3. **Business Logic**: Add services in `LinkerApp.Core/Services`
+4. **UI**: Add views/controls in `LinkerApp.UI`
+
+### 4. Debugging
+
+- **Database**: Use SQLite browser or VS Code SQLite extension
+- **Logging**: Check console output (debug builds have detailed EF logging)
+- **UI**: Use WPF debugging tools in Visual Studio
+
+## Building for Distribution
+
+### Development Build
+
 ```bash
-dotnet ef database update <PreviousMigrationName>
+# Build with debug symbols
+dotnet build --configuration Debug
 ```
 
-### Database Design Patterns
+### Release Build
 
-**Entity Relationships:**
-- Use navigation properties for related entities
-- Configure relationships in `OnModelCreating`
-- Use appropriate cascade delete behaviors
+```bash
+# Clean build for release
+dotnet clean
+dotnet build --configuration Release --no-restore
 
-```csharp
-protected override void OnModelCreating(ModelBuilder modelBuilder)
-{
-    // Configure Link-Tag many-to-many relationship
-    modelBuilder.Entity<Link>()
-        .HasMany(l => l.Tags)
-        .WithMany(t => t.Links)
-        .UsingEntity("LinkTags");
-    
-    // Configure Link hierarchy (self-referencing)
-    modelBuilder.Entity<Link>()
-        .HasOne(l => l.Parent)
-        .WithMany(l => l.Children)
-        .HasForeignKey(l => l.ParentId)
-        .OnDelete(DeleteBehavior.Cascade);
-}
-```
-
-## UI Development
-
-### MVVM Pattern Implementation
-
-**ViewModel Base Class:**
-```csharp
-public abstract class ViewModelBase : INotifyPropertyChanged
-{
-    public event PropertyChangedEventHandler? PropertyChanged;
-    
-    protected virtual bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string? propertyName = null)
-    {
-        if (EqualityComparer<T>.Default.Equals(storage, value))
-            return false;
-            
-        storage = value;
-        OnPropertyChanged(propertyName);
-        return true;
-    }
-    
-    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-}
-```
-
-**Command Implementation:**
-```csharp
-public class RelayCommand : ICommand
-{
-    private readonly Action<object?> _execute;
-    private readonly Func<object?, bool>? _canExecute;
-    
-    public RelayCommand(Action<object?> execute, Func<object?, bool>? canExecute = null)
-    {
-        _execute = execute;
-        _canExecute = canExecute;
-    }
-    
-    public event EventHandler? CanExecuteChanged
-    {
-        add => CommandManager.RequerySuggested += value;
-        remove => CommandManager.RequerySuggested -= value;
-    }
-    
-    public bool CanExecute(object? parameter) => _canExecute?.Invoke(parameter) ?? true;
-    
-    public void Execute(object? parameter) => _execute(parameter);
-}
-```
-
-### Dependency Injection in ViewModels
-
-**Service Registration:**
-```csharp
-public static class ServiceCollectionExtensions
-{
-    public static IServiceCollection AddLinkerAppServices(this IServiceCollection services)
-    {
-        // Register repositories
-        services.AddScoped<ILinkRepository, LinkRepository>();
-        services.AddScoped<ITagRepository, TagRepository>();
-        
-        // Register services
-        services.AddScoped<ILinkService, LinkService>();
-        services.AddScoped<ITagService, TagService>();
-        
-        // Register ViewModels
-        services.AddTransient<MainWindowViewModel>();
-        services.AddTransient<LinkDialogViewModel>();
-        
-        return services;
-    }
-}
-```
-
-## Testing Strategy
-
-### Unit Testing
-Create unit tests for business logic in services.
-
-**Example Test:**
-```csharp
-[TestClass]
-public class LinkServiceTests
-{
-    private Mock<ILinkRepository> _mockRepository;
-    private LinkService _linkService;
-    
-    [TestInitialize]
-    public void Setup()
-    {
-        _mockRepository = new Mock<ILinkRepository>();
-        _linkService = new LinkService(_mockRepository.Object);
-    }
-    
-    [TestMethod]
-    public async Task CreateLinkAsync_ValidLink_ReturnsCreatedLink()
-    {
-        // Arrange
-        var link = new Link { Name = "Test", Url = "https://example.com" };
-        _mockRepository.Setup(r => r.CreateAsync(link)).ReturnsAsync(link);
-        
-        // Act
-        var result = await _linkService.CreateLinkAsync(link);
-        
-        // Assert
-        Assert.IsNotNull(result);
-        Assert.AreEqual("Test", result.Name);
-    }
-}
-```
-
-### Integration Testing
-Test the full application flow including database operations.
-
-### UI Testing
-Consider using tools like:
-- **White** - For WPF UI automation
-- **FlaUI** - Modern UI automation framework
-- **Microsoft.VisualStudio.TestTools.UITest** - Visual Studio UI testing
-
-## Performance Optimization
-
-### Database Performance
-- Use async operations for all database calls
-- Implement proper indexing on frequently queried columns
-- Use `Include()` for eager loading related data
-- Consider pagination for large datasets
-
-### UI Performance
-- Use virtualization for large collections (`VirtualizingPanel`)
-- Implement lazy loading for tree view nodes
-- Use data binding efficiently
-- Minimize property change notifications
-
-### Memory Management
-- Dispose of resources properly
-- Unsubscribe from events in ViewModels
-- Use weak event patterns for long-lived objects
-
-## Deployment
-
-### Build Configuration
-**Release Configuration:**
-```xml
-<PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <DebugType>none</DebugType>
-    <Optimize>true</Optimize>
-    <TrimMode>link</TrimMode>
-    <PublishTrimmed>true</PublishTrimmed>
-</PropertyGroup>
+# Create self-contained executable
+dotnet publish src/LinkerApp.UI --configuration Release --self-contained true --runtime win-x64
 ```
 
 ### Publishing Options
-**Self-contained deployment:**
+
 ```bash
-dotnet publish -c Release -r win-x64 --self-contained true
+# Framework-dependent (requires .NET runtime on target machine)
+dotnet publish src/LinkerApp.UI --configuration Release --runtime win-x64
+
+# Self-contained (includes runtime, larger file size)
+dotnet publish src/LinkerApp.UI --configuration Release --self-contained true --runtime win-x64
+
+# Single file (everything in one executable)
+dotnet publish src/LinkerApp.UI --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true
+
+# Trimmed (smaller size, advanced)
+dotnet publish src/LinkerApp.UI --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true
 ```
 
-**Framework-dependent deployment:**
+## Environment Configuration
+
+### Development Settings
+
+The app automatically creates default settings on first run. For development, you can:
+
+1. **Reset Database**: Delete `%APPDATA%/LinkerApp/linkerapp.db`
+2. **Clean Settings**: Delete the entire `%APPDATA%/LinkerApp/` folder
+3. **Custom Database Path**: Modify connection string in `DatabaseConfiguration.cs`
+
+### Production Deployment
+
+1. **Database**: SQLite database is portable - include in app directory or use AppData
+2. **Settings**: Application settings are stored in the database
+3. **Dependencies**: Ensure target machines have required Visual C++ redistributables
+
+## Troubleshooting
+
+### Common Issues
+
+1. **"dotnet-ef not found"**
+   ```bash
+   dotnet tool install --global dotnet-ef
+   ```
+
+2. **Migration fails**
+   ```bash
+   # Check if database is locked
+   # Close application and try again
+   dotnet ef database update --force
+   ```
+
+3. **Package restore fails**
+   ```bash
+   dotnet clean
+   dotnet restore --force
+   ```
+
+4. **UI doesn't start**
+   - Check target framework is `net9.0-windows`
+   - Verify WPF workload is installed
+   - Check for missing dependencies
+
+### Development Database Reset
+
 ```bash
-dotnet publish -c Release -r win-x64 --self-contained false
+# Full reset (lose all data)
+cd src/LinkerApp.Data
+dotnet ef database drop
+dotnet ef database update
+
+# Or delete the database file manually
+# Windows: %APPDATA%/LinkerApp/linkerapp.db
 ```
 
-## Troubleshooting Common Issues
+## Code Style & Guidelines
 
-### Build Issues
-- **Missing .NET 9 SDK:** Install from Microsoft's website
-- **Package conflicts:** Clear NuGet cache and restore
-- **XAML errors:** Check for typos in property names and bindings
+### Naming Conventions
+- **Pascal Case**: Classes, methods, properties, public fields
+- **Camel Case**: Private fields, parameters, local variables
+- **Interfaces**: Prefix with 'I' (e.g., `ILinkService`)
 
-### Runtime Issues
-- **Database connection:** Ensure SQLite files have proper permissions
-- **UI freezing:** Check for blocking operations on UI thread
-- **Memory leaks:** Verify event subscriptions are properly cleaned up
+### Project Dependencies
+- `UI` → `Core` → `Data` → `Models`
+- No circular references
+- Use dependency injection for services
 
-### Debugging Tips
-- Use **Debug.WriteLine()** for console output
-- Set breakpoints in ViewModels and Services
-- Use **Data Binding debugging** in Visual Studio
-- Monitor performance with **PerfView** or **dotMemory**
+### Database Guidelines
+- Always create migrations for schema changes
+- Use meaningful migration names
+- Test migrations on clean database
+- Include seed data for default values
+
+## Performance Tips
+
+### Development
+- Use `dotnet watch run` for hot reload during UI development
+- Enable detailed logging in debug mode
+- Use profiling tools for performance issues
+
+### Production
+- Use Release configuration
+- Consider AOT compilation for faster startup
+- Monitor memory usage with large datasets
+- Optimize database queries with indexes
+
+## Contributing
+
+1. Create feature branch from `main`
+2. Make changes following coding standards
+3. Add/update tests for new functionality
+4. Update documentation if needed
+5. Submit pull request
+
+## Useful Resources
+
+- [.NET 9 Documentation](https://docs.microsoft.com/dotnet/)
+- [WPF Documentation](https://docs.microsoft.com/dotnet/desktop/wpf/)
+- [Entity Framework Core](https://docs.microsoft.com/ef/)
+- [SQLite Documentation](https://www.sqlite.org/docs.html)

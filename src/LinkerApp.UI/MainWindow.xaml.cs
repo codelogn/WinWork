@@ -8,6 +8,7 @@ using LinkerApp.Core.Interfaces;
 using LinkerApp.Models;
 using System.ComponentModel;
 using System.Drawing;
+using System.Linq;
 
 namespace LinkerApp.UI;
 
@@ -234,10 +235,18 @@ public partial class MainWindow : Window
         try
         {
             var createdTag = await viewModel.CreateTagAsync(args.Tag);
+            
+            // Refresh the tags in the TagManagementDialog by adding the new tag
+            var dialog = Application.Current.Windows.OfType<Views.TagManagementDialog>().FirstOrDefault();
+            if (dialog != null)
+            {
+                dialog.ViewModel.AddNewTag(createdTag);
+            }
+            
             // Show success message
             if (DataContext is MainWindowViewModel mainViewModel)
             {
-                mainViewModel.DisplaySuccessMessage($"Tag '{args.Tag.Name}' created successfully!");
+                mainViewModel.DisplaySuccessMessage($"Tag '{createdTag.Name}' created successfully!");
             }
         }
         catch (Exception ex)
@@ -253,11 +262,19 @@ public partial class MainWindow : Window
     {
         try
         {
-            await viewModel.UpdateTagAsync(args.Tag);
+            var updatedTag = await viewModel.UpdateTagAsync(args.Tag);
+            
+            // Refresh the tags in the TagManagementDialog by updating the existing tag
+            var dialog = Application.Current.Windows.OfType<Views.TagManagementDialog>().FirstOrDefault();
+            if (dialog != null)
+            {
+                dialog.ViewModel.RefreshTag(updatedTag);
+            }
+            
             // Show success message
             if (DataContext is MainWindowViewModel mainViewModel)
             {
-                mainViewModel.DisplaySuccessMessage($"Tag '{args.Tag.Name}' updated successfully!");
+                mainViewModel.DisplaySuccessMessage($"Tag '{updatedTag.Name}' updated successfully!");
             }
         }
         catch (Exception ex)
@@ -279,6 +296,14 @@ public partial class MainWindow : Window
             if (result == MessageBoxResult.Yes)
             {
                 await viewModel.DeleteTagAsync(args.Tag.Id);
+                
+                // Remove the tag from the TagManagementDialog
+                var dialog = Application.Current.Windows.OfType<Views.TagManagementDialog>().FirstOrDefault();
+                if (dialog != null)
+                {
+                    dialog.ViewModel.RemoveTag(args.Tag);
+                }
+                
                 // Show success message
                 if (DataContext is MainWindowViewModel mainViewModel)
                 {

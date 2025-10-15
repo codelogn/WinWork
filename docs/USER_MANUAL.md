@@ -1,53 +1,325 @@
-# User Manual - LinkerApp
+# LinkerApp User Manual
 
-## Getting Started
+## 📖 Table of Contents
+- [Getting Started](#-getting-started)
+- [Main Interface](#-main-interface)
+- [Managing Links](#-managing-links)
+- [Browse Buttons & File Selection](#-browse-buttons--file-selection)
+- [Organizing with Folders](#-organizing-with-folders)
+- [Tag Management](#-tag-management)
+- [Editing & Updates](#-editing--updates)
+- [Search & Navigation](#-search--navigation)
+- [Keyboard Shortcuts](#-keyboard-shortcuts)
+- [Troubleshooting](#-troubleshooting)
 
-### Installation
-1. Download and install **.NET 9 Runtime** from Microsoft's website
-2. Download the LinkerApp executable or source code
-3. Run `LinkerApp.UI.exe` or build from source using `dotnet run`
+---
 
-### First Launch
-On first launch, LinkerApp will:
-- Create a SQLite database (`linker.db`) in the application folder
-- Initialize the database schema automatically
-- Display an empty tree view ready for your first links
+## 🚀 Getting Started
 
-## Using LinkerApp
+### **System Requirements**
+- **Operating System**: Windows 10/11 (x64)
+- **Runtime**: .NET 9 Runtime ([Download here](https://dotnet.microsoft.com/download/dotnet/9.0))
+- **Storage**: ~50MB for application + your database size
+- **Memory**: 100MB+ RAM recommended
 
-### Main Interface
+### **Installation**
+1. **Download** LinkerApp from the releases page or build from source
+2. **Ensure .NET 9 Runtime** is installed on your system
+3. **Run `LinkerApp.UI.exe`** to launch the application
 
-#### Tree View (Left Panel)
-- **Displays** your organized links in a hierarchical tree structure  
-- **Root level** shows folders and standalone links
-- **Expandable folders** contain nested links and subfolders
-- **Icons** indicate different link types (web, file, folder, app)
+### **First Launch Experience**
+When you first open LinkerApp:
+- ✅ **Database Creation**: Automatic SQLite database setup (`linker.db`)
+- ✅ **Schema Initialization**: All database tables created automatically
+- ✅ **Sample Data**: Pre-created folders "📁 Bookmarks" and "📁 Development Tools" with sample links
+- ✅ **Ready to Use**: Interface loads with example structure for immediate use
 
-#### Search Bar (Top)
-- **Real-time search** - Results appear as you type
-- **Searches** link names, URLs, and descriptions
-- **Clear search** by emptying the text box to show all links
+---
 
-#### Toolbar Buttons
-- **Add Link** - Create a new link or folder
-- **Manage Tags** - Create and organize tags
-- **Settings** - Application preferences (future feature)
+## 🖥️ Main Interface
 
-### Managing Links
+### **Layout Overview**
+```
+┌─────────────────────────────────────────────────────┐
+│  [🔍 Search Box]  [+] [🏷️] [📁] [🔄]              │
+├─────────────────┬───────────────────────────────────┤
+│                 │                                   │
+│   Tree View     │         Edit Panel                │
+│   (Left Panel)  │        (Right Panel)              │
+│                 │                                   │
+│  📁 Bookmarks   │  ┌─ Edit Item ─────────────────┐  │
+│    🔗 Google    │  │ Name: [____________]         │  │
+│    🔗 GitHub    │  │ Type: [Dropdown ▼]          │  │
+│  📁 Dev Tools   │  │ URL:  [____________] [🔧]    │  │
+│    🔗 VS Code   │  │ Desc: [____________]         │  │
+│  🔗 Stack O.    │  │        [Save] [Cancel]       │  │
+│                 │  └─────────────────────────────┘  │
+└─────────────────┴───────────────────────────────────┘
+```
 
-#### Adding a New Link
-1. **Right-click** in the tree view or click **"Add Link"**
-2. **Fill in the Link Dialog:**
-   - **Name:** Display name for your link (required)
-   - **URL/Path:** The actual link destination (required)
-   - **Description:** Optional notes about the link
-   - **Type:** Auto-detected based on URL/path
-   - **Parent Folder:** Choose where to place the link
-   - **Tags:** Select from existing tags or create new ones
+### **Key Components**
 
-3. **Click "Save"** to create the link
+#### **🔍 Search Bar**
+- **Real-time filtering** as you type
+- **Searches**: Names, URLs, descriptions, and tags
+- **Clear**: Empty the search to see all links
+- **Case insensitive** for easier searching
 
-#### Supported Link Types
+#### **🛠️ Toolbar Buttons**
+- **[+] Add Link**: Create new link or folder
+- **[🏷️] Manage Tags**: Tag creation and management
+- **[📁] Add Folder**: Quick folder creation
+- **[🔄] Refresh**: Reload data from database
+
+#### **🌳 Tree View (Left Panel)**
+- **Hierarchical Display**: Folders and links in organized tree structure
+- **Expandable Folders**: Click arrows to expand/collapse
+- **Type Icons**: Visual indicators for different link types
+- **Context Menus**: Right-click for additional actions
+- **Single Click**: Select item for editing
+- **Double Click**: Open/launch the selected link
+
+#### **✏️ Edit Panel (Right Panel)**
+- **Dynamic Content**: Shows edit form when item is selected
+- **Real-time Validation**: Immediate feedback on required fields
+- **Resizable Interface**: Panel adjusts to content
+- **Save/Cancel**: Clear action buttons
+
+---
+
+## 🔗 Managing Links
+
+### **Adding a New Link**
+
+#### **Method 1: Quick Add**
+1. **Click the [+] button** in toolbar
+2. **Choose link type** from the dropdown
+3. **Fill in details** (see form fields below)
+4. **Click "Save"**
+
+#### **Method 2: Context Menu**
+1. **Right-click** where you want to add the link
+2. **Select "Add Link Here"** or "Add Folder Here"
+3. **Complete the form**
+4. **Save your changes**
+
+### **Link Dialog Fields**
+
+#### **📝 Required Fields**
+- **Name*** (Display name): What you'll see in the tree
+- **Type**: Automatically detected, but can be changed
+- **URL/Path*** (Destination): Where the link goes
+
+#### **📋 Optional Fields**
+- **Description**: Notes about this link
+- **Parent Folder**: Where to organize this link
+- **Tags**: Categorization labels (color-coded)
+
+### **🎯 Supported Link Types**
+
+| Type | Description | Examples |
+|------|-------------|----------|
+| **🌐 Web URL** | Internet websites | `https://github.com` |
+| **📄 File Path** | Local files | `C:\Documents\report.pdf` |
+| **📁 Folder Path** | Local directories | `C:\Users\Username\Documents` |
+| **⚙️ Application** | Executable programs | `C:\Program Files\Git\git-bash.exe` |
+| **📱 Windows Store App** | Store applications | `ms-windows-store://...` |
+| **🖥️ System Location** | Windows locations | `shell:desktop`, `ms-settings:display` |
+
+### **🔧 Application Links with Arguments**
+LinkerApp supports complex application launches:
+```
+"C:\Program Files\Git\git-bash.exe" --cd-to-home
+notepad.exe C:\temp\notes.txt
+code --new-window --goto package.json:25
+```
+
+---
+
+## 📁 Browse Buttons & File Selection
+
+### **🔧 Browse Application Button**
+- **When**: Appears when Type = "Application"
+- **Function**: Opens file dialog filtered for executables
+- **Filters**: .exe, .bat, .cmd files (with "All Files" fallback)
+- **Result**: Automatically populates URL/Path field
+
+### **📁 Browse Folder Button**  
+- **When**: Appears when Type = "Folder Path"
+- **Function**: Opens Windows folder picker dialog
+- **Result**: Selects directory path for the link
+
+### **📄 Browse File Button**
+- **When**: Appears when Type = "File Path" 
+- **Function**: Opens file selection dialog
+- **Filters**: All files (*.*) with type detection
+- **Result**: Sets path to selected file
+
+### **💡 Pro Tips**
+- **Manual Entry**: You can still type paths manually even with browse buttons
+- **Copy-Paste**: Drag files from Explorer or copy-paste paths
+- **Arguments**: Add command-line arguments after browsing for executables
+- **Validation**: Browse buttons ensure valid paths, but manual entry allows flexibility
+
+---
+
+## 📂 Organizing with Folders
+
+### **Creating Folders**
+1. **Use [📁] button** or **right-click → "Add Folder Here"**
+2. **Set Name**: Descriptive folder name
+3. **Choose Parent**: Where to place this folder (optional)
+4. **Save**: Folder appears in tree immediately
+
+### **Folder Features**
+- **Unlimited Nesting**: Folders within folders, any depth
+- **Visual Hierarchy**: Tree lines show parent-child relationships
+- **Drag Targets**: Future drag & drop support
+- **Context Actions**: Right-click for folder-specific options
+
+### **Best Practices**
+- **Categorize by Purpose**: "Work", "Personal", "Development"
+- **Group by Type**: "Applications", "Documents", "Websites"
+- **Use Descriptive Names**: Clear, meaningful folder names
+- **Avoid Deep Nesting**: 2-3 levels maximum for usability
+
+---
+
+## 🏷️ Tag Management
+
+### **Creating Tags**
+1. **Click [🏷️] Manage Tags** button
+2. **Enter tag name** in the input field
+3. **Choose color** using the color picker
+4. **Click "Add Tag"** to create
+
+### **Assigning Tags to Links**
+1. **Edit a link** (click to select, edit in right panel)
+2. **In Tags section**: Select from available tags
+3. **Multiple tags**: Links can have multiple tags
+4. **Save changes** to apply tags
+
+### **Tag Colors & Organization**
+- **Visual Coding**: Each tag has a unique color
+- **Quick Recognition**: Spot categorized links instantly  
+- **Filtering**: Future search by tag functionality
+- **Customization**: Choose colors that make sense to you
+
+---
+
+## ✏️ Editing & Updates
+
+### **Edit Any Link**
+1. **Single-click** a link in the tree view
+2. **Edit panel appears** on the right side
+3. **Modify any fields**: Name, URL, description, type
+4. **Click "Save"** to apply changes
+5. **Click "Cancel"** to discard changes
+
+### **Real-time Validation**
+- **Required Fields**: Marked with * and validated
+- **URL Validation**: Checks for proper format
+- **File Existence**: Validates file paths when possible
+- **Immediate Feedback**: Error messages appear instantly
+
+### **Data Persistence**
+- **Auto-Save**: Changes saved to SQLite database
+- **Session Persistence**: Data survives app restarts
+- **No Data Loss**: Robust error handling protects your data
+
+---
+
+## 🔍 Search & Navigation
+
+### **Real-time Search**
+- **Type anywhere**: Search box always accessible
+- **Instant Results**: Filtering happens as you type
+- **Multi-field Search**: Searches names, URLs, descriptions
+- **Case Insensitive**: "GitHub" matches "github", "GITHUB"
+
+### **Opening Links**
+- **Double-click**: Primary method to launch links
+- **Default Applications**: Uses Windows file associations
+- **Web Links**: Open in your default browser
+- **Applications**: Launch directly with any arguments
+
+### **Navigation Tips**
+- **Expand/Collapse**: Click arrows to show/hide folder contents
+- **Clear Search**: Empty search box to see all links
+- **Refresh Data**: Use [🔄] button if data seems stale
+
+---
+
+## ⌨️ Keyboard Shortcuts
+
+### **Currently Available**
+- **Enter**: Save when editing (in text fields)
+- **Escape**: Cancel current edit operation
+- **Tab**: Navigate between form fields
+- **Space**: Expand/collapse selected tree item
+
+### **Planned Shortcuts** (Future Updates)
+- **Ctrl+N**: New link
+- **Ctrl+F**: Focus search box  
+- **Delete**: Delete selected link
+- **F2**: Rename selected item
+
+---
+
+## 🛠️ Troubleshooting
+
+### **Common Issues & Solutions**
+
+#### **🚫 "Application won't start"**
+- **Check .NET 9 Runtime**: Must be installed
+- **Run as Administrator**: Try elevated permissions
+- **Check Windows version**: Requires Windows 10/11
+
+#### **📄 "Database errors on startup"**
+- **File Permissions**: Ensure write access to app folder
+- **Antivirus**: Temporarily disable to test
+- **Disk Space**: Ensure adequate free space
+
+#### **🔗 "Links won't open"**
+- **File Paths**: Verify files still exist at specified paths
+- **Applications**: Check if executable paths are correct
+- **Permissions**: Some system locations require admin rights
+
+#### **🎨 "Can't see dropdown text"**
+- **This is fixed** in version 1.2.0+
+- **Update**: Get the latest version of LinkerApp
+- **Theme**: Ensure you're not using high contrast mode
+
+### **Performance Tips**
+- **Regular Cleanup**: Remove broken or unused links
+- **Organize Folders**: Use folders to keep tree manageable
+- **Limit Nesting**: Avoid excessive folder depth
+- **Database Maintenance**: Restart app occasionally to refresh
+
+### **Getting Help**
+- **Documentation**: Check other files in `/docs/` folder
+- **Issues**: Report bugs on the project repository
+- **Community**: Join discussions for tips and tricks
+
+---
+
+## 🎓 Advanced Usage
+
+### **Power User Features**
+- **Batch Operations**: Select multiple items (planned)
+- **Import/Export**: Backup and restore data (planned)
+- **Custom Hotkeys**: Global shortcuts (planned)
+- **System Integration**: Tray icon, context menus (planned)
+
+### **Data Management**
+- **Database Location**: `linker.db` in application folder
+- **Backup Strategy**: Copy database file for backup
+- **Migration**: Move database file to transfer data
+- **Reset**: Delete database file to start fresh
+
+---
+
+*This manual covers LinkerApp version 1.2.0. For the latest updates and features, check the project documentation and release notes.*
 
 **Web URLs:**
 - `https://www.example.com`
