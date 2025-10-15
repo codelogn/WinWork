@@ -55,9 +55,11 @@ public class MainWindowViewModel : ViewModelBase
     private LinkType _editType = LinkType.WebUrl;
     private bool _isEditingItem = false;
     private Link? _originalLinkForEdit;
+    private LinkTreeItemViewModel? _editParent;
 
     public ObservableCollection<LinkTreeItemViewModel> RootLinks { get; }
     public ObservableCollection<LinkTypeItem> LinkTypes { get; }
+    public ObservableCollection<LinkTreeItemViewModel> AvailableParents { get; }
 
     // Commands
     public ICommand AddLinkCommand { get; }
@@ -80,6 +82,7 @@ public class MainWindowViewModel : ViewModelBase
         _linkOpenerService = linkOpenerService;
 
         RootLinks = new ObservableCollection<LinkTreeItemViewModel>();
+        AvailableParents = new ObservableCollection<LinkTreeItemViewModel>();
         LinkTypes = new ObservableCollection<LinkTypeItem>
         {
             new LinkTypeItem(LinkType.WebUrl, "🌐 Web Link", "HTTP/HTTPS website"),
@@ -168,6 +171,12 @@ public class MainWindowViewModel : ViewModelBase
     {
         get => _isEditingItem;
         set => SetProperty(ref _isEditingItem, value);
+    }
+
+    public LinkTreeItemViewModel? EditParent
+    {
+        get => _editParent;
+        set => SetProperty(ref _editParent, value);
     }
 
     public string StatusMessage
@@ -492,6 +501,10 @@ public class MainWindowViewModel : ViewModelBase
             EditDescription = _selectedLink.Link.Description ?? string.Empty;
             EditType = _selectedLink.Link.Type;
             IsEditingItem = true;
+            
+            // Populate available parents and set current parent
+            PopulateAvailableParents();
+            EditParent = FindParentInAvailableParents(_selectedLink.Link.ParentId);
         }
         else
         {
@@ -506,7 +519,60 @@ public class MainWindowViewModel : ViewModelBase
         EditUrl = string.Empty;
         EditDescription = string.Empty;
         EditType = LinkType.WebUrl;
+        EditParent = null;
         IsEditingItem = false;
+    }
+
+    private void PopulateAvailableParents()
+    {
+        AvailableParents.Clear();
+        
+        // Add "No Parent" option
+        AvailableParents.Add(new LinkTreeItemViewModel(new Link 
+        { 
+            Id = 0, 
+            Name = "📁 Root Level", 
+            Type = LinkType.Folder 
+        }));
+        
+        // Add all folders as potential parents, excluding the current item and its descendants
+        foreach (var rootItem in RootLinks)
+        {
+            AddFoldersToAvailableParents(rootItem);
+        }
+    }
+
+    private void AddFoldersToAvailableParents(LinkTreeItemViewModel item)
+    {
+        // Don't add the item being edited or any of its children as potential parents
+        if (_originalLinkForEdit != null && IsDescendantOf(item, _originalLinkForEdit.Id))
+            return;
+            
+        if (item.Link.Type == LinkType.Folder)
+        {
+            AvailableParents.Add(item);
+        }
+        
+        foreach (var child in item.Children)
+        {
+            AddFoldersToAvailableParents(child);
+        }
+    }
+
+    private bool IsDescendantOf(LinkTreeItemViewModel item, int ancestorId)
+    {
+        if (item.Link.Id == ancestorId)
+            return true;
+            
+        return item.Children.Any(child => IsDescendantOf(child, ancestorId));
+    }
+
+    private LinkTreeItemViewModel? FindParentInAvailableParents(int? parentId)
+    {
+        if (parentId == null)
+            return AvailableParents.FirstOrDefault(p => p.Link.Id == 0); // Root level
+            
+        return AvailableParents.FirstOrDefault(p => p.Link.Id == parentId);
     }
 
     private async Task SaveEditAsync()
@@ -520,6 +586,7 @@ public class MainWindowViewModel : ViewModelBase
             _originalLinkForEdit.Url = EditType == LinkType.Folder ? null : EditUrl.Trim();
             _originalLinkForEdit.Description = string.IsNullOrWhiteSpace(EditDescription) ? null : EditDescription.Trim();
             _originalLinkForEdit.Type = EditType;
+            _originalLinkForEdit.ParentId = EditParent?.Link.Id == 0 ? null : EditParent?.Link.Id;
             _originalLinkForEdit.UpdatedAt = DateTime.UtcNow;
 
             await _linkService.UpdateLinkAsync(_originalLinkForEdit);

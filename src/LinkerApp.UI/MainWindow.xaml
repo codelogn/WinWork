@@ -200,12 +200,6 @@
                                                 <TextBlock Text="{Binding Name}" 
                                                            Foreground="White" 
                                                            VerticalAlignment="Center"/>
-                                                <!-- Show children count for debugging -->
-                                                <TextBlock Text="{Binding Children.Count, StringFormat=' (Children: {0})'}" 
-                                                           Foreground="LightBlue" 
-                                                           FontSize="10"
-                                                           VerticalAlignment="Center"
-                                                           Margin="5,0,0,0"/>
                                             </StackPanel>
                                         </HierarchicalDataTemplate>
                                     </TreeView.Resources>
@@ -465,6 +459,32 @@
                                              BorderBrush="#66FFFFFF"
                                              BorderThickness="1"
                                              FontSize="14"/>
+                                </StackPanel>
+                                
+                                <!-- Parent Folder Field -->
+                                <StackPanel Margin="0,0,0,16">
+                                    <TextBlock Text="Parent Folder" 
+                                               Foreground="White" 
+                                               FontWeight="Medium"
+                                               Margin="0,0,0,8"/>
+                                    <ComboBox ItemsSource="{Binding AvailableParents}"
+                                              SelectedItem="{Binding EditParent}"
+                                              DisplayMemberPath="Name"
+                                              Background="#33FFFFFF"
+                                              Foreground="White"
+                                              BorderBrush="#66FFFFFF"
+                                              BorderThickness="1"
+                                              Padding="12,8"
+                                              FontSize="14">
+                                        <ComboBox.Resources>
+                                            <Style TargetType="ComboBoxItem">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                                <Setter Property="Padding" Value="12,8"/>
+                                                <Setter Property="FontSize" Value="14"/>
+                                            </Style>
+                                        </ComboBox.Resources>
+                                    </ComboBox>
                                 </StackPanel>
                                 
                                 <!-- Description Field -->
