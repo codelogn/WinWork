@@ -47,13 +47,24 @@ public class MainWindowViewModel : ViewModelBase
     private string _statusMessage = string.Empty;
     private bool _showSuccessMessage;
     private bool _showErrorMessage;
+    
+    // Edit form properties
+    private string _editName = string.Empty;
+    private string _editUrl = string.Empty;
+    private string _editDescription = string.Empty;
+    private LinkType _editType = LinkType.WebUrl;
+    private bool _isEditingItem = false;
+    private Link? _originalLinkForEdit;
 
     public ObservableCollection<LinkTreeItemViewModel> RootLinks { get; }
+    public ObservableCollection<LinkTypeItem> LinkTypes { get; }
 
     // Commands
     public ICommand AddLinkCommand { get; }
     public ICommand AddFolderCommand { get; }
     public ICommand RefreshCommand { get; }
+    public ICommand SaveEditCommand { get; }
+    public ICommand CancelEditCommand { get; }
 
     public MainWindowViewModel(
         ILinkService linkService,
@@ -67,11 +78,23 @@ public class MainWindowViewModel : ViewModelBase
         _linkOpenerService = linkOpenerService;
 
         RootLinks = new ObservableCollection<LinkTreeItemViewModel>();
+        LinkTypes = new ObservableCollection<LinkTypeItem>
+        {
+            new LinkTypeItem(LinkType.WebUrl, "🌐 Web Link", "HTTP/HTTPS website"),
+            new LinkTypeItem(LinkType.FilePath, "📄 File Path", "Local file"),
+            new LinkTypeItem(LinkType.Folder, "📁 Folder", "Container for other items"),
+            new LinkTypeItem(LinkType.FolderPath, "📁 Folder Path", "Windows Explorer folder"),
+            new LinkTypeItem(LinkType.Application, "⚙️ Application", "Executable program"),
+            new LinkTypeItem(LinkType.WindowsStoreApp, "📱 Windows Store App", "UWP/Store application"),
+            new LinkTypeItem(LinkType.SystemLocation, "🖥️ System Location", "Control Panel, Settings, etc.")
+        };
 
         // Initialize commands
         AddLinkCommand = new AsyncRelayCommand(AddLinkAsync);
         AddFolderCommand = new AsyncRelayCommand(AddFolderAsync);
         RefreshCommand = new AsyncRelayCommand(LoadLinksAsync);
+        SaveEditCommand = new AsyncRelayCommand(SaveEditAsync, CanSaveEdit);
+        CancelEditCommand = new RelayCommand(CancelEdit);
         
         _ = LoadDataAsync();
     }
@@ -103,7 +126,44 @@ public class MainWindowViewModel : ViewModelBase
     public LinkTreeItemViewModel? SelectedLink
     {
         get => _selectedLink;
-        set => SetProperty(ref _selectedLink, value);
+        set 
+        { 
+            if (SetProperty(ref _selectedLink, value))
+            {
+                LoadSelectedItemForEdit();
+            }
+        }
+    }
+
+    // Edit form properties
+    public string EditName
+    {
+        get => _editName;
+        set => SetProperty(ref _editName, value);
+    }
+
+    public string EditUrl
+    {
+        get => _editUrl;
+        set => SetProperty(ref _editUrl, value);
+    }
+
+    public string EditDescription
+    {
+        get => _editDescription;
+        set => SetProperty(ref _editDescription, value);
+    }
+
+    public LinkType EditType
+    {
+        get => _editType;
+        set => SetProperty(ref _editType, value);
+    }
+
+    public bool IsEditingItem
+    {
+        get => _isEditingItem;
+        set => SetProperty(ref _isEditingItem, value);
     }
 
     public string StatusMessage
@@ -389,6 +449,70 @@ public class MainWindowViewModel : ViewModelBase
         {
             System.Diagnostics.Debug.WriteLine($"Error performing search: {ex.Message}");
         }
+    }
+
+    // Edit form methods
+    private void LoadSelectedItemForEdit()
+    {
+        if (_selectedLink?.Link != null)
+        {
+            _originalLinkForEdit = _selectedLink.Link;
+            EditName = _selectedLink.Link.Name;
+            EditUrl = _selectedLink.Link.Url ?? string.Empty;
+            EditDescription = _selectedLink.Link.Description ?? string.Empty;
+            EditType = _selectedLink.Link.Type;
+            IsEditingItem = true;
+        }
+        else
+        {
+            ClearEditForm();
+        }
+    }
+
+    private void ClearEditForm()
+    {
+        _originalLinkForEdit = null;
+        EditName = string.Empty;
+        EditUrl = string.Empty;
+        EditDescription = string.Empty;
+        EditType = LinkType.WebUrl;
+        IsEditingItem = false;
+    }
+
+    private async Task SaveEditAsync()
+    {
+        if (_originalLinkForEdit == null) return;
+
+        try
+        {
+            // Update the existing entity's properties directly to avoid tracking issues
+            _originalLinkForEdit.Name = EditName.Trim();
+            _originalLinkForEdit.Url = EditType == LinkType.Folder ? null : EditUrl.Trim();
+            _originalLinkForEdit.Description = string.IsNullOrWhiteSpace(EditDescription) ? null : EditDescription.Trim();
+            _originalLinkForEdit.Type = EditType;
+            _originalLinkForEdit.UpdatedAt = DateTime.UtcNow;
+
+            await _linkService.UpdateLinkAsync(_originalLinkForEdit);
+            await LoadLinksAsync(); // Refresh the tree
+            DisplaySuccessMessage("Link updated successfully!");
+        }
+        catch (Exception ex)
+        {
+            DisplayErrorMessage($"Failed to update link: {ex.Message}");
+        }
+    }
+
+    private bool CanSaveEdit()
+    {
+        if (_originalLinkForEdit == null) return false;
+        if (string.IsNullOrWhiteSpace(EditName)) return false;
+        if (EditType != LinkType.Folder && string.IsNullOrWhiteSpace(EditUrl)) return false;
+        return true;
+    }
+
+    private void CancelEdit()
+    {
+        LoadSelectedItemForEdit(); // Reset to original values
     }
 
     // Events

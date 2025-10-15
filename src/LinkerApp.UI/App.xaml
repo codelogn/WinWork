@@ -14,6 +14,7 @@
             <converters:BoolToStringConverter x:Key="BoolToStringConverter"/>
             <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+            <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

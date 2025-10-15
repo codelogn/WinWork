@@ -123,16 +123,30 @@ public class LinkOpenerService : ILinkOpenerService
 
     private async Task<bool> OpenApplicationAsync(string appPath)
     {
-        if (!File.Exists(appPath))
+        if (string.IsNullOrWhiteSpace(appPath))
             return false;
 
-        var psi = new ProcessStartInfo
+        try
         {
-            FileName = appPath,
-            UseShellExecute = true
-        };
+            // Parse the application path and arguments
+            var (fileName, arguments) = ParseApplicationPath(appPath);
+            
+            if (!File.Exists(fileName))
+                return false;
 
-        return await StartProcessAsync(psi);
+            var psi = new ProcessStartInfo
+            {
+                FileName = fileName,
+                Arguments = arguments,
+                UseShellExecute = true
+            };
+
+            return await StartProcessAsync(psi);
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private async Task<bool> OpenWindowsStoreAppAsync(string appUri)
@@ -226,8 +240,13 @@ public class LinkOpenerService : ILinkOpenerService
 
         try
         {
-            var fullPath = Path.GetFullPath(appPath);
-            var extension = Path.GetExtension(fullPath)?.ToLower();
+            // Parse the application path to separate executable from arguments
+            var (fileName, _) = ParseApplicationPath(appPath);
+            
+            if (string.IsNullOrWhiteSpace(fileName))
+                return false;
+                
+            var extension = Path.GetExtension(fileName)?.ToLower();
             
             // Common executable extensions
             var validExtensions = new[] { ".exe", ".bat", ".cmd", ".com", ".msi" };
@@ -237,6 +256,56 @@ public class LinkOpenerService : ILinkOpenerService
         {
             return false;
         }
+    }
+
+    private (string fileName, string arguments) ParseApplicationPath(string appPath)
+    {
+        if (string.IsNullOrWhiteSpace(appPath))
+            return (string.Empty, string.Empty);
+
+        appPath = appPath.Trim();
+
+        // Handle quoted paths
+        if (appPath.StartsWith("\""))
+        {
+            var endQuoteIndex = appPath.IndexOf("\"", 1);
+            if (endQuoteIndex > 0)
+            {
+                var fileName = appPath.Substring(1, endQuoteIndex - 1);
+                var arguments = appPath.Length > endQuoteIndex + 1 ? 
+                    appPath.Substring(endQuoteIndex + 1).Trim() : string.Empty;
+                return (fileName, arguments);
+            }
+        }
+
+        // Handle unquoted paths - split on first space that's not part of a path
+        var parts = appPath.Split(' ', 2);
+        if (parts.Length == 1)
+        {
+            return (parts[0], string.Empty);
+        }
+
+        // Check if the first part is a valid file path
+        if (File.Exists(parts[0]))
+        {
+            return (parts[0], parts[1]);
+        }
+
+        // If not, try to find the executable by looking for common patterns
+        var words = appPath.Split(' ');
+        for (int i = 1; i < words.Length; i++)
+        {
+            var potentialPath = string.Join(" ", words.Take(i + 1));
+            if (File.Exists(potentialPath))
+            {
+                var remainingArgs = i + 1 < words.Length ? 
+                    string.Join(" ", words.Skip(i + 1)) : string.Empty;
+                return (potentialPath, remainingArgs);
+            }
+        }
+
+        // Fallback - assume first part is the executable
+        return (parts[0], parts[1]);
     }
 
     private bool ValidateWindowsStoreApp(string appUri)

@@ -256,20 +256,15 @@ public partial class App : Application
     {
         try
         {
-            // FORCE COMPLETE DATABASE RESET - Remove all existing data and recreate with hierarchical structure
-            Console.WriteLine("EnsureSeedDataAsync: FORCE CLEARING ALL DATA TO CREATE HIERARCHICAL STRUCTURE");
+            // Check if we already have data - if so, don't create seed data
+            var existingCount = await dbContext.Links.CountAsync();
+            Console.WriteLine($"EnsureSeedDataAsync: Found {existingCount} existing links");
             
-            // Delete all existing links to start fresh
-            var allLinks = await dbContext.Links.ToListAsync();
-            if (allLinks.Any())
+            if (existingCount > 0)
             {
-                Console.WriteLine($"EnsureSeedDataAsync: Removing {allLinks.Count} existing links");
-                dbContext.Links.RemoveRange(allLinks);
-                await dbContext.SaveChangesAsync();
+                Console.WriteLine("EnsureSeedDataAsync: Database already has data. Skipping seed data creation.");
+                return;
             }
-            
-            var remainingCount = await dbContext.Links.CountAsync();
-            Console.WriteLine($"EnsureSeedDataAsync: After cleanup, {remainingCount} links remain");
             
             Console.WriteLine("EnsureSeedDataAsync: Creating seed data...");
 

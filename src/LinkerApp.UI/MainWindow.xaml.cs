@@ -90,6 +90,22 @@ public partial class MainWindow : Window
 
     #region Tree View Event Handlers
 
+    private void LinksTreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+    {
+        if (DataContext is MainWindowViewModel viewModel && e.NewValue is LinkTreeItemViewModel selectedItem)
+        {
+            viewModel.SelectedLink = selectedItem;
+        }
+    }
+
+    private async void LinksTreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel && viewModel.SelectedLink != null)
+        {
+            await viewModel.HandleItemDoubleClick(viewModel.SelectedLink);
+        }
+    }
+
     private async void LinkTree_ItemDoubleClicked(object sender, LinkTreeItemViewModel e)
     {
         if (DataContext is MainWindowViewModel viewModel)

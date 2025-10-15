@@ -29,6 +29,7 @@ public class LinkDialogViewModel : ViewModelBase
     public ICommand CancelCommand { get; }
     public ICommand BrowseFileCommand { get; }
     public ICommand BrowseFolderCommand { get; }
+    public ICommand BrowseApplicationCommand { get; }
     public ICommand AddTagCommand { get; }
     public ICommand RemoveTagCommand { get; }
 
@@ -131,6 +132,7 @@ public class LinkDialogViewModel : ViewModelBase
         CancelCommand = new RelayCommand(Cancel);
         BrowseFileCommand = new RelayCommand(BrowseFile);
         BrowseFolderCommand = new RelayCommand(BrowseFolder);
+        BrowseApplicationCommand = new RelayCommand(BrowseApplication);
         AddTagCommand = new RelayCommand<TagViewModel>(AddTag);
         RemoveTagCommand = new RelayCommand<TagViewModel>(RemoveTag);
 
@@ -374,6 +376,25 @@ public class LinkDialogViewModel : ViewModelBase
         {
             System.Diagnostics.Debug.WriteLine($"Error browsing folder: {ex.Message}");
             // Fallback to simple text input
+        }
+    }
+
+    private void BrowseApplication()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Select Application",
+            Filter = "Executable Files (*.exe)|*.exe|Batch Files (*.bat)|*.bat|Command Files (*.cmd)|*.cmd|All Files (*.*)|*.*",
+            FilterIndex = 1
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            Url = dialog.FileName;
+            if (string.IsNullOrWhiteSpace(_name))
+            {
+                Name = System.IO.Path.GetFileNameWithoutExtension(dialog.FileName);
+            }
         }
     }
 

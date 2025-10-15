@@ -150,7 +150,16 @@ public class LinkRepository : ILinkRepository
     public async Task<Link> UpdateAsync(Link link)
     {
         link.UpdatedAt = DateTime.UtcNow;
-        _context.Links.Update(link);
+        
+        // Check if the entity is already being tracked
+        var trackedEntity = _context.Entry(link);
+        if (trackedEntity.State == Microsoft.EntityFrameworkCore.EntityState.Detached)
+        {
+            // Only call Update if the entity is not being tracked
+            _context.Links.Update(link);
+        }
+        // If already tracked, EF will automatically detect changes
+        
         await _context.SaveChangesAsync();
         return link;
     }
