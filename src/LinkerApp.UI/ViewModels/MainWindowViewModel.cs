@@ -535,27 +535,25 @@ public class MainWindowViewModel : ViewModelBase
             Type = LinkType.Folder 
         }));
         
-        // Add all folders as potential parents, excluding the current item and its descendants
+        // Add all items as potential parents, excluding the current item and its descendants
         foreach (var rootItem in RootLinks)
         {
-            AddFoldersToAvailableParents(rootItem);
+            AddItemsToAvailableParents(rootItem);
         }
     }
 
-    private void AddFoldersToAvailableParents(LinkTreeItemViewModel item)
+    private void AddItemsToAvailableParents(LinkTreeItemViewModel item)
     {
         // Don't add the item being edited or any of its children as potential parents
         if (_originalLinkForEdit != null && IsDescendantOf(item, _originalLinkForEdit.Id))
             return;
             
-        if (item.Link.Type == LinkType.Folder)
-        {
-            AvailableParents.Add(item);
-        }
+        // Allow any item type to be a parent (folders, links, etc.)
+        AvailableParents.Add(item);
         
         foreach (var child in item.Children)
         {
-            AddFoldersToAvailableParents(child);
+            AddItemsToAvailableParents(child);
         }
     }
 
