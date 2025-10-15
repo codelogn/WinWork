@@ -63,8 +63,10 @@ public class MainWindowViewModel : ViewModelBase
     public ICommand AddLinkCommand { get; }
     public ICommand AddFolderCommand { get; }
     public ICommand RefreshCommand { get; }
+    public ICommand EditLinkCommand { get; }
     public ICommand SaveEditCommand { get; }
     public ICommand CancelEditCommand { get; }
+    public ICommand DeleteEditCommand { get; }
 
     public MainWindowViewModel(
         ILinkService linkService,
@@ -93,8 +95,10 @@ public class MainWindowViewModel : ViewModelBase
         AddLinkCommand = new AsyncRelayCommand(AddLinkAsync);
         AddFolderCommand = new AsyncRelayCommand(AddFolderAsync);
         RefreshCommand = new AsyncRelayCommand(LoadLinksAsync);
+        EditLinkCommand = new RelayCommand<LinkTreeItemViewModel>(EditLink);
         SaveEditCommand = new AsyncRelayCommand(SaveEditAsync, CanSaveEdit);
         CancelEditCommand = new RelayCommand(CancelEdit);
+        DeleteEditCommand = new AsyncRelayCommand(DeleteEditAsync, CanDeleteEdit);
         
         _ = LoadDataAsync();
     }
@@ -289,6 +293,32 @@ public class MainWindowViewModel : ViewModelBase
     {
         System.Diagnostics.Debug.WriteLine("AddFolderAsync started - showing dialog for folder");
         await ShowLinkDialog(initialType: LinkType.Folder);
+    }
+
+    private void EditLink(LinkTreeItemViewModel? linkTreeItem)
+    {
+        if (linkTreeItem?.Link != null)
+        {
+            _ = ShowLinkDialog(linkTreeItem.Link);
+        }
+    }
+
+    public async Task<bool> DeleteLinkAsync(int linkId)
+    {
+        try
+        {
+            IsLoading = true;
+            return await _linkService.DeleteLinkAsync(linkId);
+        }
+        catch (Exception ex)
+        {
+            DisplayErrorMessage($"Failed to delete link: {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     public void DisplaySuccessMessage(string message)
@@ -513,6 +543,54 @@ public class MainWindowViewModel : ViewModelBase
     private void CancelEdit()
     {
         LoadSelectedItemForEdit(); // Reset to original values
+    }
+
+    private async Task DeleteEditAsync()
+    {
+        if (_originalLinkForEdit == null) return;
+
+        try
+        {
+            // Capture the name before deletion since the object might become invalid
+            var linkName = _originalLinkForEdit.Name;
+            var linkId = _originalLinkForEdit.Id;
+
+            Console.WriteLine($"DEBUG: About to delete link '{linkName}' with ID {linkId}");
+
+            // Show confirmation dialog
+            var result = System.Windows.MessageBox.Show(
+                $"Are you sure you want to delete '{linkName}'?\n\nThis action cannot be undone.",
+                "Confirm Delete",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Warning,
+                System.Windows.MessageBoxResult.No);
+
+            if (result == System.Windows.MessageBoxResult.Yes)
+            {
+                Console.WriteLine("DEBUG: User confirmed deletion, calling DeleteLinkAsync...");
+                await _linkService.DeleteLinkAsync(linkId);
+                
+                Console.WriteLine("DEBUG: DeleteLinkAsync completed, clearing edit form...");
+                ClearEditForm(); // Clear the edit form first
+                
+                Console.WriteLine("DEBUG: Edit form cleared, refreshing tree...");
+                await LoadLinksAsync(); // Refresh the tree
+                
+                Console.WriteLine("DEBUG: Tree refreshed, showing success message...");
+                DisplaySuccessMessage($"'{linkName}' deleted successfully!");
+                Console.WriteLine("DEBUG: Delete operation completed successfully");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"DEBUG: Exception in DeleteEditAsync: {ex}");
+            DisplayErrorMessage($"Failed to delete link: {ex.Message}");
+        }
+    }
+
+    private bool CanDeleteEdit()
+    {
+        return _originalLinkForEdit != null && IsEditingItem;
     }
 
     // Events

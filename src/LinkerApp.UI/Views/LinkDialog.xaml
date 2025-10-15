@@ -606,6 +606,15 @@
                             Padding="20,8"
                             Background="#33666666"/>
                     
+                    <!-- Delete Button (between Cancel and Save, only in edit mode) -->
+                    <Button Content="🗑️ Delete"
+                            Command="{Binding DeleteCommand}"
+                            Style="{StaticResource ModernButtonStyle}"
+                            Margin="0,0,12,0"
+                            Padding="20,8"
+                            Background="#33D32F2F"
+                            Visibility="{Binding DeleteButtonVisibility}"/>
+                    
                     <Button Content="{Binding IsEditMode, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Update|Save'}"
                             Command="{Binding SaveCommand}"
                             Style="{StaticResource ModernButtonStyle}"

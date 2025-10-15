@@ -19,6 +19,7 @@ public partial class LinkDialog : Window
         // Subscribe to events
         viewModel.LinkSaved += OnLinkSaved;
         viewModel.DialogCancelled += OnDialogCancelled;
+        viewModel.LinkDeleted += OnLinkDeleted;
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -44,6 +45,12 @@ public partial class LinkDialog : Window
     private void OnDialogCancelled(object? sender, EventArgs e)
     {
         DialogResult = false;
+        Close();
+    }
+
+    private void OnLinkDeleted(object? sender, LinkDeleteEventArgs e)
+    {
+        DialogResult = true;
         Close();
     }
 

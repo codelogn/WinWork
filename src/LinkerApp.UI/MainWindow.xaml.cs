@@ -178,14 +178,25 @@ public partial class MainWindow : Window
                 Owner = this
             };
 
-            // Subscribe to the save event
+            // Subscribe to the save and delete events
             LinkSaveEventArgs? saveArgs = null;
+            LinkDeleteEventArgs? deleteArgs = null;
             dialogViewModel.LinkSaved += (s, e) => saveArgs = e;
+            dialogViewModel.LinkDeleted += (s, e) => deleteArgs = e;
 
-            if (dialog.ShowDialog() == true && saveArgs != null)
+            if (dialog.ShowDialog() == true)
             {
-                // Handle successful save
-                await viewModel.HandleLinkSaved(saveArgs.Link, saveArgs.SelectedTagIds, saveArgs.IsEditMode);
+                if (saveArgs != null)
+                {
+                    // Handle successful save
+                    await viewModel.HandleLinkSaved(saveArgs.Link, saveArgs.SelectedTagIds, saveArgs.IsEditMode);
+                }
+                else if (deleteArgs != null)
+                {
+                    // Handle successful delete
+                    await viewModel.DeleteLinkAsync(deleteArgs.Link.Id);
+                    await viewModel.LoadLinksAsync();
+                }
             }
         }
         catch (Exception ex)
@@ -384,7 +395,296 @@ public partial class MainWindow : Window
         }
     }
 
+    private void ContextMenu_Opened(object sender, RoutedEventArgs e)
+    {
+        if (sender is ContextMenu contextMenu)
+        {
+            var treeView = FindName("LinksTreeView") as TreeView;
+            var selectedItem = treeView?.SelectedItem as LinkTreeItemViewModel;
+            
+            var editMenuItem = contextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Name == "EditMenuItem");
+            var copyUrlMenuItem = contextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Name == "CopyUrlMenuItem");
+            var deleteMenuItem = contextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Name == "DeleteMenuItem");
+            var editSeparator = contextMenu.Items.OfType<Separator>().FirstOrDefault(s => s.Name == "EditSeparator");
+            var deleteSeparator = contextMenu.Items.OfType<Separator>().FirstOrDefault(s => s.Name == "DeleteSeparator");
+            
+            if (selectedItem != null)
+            {
+                // Show Edit option for both links and folders
+                if (editMenuItem != null)
+                    editMenuItem.Visibility = Visibility.Visible;
+                
+                // Show Copy URL only for web links
+                if (copyUrlMenuItem != null)
+                    copyUrlMenuItem.Visibility = selectedItem.Link.Type == LinkType.WebUrl ? Visibility.Visible : Visibility.Collapsed;
+                
+                // Show Delete option for both links and folders
+                if (deleteMenuItem != null)
+                    deleteMenuItem.Visibility = Visibility.Visible;
+                
+                // Show separators when needed
+                if (editSeparator != null)
+                    editSeparator.Visibility = Visibility.Visible;
+                if (deleteSeparator != null)
+                    deleteSeparator.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                // Hide all item-specific options
+                if (editMenuItem != null)
+                    editMenuItem.Visibility = Visibility.Collapsed;
+                if (copyUrlMenuItem != null)
+                    copyUrlMenuItem.Visibility = Visibility.Collapsed;
+                if (deleteMenuItem != null)
+                    deleteMenuItem.Visibility = Visibility.Collapsed;
+                if (editSeparator != null)
+                    editSeparator.Visibility = Visibility.Collapsed;
+                if (deleteSeparator != null)
+                    deleteSeparator.Visibility = Visibility.Collapsed;
+            }
+        }
+    }
 
+    private void Edit_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            var treeView = FindName("LinksTreeView") as TreeView;
+            var selectedItem = treeView?.SelectedItem as LinkTreeItemViewModel;
+            
+            if (selectedItem != null)
+            {
+                viewModel.EditLinkCommand.Execute(selectedItem);
+            }
+        }
+    }
+
+    private void CopyUrl_Click(object sender, RoutedEventArgs e)
+    {
+        var treeView = FindName("LinksTreeView") as TreeView;
+        var selectedItem = treeView?.SelectedItem as LinkTreeItemViewModel;
+        
+        if (selectedItem?.Link?.Url != null)
+        {
+            try
+            {
+                Clipboard.SetText(selectedItem.Link.Url);
+                // You could add a status message or notification here
+                MessageBox.Show($"URL copied to clipboard: {selectedItem.Link.Url}", "URL Copied", 
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to copy URL to clipboard: {ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+    }
+
+    private async void Delete_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            var treeView = FindName("LinksTreeView") as TreeView;
+            var selectedItem = treeView?.SelectedItem as LinkTreeItemViewModel;
+            
+            if (selectedItem != null)
+            {
+                var itemType = selectedItem.Link.Type == LinkType.Folder ? "folder" : "link";
+                var hasChildren = selectedItem.Link.Type == LinkType.Folder && selectedItem.Children?.Count > 0;
+                
+                string message;
+                if (hasChildren)
+                {
+                    message = $"The folder '{selectedItem.Name}' contains {selectedItem.Children?.Count} item(s). " +
+                             "You must delete or move all items from this folder before you can delete it.\n\n" +
+                             "Do you want to delete all items in this folder first?";
+                }
+                else
+                {
+                    message = $"Are you sure you want to delete this {itemType}?\n\n" +
+                             $"Name: {selectedItem.Name}" +
+                             (selectedItem.Link.Type != LinkType.Folder ? $"\nURL: {selectedItem.Link.Url}" : "");
+                }
+                
+                var result = MessageBox.Show(message, 
+                    hasChildren ? "Folder Not Empty" : $"Delete {char.ToUpper(itemType[0])}{itemType.Substring(1)}",
+                    hasChildren ? MessageBoxButton.YesNo : MessageBoxButton.YesNo, 
+                    MessageBoxImage.Warning);
+                
+                if (result == MessageBoxResult.Yes)
+                {
+                    try
+                    {
+                        if (hasChildren)
+                        {
+                            // Delete all children first
+                            var childrenToDelete = selectedItem.Children?.ToList() ?? new List<LinkTreeItemViewModel>();
+                            foreach (var child in childrenToDelete)
+                            {
+                                await viewModel.DeleteLinkAsync(child.Link.Id);
+                            }
+                        }
+                        
+                        // Delete the item itself
+                        await viewModel.DeleteLinkAsync(selectedItem.Link.Id);
+                        
+                        // Refresh the tree view
+                        await viewModel.LoadLinksAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Failed to delete {itemType}: {ex.Message}", "Error", 
+                            MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+            }
+        }
+    }
+
+    // Individual item context menu handlers
+    private void EditItem_Click(object sender, RoutedEventArgs e)
+    {
+        var linkItem = GetLinkItemFromMenuItem(sender);
+        if (linkItem != null && DataContext is MainWindowViewModel viewModel)
+        {
+            viewModel.EditLinkCommand.Execute(linkItem);
+        }
+    }
+
+    private void CopyItemUrl_Click(object sender, RoutedEventArgs e)
+    {
+        var linkItem = GetLinkItemFromMenuItem(sender);
+        if (linkItem?.Link?.Url != null)
+        {
+            try
+            {
+                Clipboard.SetText(linkItem.Link.Url);
+                MessageBox.Show($"URL copied to clipboard: {linkItem.Link.Url}", "URL Copied", 
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to copy URL to clipboard: {ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+    }
+
+    private void AddItemFolder_Click(object sender, RoutedEventArgs e)
+    {
+        var linkItem = GetLinkItemFromMenuItem(sender);
+        if (linkItem != null && DataContext is MainWindowViewModel viewModel)
+        {
+            viewModel.AddFolderCommand.Execute(linkItem.Link.Id);
+        }
+    }
+
+    private void AddItemLink_Click(object sender, RoutedEventArgs e)
+    {
+        var linkItem = GetLinkItemFromMenuItem(sender);
+        if (linkItem != null && DataContext is MainWindowViewModel viewModel)
+        {
+            viewModel.AddLinkCommand.Execute(linkItem.Link.Id);
+        }
+    }
+
+    private async void DeleteItem_Click(object sender, RoutedEventArgs e)
+    {
+        var linkItem = GetLinkItemFromMenuItem(sender);
+        if (linkItem != null && DataContext is MainWindowViewModel viewModel)
+        {
+            var itemType = linkItem.Link.Type == LinkType.Folder ? "folder" : "link";
+            var hasChildren = linkItem.Link.Type == LinkType.Folder && linkItem.Children?.Count > 0;
+            
+            string message;
+            if (hasChildren)
+            {
+                message = $"The folder '{linkItem.Name}' contains {linkItem.Children?.Count} item(s). " +
+                         "You must delete or move all items from this folder before you can delete it.\n\n" +
+                         "Do you want to delete all items in this folder first?";
+            }
+            else
+            {
+                message = $"Are you sure you want to delete this {itemType}?\n\n" +
+                         $"Name: {linkItem.Name}" +
+                         (linkItem.Link.Type != LinkType.Folder ? $"\nURL: {linkItem.Link.Url}" : "");
+            }
+            
+            var result = MessageBox.Show(message, 
+                hasChildren ? "Folder Not Empty" : $"Delete {char.ToUpper(itemType[0])}{itemType.Substring(1)}",
+                hasChildren ? MessageBoxButton.YesNo : MessageBoxButton.YesNo, 
+                MessageBoxImage.Warning);
+            
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    if (hasChildren)
+                    {
+                        // Delete all children first
+                        var childrenToDelete = linkItem.Children?.ToList() ?? new List<LinkTreeItemViewModel>();
+                        foreach (var child in childrenToDelete)
+                        {
+                            await viewModel.DeleteLinkAsync(child.Link.Id);
+                        }
+                    }
+                    
+                    // Delete the item itself
+                    await viewModel.DeleteLinkAsync(linkItem.Link.Id);
+                    
+                    // Refresh the tree view
+                    await viewModel.LoadLinksAsync();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to delete {itemType}: {ex.Message}", "Error", 
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+    }
+
+    private LinkTreeItemViewModel? GetLinkItemFromMenuItem(object sender)
+    {
+        if (sender is MenuItem menuItem)
+        {
+            // Get the context menu
+            var contextMenu = menuItem.Parent as ContextMenu;
+            if (contextMenu?.PlacementTarget is TreeViewItem treeViewItem)
+            {
+                return treeViewItem.DataContext as LinkTreeItemViewModel;
+            }
+        }
+        return null;
+    }
+
+    private void ItemContextMenu_Opened(object sender, RoutedEventArgs e)
+    {
+        if (sender is ContextMenu contextMenu && contextMenu.PlacementTarget is TreeViewItem treeViewItem)
+        {
+            var selectedItem = treeViewItem.DataContext as LinkTreeItemViewModel;
+            
+            var editMenuItem = contextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Name == "EditMenuItem");
+            var copyUrlMenuItem = contextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Name == "CopyUrlMenuItem");
+            var addFolderMenuItem = contextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Name == "AddFolderMenuItem");
+            var addLinkMenuItem = contextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Name == "AddLinkMenuItem");
+            var deleteMenuItem = contextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Name == "DeleteMenuItem");
+            
+            if (selectedItem != null)
+            {
+                // Show Copy URL only for web links
+                if (copyUrlMenuItem != null)
+                    copyUrlMenuItem.Visibility = selectedItem.Link.Type == LinkType.WebUrl ? Visibility.Visible : Visibility.Collapsed;
+                
+                // Show Add options only for folders
+                if (addFolderMenuItem != null)
+                    addFolderMenuItem.Visibility = selectedItem.Link.Type == LinkType.Folder ? Visibility.Visible : Visibility.Collapsed;
+                if (addLinkMenuItem != null)
+                    addLinkMenuItem.Visibility = selectedItem.Link.Type == LinkType.Folder ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+    }
 
     private void TreeViewItem_Loaded(object sender, RoutedEventArgs e)
     {

@@ -27,6 +27,7 @@ public class LinkDialogViewModel : ViewModelBase
 
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
+    public ICommand DeleteCommand { get; }
     public ICommand BrowseFileCommand { get; }
     public ICommand BrowseFolderCommand { get; }
     public ICommand BrowseApplicationCommand { get; }
@@ -98,7 +99,22 @@ public class LinkDialogViewModel : ViewModelBase
     public bool IsEditMode
     {
         get => _isEditMode;
-        private set => SetProperty(ref _isEditMode, value);
+        private set 
+        { 
+            SetProperty(ref _isEditMode, value);
+            Console.WriteLine($"DEBUG: IsEditMode set to {value}");
+            OnPropertyChanged(nameof(DeleteButtonVisibility));
+        }
+    }
+
+    public System.Windows.Visibility DeleteButtonVisibility
+    {
+        get 
+        {
+            var visibility = IsEditMode ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+            Console.WriteLine($"DEBUG: DeleteButtonVisibility returning {visibility} (IsEditMode={IsEditMode})");
+            return visibility;
+        }
     }
 
     public LinkTreeItemViewModel? SelectedParent
@@ -110,9 +126,11 @@ public class LinkDialogViewModel : ViewModelBase
     // Events
     public event EventHandler<LinkSaveEventArgs>? LinkSaved;
     public event EventHandler? DialogCancelled;
+    public event EventHandler<LinkDeleteEventArgs>? LinkDeleted;
 
     public LinkDialogViewModel()
     {
+        Console.WriteLine("DEBUG: LinkDialogViewModel constructor - IsEditMode = false by default");
         LinkTypes = new ObservableCollection<LinkTypeItem>
         {
             new(LinkType.WebUrl, "🌐 Web URL", "Website or web page"),
@@ -130,6 +148,7 @@ public class LinkDialogViewModel : ViewModelBase
         // Initialize commands
         SaveCommand = new RelayCommand(Save, CanSave);
         CancelCommand = new RelayCommand(Cancel);
+        DeleteCommand = new RelayCommand(Delete, CanDelete);
         BrowseFileCommand = new RelayCommand(BrowseFile);
         BrowseFolderCommand = new RelayCommand(BrowseFolder);
         BrowseApplicationCommand = new RelayCommand(BrowseApplication);
@@ -150,6 +169,7 @@ public class LinkDialogViewModel : ViewModelBase
 
     public void SetEditMode(Link link)
     {
+        Console.WriteLine("DEBUG: SetEditMode called");
         _originalLink = link;
         IsEditMode = true;
         
@@ -335,6 +355,19 @@ public class LinkDialogViewModel : ViewModelBase
         DialogCancelled?.Invoke(this, EventArgs.Empty);
     }
 
+    private bool CanDelete()
+    {
+        return IsEditMode && _originalLink != null;
+    }
+
+    private void Delete()
+    {
+        if (_originalLink != null)
+        {
+            LinkDeleted?.Invoke(this, new LinkDeleteEventArgs(_originalLink));
+        }
+    }
+
     private void BrowseFile()
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
@@ -446,6 +479,16 @@ public class LinkSaveEventArgs : EventArgs
         Link = link;
         SelectedTagIds = selectedTagIds;
         IsEditMode = isEditMode;
+    }
+}
+
+public class LinkDeleteEventArgs : EventArgs
+{
+    public Link Link { get; }
+
+    public LinkDeleteEventArgs(Link link)
+    {
+        Link = link;
     }
 }
 

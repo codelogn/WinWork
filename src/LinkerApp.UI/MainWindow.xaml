@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:LinkerApp.UI"
         xmlns:vm="clr-namespace:LinkerApp.UI.ViewModels"
         xmlns:controls="clr-namespace:LinkerApp.UI.Controls"
+        xmlns:models="clr-namespace:LinkerApp.Models;assembly=LinkerApp.Models"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
         Title="{Binding Title}" 
@@ -216,14 +217,32 @@
                                             <Setter Property="Margin" Value="0,2,0,2"/>
                                             <EventSetter Event="MouseRightButtonUp" Handler="TreeViewItem_RightClick"/>
                                             <EventSetter Event="Loaded" Handler="TreeViewItem_Loaded"/>
+                                            <Setter Property="ContextMenu">
+                                                <Setter.Value>
+                                                    <ContextMenu Background="#CC000000" BorderBrush="#33FFFFFF" Opened="ItemContextMenu_Opened">
+                                                        <MenuItem Name="EditMenuItem" Header="✏️ Edit" Click="EditItem_Click"/>
+                                                        <MenuItem Name="CopyUrlMenuItem" Header="📋 Copy URL" Click="CopyItemUrl_Click" Visibility="Collapsed"/>
+                                                        <Separator Name="EditSeparator"/>
+                                                        <MenuItem Name="AddFolderMenuItem" Header="📁 Add Folder Here" Click="AddItemFolder_Click" Visibility="Collapsed"/>
+                                                        <MenuItem Name="AddLinkMenuItem" Header="🔗 Add Link Here" Click="AddItemLink_Click" Visibility="Collapsed"/>
+                                                        <Separator Name="DeleteSeparator"/>
+                                                        <MenuItem Name="DeleteMenuItem" Header="🗑️ Delete" Click="DeleteItem_Click"/>
+                                                    </ContextMenu>
+                                                </Setter.Value>
+                                            </Setter>
                                         </Style>
                                     </TreeView.ItemContainerStyle>
                                     
                                     <!-- TreeView Context Menu -->
                                     <TreeView.ContextMenu>
-                                        <ContextMenu Background="#CC000000" BorderBrush="#33FFFFFF">
-                                            <MenuItem Header="📁 Add Folder Here" Click="AddSubFolder_Click"/>
+                                        <ContextMenu Background="#CC000000" BorderBrush="#33FFFFFF" Opened="ContextMenu_Opened">
+                                            <MenuItem Name="EditMenuItem" Header="✏️ Edit" Click="Edit_Click" Visibility="Collapsed"/>
+                                            <MenuItem Name="CopyUrlMenuItem" Header="� Copy URL" Click="CopyUrl_Click" Visibility="Collapsed"/>
+                                            <Separator Name="EditSeparator" Visibility="Collapsed"/>
+                                            <MenuItem Header="�📁 Add Folder Here" Click="AddSubFolder_Click"/>
                                             <MenuItem Header="🔗 Add Link Here" Click="AddSubLink_Click"/>
+                                            <Separator Name="DeleteSeparator" Visibility="Collapsed"/>
+                                            <MenuItem Name="DeleteMenuItem" Header="🗑️ Delete" Click="Delete_Click" Visibility="Collapsed"/>
                                         </ContextMenu>
                                     </TreeView.ContextMenu>
                                 </TreeView>
@@ -479,6 +498,14 @@
                                             Margin="0,0,10,0"
                                             Background="#66666666"
                                             BorderBrush="#88888888"/>
+                                    <Button Content="🗑️ Delete" 
+                                            Command="{Binding DeleteEditCommand}"
+                                            Style="{StaticResource ModernButtonStyle}"
+                                            Width="90" 
+                                            Height="36"
+                                            Margin="0,0,10,0"
+                                            Background="#33D32F2F"
+                                            BorderBrush="#D32F2F"/>
                                     <Button Content="Save" 
                                             Command="{Binding SaveEditCommand}"
                                             Style="{StaticResource ModernButtonStyle}"
