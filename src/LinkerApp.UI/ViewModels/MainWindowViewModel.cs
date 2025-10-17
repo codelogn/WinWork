@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using LinkerApp.Core.Services;
 using LinkerApp.Models;
+using LinkerApp.UI.Utils;
 
 namespace LinkerApp.UI.ViewModels;
 
@@ -53,6 +54,7 @@ public class MainWindowViewModel : ViewModelBase
     private string _editUrl = string.Empty;
     private string _editDescription = string.Empty;
     private string _editTags = string.Empty;
+    private string _editNotes = string.Empty;
     private LinkType _editType = LinkType.WebUrl;
     private bool _isEditingItem = false;
     private Link? _originalLinkForEdit;
@@ -164,6 +166,12 @@ public class MainWindowViewModel : ViewModelBase
     {
         get => _editTags;
         set => SetProperty(ref _editTags, value);
+    }
+
+    public string EditNotes
+    {
+        get => _editNotes;
+        set => SetProperty(ref _editNotes, value);
     }
 
     public LinkType EditType
@@ -314,7 +322,12 @@ public class MainWindowViewModel : ViewModelBase
         if (linkTreeItem?.Link != null)
         {
             System.Diagnostics.Debug.WriteLine($"DEBUG: EditLink called for link: {linkTreeItem.Link.Name}, Type: {linkTreeItem.Link.Type}, ID: {linkTreeItem.Link.Id}");
+            FileLogger.Log($"EditLink called for link: {linkTreeItem.Link.Name}, Type: {linkTreeItem.Link.Type}, ID: {linkTreeItem.Link.Id}");
             _ = ShowLinkDialog(linkTreeItem.Link);
+        }
+        else
+        {
+            FileLogger.Log("EditLink called but linkTreeItem or Link is null");
         }
     }
 
@@ -388,12 +401,20 @@ public class MainWindowViewModel : ViewModelBase
         try
         {
             System.Diagnostics.Debug.WriteLine($"DEBUG: ShowLinkDialog called - linkToEdit: {linkToEdit?.Name ?? "null"}, initialType: {initialType}, parentItem: {parentItem?.Name ?? "null"}");
+            FileLogger.Log($"ShowLinkDialog called - linkToEdit: {linkToEdit?.Name ?? "null"} (ID: {linkToEdit?.Id ?? 0}), Type: {linkToEdit?.Type}, initialType: {initialType}, parentItem: {parentItem?.Name ?? "null"}");
+            
+            if (linkToEdit != null)
+            {
+                FileLogger.Log($"Link details - Name: '{linkToEdit.Name}', Type: {linkToEdit.Type}, URL: '{linkToEdit.Url}', Notes: '{linkToEdit.Notes}'");
+            }
+            
             // This will be called from the UI layer
             LinkDialogRequested?.Invoke(this, new LinkDialogRequestEventArgs(linkToEdit, initialType, parentItem));
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error showing link dialog: {ex.Message}");
+            FileLogger.Log($"Error in ShowLinkDialog: {ex.Message}");
         }
     }
 
@@ -513,6 +534,7 @@ public class MainWindowViewModel : ViewModelBase
             EditUrl = _selectedLink.Link.Url ?? string.Empty;
             EditDescription = _selectedLink.Link.Description ?? string.Empty;
             EditTags = ConvertTagsToString(_selectedLink.Link.LinkTags);
+            EditNotes = _selectedLink.Link.Notes ?? string.Empty;
             EditType = _selectedLink.Link.Type;
             IsEditingItem = true;
             
@@ -533,6 +555,7 @@ public class MainWindowViewModel : ViewModelBase
         EditUrl = string.Empty;
         EditDescription = string.Empty;
         EditTags = string.Empty;
+        EditNotes = string.Empty;
         EditType = LinkType.WebUrl;
         EditParent = null;
         IsEditingItem = false;
@@ -613,8 +636,9 @@ public class MainWindowViewModel : ViewModelBase
         {
             // Update the existing entity's properties directly to avoid tracking issues
             _originalLinkForEdit.Name = EditName.Trim();
-            _originalLinkForEdit.Url = EditType == LinkType.Folder ? null : EditUrl.Trim();
+            _originalLinkForEdit.Url = EditType == LinkType.Folder || EditType == LinkType.Notes ? null : EditUrl.Trim();
             _originalLinkForEdit.Description = string.IsNullOrWhiteSpace(EditDescription) ? null : EditDescription.Trim();
+            _originalLinkForEdit.Notes = EditType == LinkType.Notes ? (string.IsNullOrWhiteSpace(EditNotes) ? null : EditNotes.Trim()) : null;
             _originalLinkForEdit.Type = EditType;
             _originalLinkForEdit.ParentId = EditParent?.Link.Id == 0 ? null : EditParent?.Link.Id;
             _originalLinkForEdit.UpdatedAt = DateTime.UtcNow;
@@ -636,8 +660,22 @@ public class MainWindowViewModel : ViewModelBase
     {
         if (_originalLinkForEdit == null) return false;
         if (string.IsNullOrWhiteSpace(EditName)) return false;
-        if (EditType != LinkType.Folder && string.IsNullOrWhiteSpace(EditUrl)) return false;
-        return true;
+        
+        // Type-specific validation
+        switch (EditType)
+        {
+            case LinkType.Folder:
+                // Folders only need a name
+                return true;
+                
+            case LinkType.Notes:
+                // Notes require both name and notes content
+                return !string.IsNullOrWhiteSpace(EditNotes);
+                
+            default:
+                // All other link types require a URL
+                return !string.IsNullOrWhiteSpace(EditUrl);
+        }
     }
 
     private void CancelEdit()

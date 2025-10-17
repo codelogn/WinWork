@@ -434,13 +434,16 @@
                                     </ComboBox>
                                 </StackPanel>
                                 
-                                <!-- URL/Path Field (Hidden for Folders) -->
+                                <!-- URL/Path Field (Hidden for Folders and Notes) -->
                                 <StackPanel Margin="0,0,0,16">
                                     <StackPanel.Style>
                                         <Style TargetType="StackPanel">
                                             <Setter Property="Visibility" Value="Visible"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding EditType}" Value="Folder">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding EditType}" Value="Notes">
                                                     <Setter Property="Visibility" Value="Collapsed"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
@@ -606,6 +609,35 @@
                                                FontSize="11"
                                                Margin="0,4,0,0"
                                                TextWrapping="Wrap"/>
+                                </StackPanel>
+                                
+                                <!-- Notes Field (Only for Notes type) -->
+                                <StackPanel Margin="0,0,0,16">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding EditType}" Value="Notes">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <TextBlock Text="Notes Content *" 
+                                               Foreground="White" 
+                                               FontWeight="Medium"
+                                               Margin="0,0,0,8"/>
+                                    <TextBox Text="{Binding EditNotes, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="12,8"
+                                             Background="#33FFFFFF"
+                                             Foreground="White"
+                                             BorderBrush="#66FFFFFF"
+                                             BorderThickness="1"
+                                             FontSize="14"
+                                             Height="120"
+                                             TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             VerticalScrollBarVisibility="Auto"/>
                                 </StackPanel>
                                 
                                 <!-- Action Buttons -->

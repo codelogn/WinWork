@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using LinkerApp.Models;
+using LinkerApp.UI.Utils;
 
 namespace LinkerApp.UI.ViewModels;
 
@@ -255,11 +256,25 @@ public class LinkDialogViewModel : ViewModelBase
 
     public void SetEditMode(Link link)
     {
-        System.Diagnostics.Debug.WriteLine("DEBUG: SetEditMode called");
-        System.Diagnostics.Debug.WriteLine($"DEBUG: Link type = {link.Type}");
-        System.Diagnostics.Debug.WriteLine($"DEBUG: Link ID = {link.Id}");
-        System.Diagnostics.Debug.WriteLine($"DEBUG: Link Name = '{link.Name}'");
-        System.Diagnostics.Debug.WriteLine($"DEBUG: Link Notes = '{link.Notes ?? "null"}'");
+        var startMessage = "DEBUG: SetEditMode called";
+        System.Diagnostics.Debug.WriteLine(startMessage);
+        FileLogger.Log(startMessage);
+        
+        var linkTypeMessage = $"DEBUG: Link type = {link.Type}";
+        System.Diagnostics.Debug.WriteLine(linkTypeMessage);
+        FileLogger.Log(linkTypeMessage);
+        
+        var linkIdMessage = $"DEBUG: Link ID = {link.Id}";
+        System.Diagnostics.Debug.WriteLine(linkIdMessage);
+        FileLogger.Log(linkIdMessage);
+        
+        var linkNameMessage = $"DEBUG: Link Name = '{link.Name}'";
+        System.Diagnostics.Debug.WriteLine(linkNameMessage);
+        FileLogger.Log(linkNameMessage);
+        
+        var linkNotesMessage = $"DEBUG: Link Notes = '{link.Notes ?? "null"}'";
+        System.Diagnostics.Debug.WriteLine(linkNotesMessage);
+        FileLogger.Log(linkNotesMessage);
         
         _originalLink = link;
         IsEditMode = true;
@@ -269,17 +284,32 @@ public class LinkDialogViewModel : ViewModelBase
         Description = link.Description ?? string.Empty;
         Notes = link.Notes ?? string.Empty;
         
-        System.Diagnostics.Debug.WriteLine($"DEBUG: Setting SelectedLinkType to {link.Type}");
+        var settingTypeMessage = $"DEBUG: Setting SelectedLinkType to {link.Type}";
+        System.Diagnostics.Debug.WriteLine(settingTypeMessage);
+        FileLogger.Log(settingTypeMessage);
         SelectedLinkType = link.Type;
         
         // Set the selected item for ComboBox binding
         SelectedLinkTypeItem = LinkTypes.FirstOrDefault(x => x.Type == link.Type);
-        System.Diagnostics.Debug.WriteLine($"DEBUG: SelectedLinkTypeItem set to: {SelectedLinkTypeItem?.DisplayName}");
+        var selectedItemMessage = $"DEBUG: SelectedLinkTypeItem set to: {SelectedLinkTypeItem?.DisplayName}";
+        System.Diagnostics.Debug.WriteLine(selectedItemMessage);
+        FileLogger.Log(selectedItemMessage);
         
-        System.Diagnostics.Debug.WriteLine($"DEBUG: SelectedLinkType is now {SelectedLinkType}");
-        System.Diagnostics.Debug.WriteLine($"DEBUG: IsNotesType is now {IsNotesType}");
-        System.Diagnostics.Debug.WriteLine($"DEBUG: Notes property is now '{Notes}'");
-        System.Diagnostics.Debug.WriteLine($"DEBUG: IsEditMode is now {IsEditMode}");
+        var finalTypeMessage = $"DEBUG: SelectedLinkType is now {SelectedLinkType}";
+        System.Diagnostics.Debug.WriteLine(finalTypeMessage);
+        FileLogger.Log(finalTypeMessage);
+        
+        var isNotesMessage = $"DEBUG: IsNotesType is now {IsNotesType}";
+        System.Diagnostics.Debug.WriteLine(isNotesMessage);
+        FileLogger.Log(isNotesMessage);
+        
+        var notesPropertyMessage = $"DEBUG: Notes property is now '{Notes}'";
+        System.Diagnostics.Debug.WriteLine(notesPropertyMessage);
+        FileLogger.Log(notesPropertyMessage);
+        
+        var editModeMessage = $"DEBUG: IsEditMode is now {IsEditMode}";
+        System.Diagnostics.Debug.WriteLine(editModeMessage);
+        FileLogger.Log(editModeMessage);
 
         // Load tags as comma-separated string
         if (link.LinkTags != null && link.LinkTags.Any())

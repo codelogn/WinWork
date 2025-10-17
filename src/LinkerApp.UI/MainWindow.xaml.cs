@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using LinkerApp.UI.ViewModels;
 using LinkerApp.UI.Controls;
 using LinkerApp.UI.Views;
+using LinkerApp.UI.Utils;
 using LinkerApp.Core.Interfaces;
 using LinkerApp.Models;
 using System.ComponentModel;
@@ -449,17 +450,27 @@ public partial class MainWindow : Window
     // Individual item context menu handlers
     private void EditItem_Click(object sender, RoutedEventArgs e)
     {
-        System.Diagnostics.Debug.WriteLine("DEBUG: EditItem_Click called");
+        var message = "DEBUG: EditItem_Click called";
+        System.Diagnostics.Debug.WriteLine(message);
+        FileLogger.Log(message);
+        
         var linkItem = GetLinkItemFromMenuItem(sender);
-        System.Diagnostics.Debug.WriteLine($"DEBUG: linkItem found: {linkItem?.Name ?? "null"}");
+        var linkFoundMessage = $"DEBUG: linkItem found: {linkItem?.Name ?? "null"}";
+        System.Diagnostics.Debug.WriteLine(linkFoundMessage);
+        FileLogger.Log(linkFoundMessage);
+        
         if (linkItem != null && DataContext is MainWindowViewModel viewModel)
         {
-            System.Diagnostics.Debug.WriteLine($"DEBUG: Calling EditLinkCommand.Execute for: {linkItem.Name}");
+            var executeMessage = $"DEBUG: Calling EditLinkCommand.Execute for: {linkItem.Name}";
+            System.Diagnostics.Debug.WriteLine(executeMessage);
+            FileLogger.Log(executeMessage);
             viewModel.EditLinkCommand.Execute(linkItem);
         }
         else
         {
-            System.Diagnostics.Debug.WriteLine($"DEBUG: EditItem_Click failed - linkItem: {linkItem?.Name ?? "null"}, viewModel: {DataContext?.GetType().Name ?? "null"}");
+            var failMessage = $"DEBUG: EditItem_Click failed - linkItem: {linkItem?.Name ?? "null"}, viewModel: {DataContext?.GetType().Name ?? "null"}";
+            System.Diagnostics.Debug.WriteLine(failMessage);
+            FileLogger.Log(failMessage);
         }
     }
 
@@ -595,21 +606,31 @@ public partial class MainWindow : Window
 
     private LinkTreeItemViewModel? GetLinkItemFromMenuItem(object sender)
     {
-        System.Diagnostics.Debug.WriteLine($"DEBUG: GetLinkItemFromMenuItem called with sender: {sender?.GetType().Name ?? "null"}");
+        var senderMessage = $"DEBUG: GetLinkItemFromMenuItem called with sender: {sender?.GetType().Name ?? "null"}";
+        System.Diagnostics.Debug.WriteLine(senderMessage);
+        FileLogger.Log(senderMessage);
+        
         if (sender is MenuItem menuItem)
         {
-            System.Diagnostics.Debug.WriteLine($"DEBUG: MenuItem found, parent: {menuItem.Parent?.GetType().Name ?? "null"}");
+            var menuItemMessage = $"DEBUG: MenuItem found, parent: {menuItem.Parent?.GetType().Name ?? "null"}";
+            System.Diagnostics.Debug.WriteLine(menuItemMessage);
+            FileLogger.Log(menuItemMessage);
+            
             // Get the context menu
             var contextMenu = menuItem.Parent as ContextMenu;
             if (contextMenu?.PlacementTarget is TreeViewItem treeViewItem)
             {
                 var result = treeViewItem.DataContext as LinkTreeItemViewModel;
-                System.Diagnostics.Debug.WriteLine($"DEBUG: Found TreeViewItem with DataContext: {result?.Name ?? "null"}");
+                var resultMessage = $"DEBUG: Found TreeViewItem with DataContext: {result?.Name ?? "null"}";
+                System.Diagnostics.Debug.WriteLine(resultMessage);
+                FileLogger.Log(resultMessage);
                 return result;
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine($"DEBUG: PlacementTarget is not TreeViewItem: {contextMenu?.PlacementTarget?.GetType().Name ?? "null"}");
+                var placementMessage = $"DEBUG: PlacementTarget is not TreeViewItem: {contextMenu?.PlacementTarget?.GetType().Name ?? "null"}";
+                System.Diagnostics.Debug.WriteLine(placementMessage);
+                FileLogger.Log(placementMessage);
             }
         }
         return null;
@@ -623,7 +644,7 @@ public partial class MainWindow : Window
         {
             // Debug output for TreeViewItem loading
             var dataContext = item.DataContext as LinkTreeItemViewModel;
-            Console.WriteLine($"TreeViewItem_Loaded: {dataContext?.Name ?? "Unknown"} - " +
+            System.Diagnostics.Debug.WriteLine($"TreeViewItem_Loaded: {dataContext?.Name ?? "Unknown"} - " +
                             $"HasChildren: {(dataContext?.Children?.Count > 0)} - " +
                             $"IsExpanded: {item.IsExpanded}");
             
@@ -631,7 +652,7 @@ public partial class MainWindow : Window
             if (dataContext?.Children?.Count > 0)
             {
                 item.IsExpanded = true;
-                Console.WriteLine($"TreeViewItem_Loaded: Forced expansion for {dataContext.Name}");
+                System.Diagnostics.Debug.WriteLine($"TreeViewItem_Loaded: Forced expansion for {dataContext.Name}");
             }
             
             // Attach context menu event handlers programmatically to avoid XAML connection ID issues
