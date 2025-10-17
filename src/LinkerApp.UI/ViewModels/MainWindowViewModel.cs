@@ -52,6 +52,7 @@ public class MainWindowViewModel : ViewModelBase
     private string _editName = string.Empty;
     private string _editUrl = string.Empty;
     private string _editDescription = string.Empty;
+    private string _editTags = string.Empty;
     private LinkType _editType = LinkType.WebUrl;
     private bool _isEditingItem = false;
     private Link? _originalLinkForEdit;
@@ -159,6 +160,12 @@ public class MainWindowViewModel : ViewModelBase
     {
         get => _editDescription;
         set => SetProperty(ref _editDescription, value);
+    }
+
+    public string EditTags
+    {
+        get => _editTags;
+        set => SetProperty(ref _editTags, value);
     }
 
     public LinkType EditType
@@ -390,7 +397,7 @@ public class MainWindowViewModel : ViewModelBase
         }
     }
 
-    public async Task HandleLinkSaved(Link link, List<int> tagIds, bool isEditMode)
+    public async Task HandleLinkSaved(Link link, string tagsString, bool isEditMode)
     {
         try
         {
@@ -406,8 +413,8 @@ public class MainWindowViewModel : ViewModelBase
                 await _linkService.CreateLinkAsync(link);
             }
 
-            // TODO: Update tags when tag management is implemented
-            // For now, we'll skip tag assignment
+            // Handle tags after saving the link
+            await UpdateLinkTagsAsync(link.Id, tagsString);
 
             await LoadLinksAsync();
             DisplaySuccessMessage($"{char.ToUpper(actionType[0])}{actionType.Substring(1)} '{link.Name}' {action} successfully!");
@@ -499,6 +506,7 @@ public class MainWindowViewModel : ViewModelBase
             EditName = _selectedLink.Link.Name;
             EditUrl = _selectedLink.Link.Url ?? string.Empty;
             EditDescription = _selectedLink.Link.Description ?? string.Empty;
+            EditTags = ConvertTagsToString(_selectedLink.Link.LinkTags);
             EditType = _selectedLink.Link.Type;
             IsEditingItem = true;
             
@@ -518,6 +526,7 @@ public class MainWindowViewModel : ViewModelBase
         EditName = string.Empty;
         EditUrl = string.Empty;
         EditDescription = string.Empty;
+        EditTags = string.Empty;
         EditType = LinkType.WebUrl;
         EditParent = null;
         IsEditingItem = false;
@@ -535,25 +544,42 @@ public class MainWindowViewModel : ViewModelBase
             Type = LinkType.Folder 
         }));
         
-        // Add all items as potential parents, excluding the current item and its descendants
+        // Add all items as potential parents with hierarchical indentation
         foreach (var rootItem in RootLinks)
         {
-            AddItemsToAvailableParents(rootItem);
+            AddItemsToAvailableParents(rootItem, 0);
         }
     }
 
-    private void AddItemsToAvailableParents(LinkTreeItemViewModel item)
+    private void AddItemsToAvailableParents(LinkTreeItemViewModel item, int level)
     {
         // Don't add the item being edited or any of its children as potential parents
         if (_originalLinkForEdit != null && IsDescendantOf(item, _originalLinkForEdit.Id))
             return;
             
+        // Create a copy of the item with hierarchical display name
+        var indentation = new string(' ', level * 3); // 3 spaces per level
+        var prefix = level > 0 ? $"{indentation}└─ " : "";
+        
+        var displayItem = new LinkTreeItemViewModel(new Link
+        {
+            Id = item.Link.Id,
+            Name = $"{prefix}{item.Link.Name}",
+            Type = item.Link.Type,
+            Url = item.Link.Url,
+            Description = item.Link.Description,
+            ParentId = item.Link.ParentId,
+            SortOrder = item.Link.SortOrder,
+            CreatedAt = item.Link.CreatedAt,
+            UpdatedAt = item.Link.UpdatedAt
+        });
+        
         // Allow any item type to be a parent (folders, links, etc.)
-        AvailableParents.Add(item);
+        AvailableParents.Add(displayItem);
         
         foreach (var child in item.Children)
         {
-            AddItemsToAvailableParents(child);
+            AddItemsToAvailableParents(child, level + 1);
         }
     }
 
@@ -588,6 +614,9 @@ public class MainWindowViewModel : ViewModelBase
             _originalLinkForEdit.UpdatedAt = DateTime.UtcNow;
 
             await _linkService.UpdateLinkAsync(_originalLinkForEdit);
+
+            // Handle tags after updating the link
+            await UpdateLinkTagsAsync(_originalLinkForEdit.Id, EditTags);
             await LoadLinksAsync(); // Refresh the tree
             DisplaySuccessMessage("Link updated successfully!");
         }
@@ -656,6 +685,87 @@ public class MainWindowViewModel : ViewModelBase
     private bool CanDeleteEdit()
     {
         return _originalLinkForEdit != null && IsEditingItem;
+    }
+
+    private string ConvertTagsToString(ICollection<LinkTag>? linkTags)
+    {
+        if (linkTags == null || !linkTags.Any())
+            return string.Empty;
+
+        return string.Join(", ", linkTags.Select(lt => lt.Tag.Name));
+    }
+
+    private async Task<List<int>> ConvertStringToTagIds(string tagsString)
+    {
+        if (string.IsNullOrWhiteSpace(tagsString))
+            return new List<int>();
+
+        var tagNames = tagsString.Split(',')
+            .Select(t => t.Trim())
+            .Where(t => !string.IsNullOrWhiteSpace(t))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var tagIds = new List<int>();
+        var allTags = await _tagService.GetAllTagsAsync();
+        
+        foreach (var tagName in tagNames)
+        {
+            var existingTag = allTags.FirstOrDefault(t => 
+                string.Equals(t.Name, tagName, StringComparison.OrdinalIgnoreCase));
+
+            if (existingTag != null)
+            {
+                tagIds.Add(existingTag.Id);
+            }
+            else
+            {
+                // Create new tag if it doesn't exist
+                var newTag = new Tag
+                {
+                    Name = tagName,
+                    Color = GenerateRandomTagColor()
+                };
+                var createdTag = await _tagService.CreateTagAsync(newTag);
+                tagIds.Add(createdTag.Id);
+            }
+        }
+
+        return tagIds;
+    }
+
+    private async Task UpdateLinkTagsAsync(int linkId, string tagsString)
+    {
+        // Get current tags for the link
+        var currentTags = await _tagService.GetTagsForLinkAsync(linkId);
+        var currentTagIds = currentTags.Select(t => t.Id).ToHashSet();
+
+        // Get new tag IDs from the string
+        var newTagIds = (await ConvertStringToTagIds(tagsString)).ToHashSet();
+
+        // Remove tags that are no longer needed
+        foreach (var tagId in currentTagIds.Except(newTagIds))
+        {
+            await _tagService.RemoveTagFromLinkAsync(linkId, tagId);
+        }
+
+        // Add new tags
+        foreach (var tagId in newTagIds.Except(currentTagIds))
+        {
+            await _tagService.AddTagToLinkAsync(linkId, tagId);
+        }
+    }
+
+    private string GenerateRandomTagColor()
+    {
+        var colors = new[]
+        {
+            "#E74C3C", "#3498DB", "#2ECC71", "#F39C12", "#9B59B6",
+            "#1ABC9C", "#E67E22", "#34495E", "#E91E63", "#009688"
+        };
+        
+        var random = new Random();
+        return colors[random.Next(colors.Length)];
     }
 
     // Events

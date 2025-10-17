@@ -148,9 +148,7 @@ public partial class MainWindow : Window
         {
             var dialogViewModel = new LinkDialogViewModel();
             
-            // Load available tags
-            var tags = await viewModel.GetAllTagsAsync();
-            dialogViewModel.LoadAvailableTags(tags);
+
 
             // Set edit mode if editing existing link
             if (e.LinkToEdit != null)
@@ -189,7 +187,7 @@ public partial class MainWindow : Window
                 if (saveArgs != null)
                 {
                     // Handle successful save
-                    await viewModel.HandleLinkSaved(saveArgs.Link, saveArgs.SelectedTagIds, saveArgs.IsEditMode);
+                    await viewModel.HandleLinkSaved(saveArgs.Link, saveArgs.TagsString, saveArgs.IsEditMode);
                 }
                 else if (deleteArgs != null)
                 {

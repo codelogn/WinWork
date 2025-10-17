@@ -589,6 +589,27 @@
                                              VerticalScrollBarVisibility="Auto"/>
                                 </StackPanel>
                                 
+                                <!-- Tags Field -->
+                                <StackPanel Margin="0,0,0,16">
+                                    <TextBlock Text="Tags" 
+                                               Foreground="White" 
+                                               FontWeight="Medium"
+                                               Margin="0,0,0,8"/>
+                                    <TextBox Text="{Binding EditTags, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="12,8"
+                                             Background="#33FFFFFF"
+                                             Foreground="White"
+                                             BorderBrush="#66FFFFFF"
+                                             BorderThickness="1"
+                                             FontSize="14"
+                                             ToolTip="Enter tags separated by commas (e.g., work, important, project)"/>
+                                    <TextBlock Text="Enter tags separated by commas (e.g., work, important, project)" 
+                                               Foreground="#99FFFFFF" 
+                                               FontSize="11"
+                                               Margin="0,4,0,0"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                                
                                 <!-- Action Buttons -->
                                 <StackPanel Orientation="Horizontal" 
                                             HorizontalAlignment="Right"

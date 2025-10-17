@@ -14,6 +14,7 @@ public class LinkDialogViewModel : ViewModelBase
     private string _name = string.Empty;
     private string _url = string.Empty;
     private string _description = string.Empty;
+    private string _tagsString = string.Empty;
     private LinkType _selectedLinkType = LinkType.WebUrl;
     private bool _isEditMode;
     private Link? _originalLink;
@@ -21,8 +22,6 @@ public class LinkDialogViewModel : ViewModelBase
     private LinkTreeItemViewModel? _selectedParent;
 
     public ObservableCollection<LinkTypeItem> LinkTypes { get; }
-    public ObservableCollection<TagViewModel> AvailableTags { get; }
-    public ObservableCollection<TagViewModel> SelectedTags { get; }
     public ObservableCollection<LinkTreeItemViewModel> AvailableParents { get; }
 
     public ICommand SaveCommand { get; }
@@ -31,8 +30,7 @@ public class LinkDialogViewModel : ViewModelBase
     public ICommand BrowseFileCommand { get; }
     public ICommand BrowseFolderCommand { get; }
     public ICommand BrowseApplicationCommand { get; }
-    public ICommand AddTagCommand { get; }
-    public ICommand RemoveTagCommand { get; }
+
 
     public string DialogTitle 
     {
@@ -76,6 +74,12 @@ public class LinkDialogViewModel : ViewModelBase
     {
         get => _description;
         set => SetProperty(ref _description, value);
+    }
+
+    public string TagsString
+    {
+        get => _tagsString;
+        set => SetProperty(ref _tagsString, value);
     }
 
     public LinkType SelectedLinkType
@@ -141,8 +145,6 @@ public class LinkDialogViewModel : ViewModelBase
             new(LinkType.SystemLocation, "🖥️ System", "System location or setting")
         };
 
-        AvailableTags = new ObservableCollection<TagViewModel>();
-        SelectedTags = new ObservableCollection<TagViewModel>();
         AvailableParents = new ObservableCollection<LinkTreeItemViewModel>();
 
         // Initialize commands
@@ -152,8 +154,7 @@ public class LinkDialogViewModel : ViewModelBase
         BrowseFileCommand = new RelayCommand(BrowseFile);
         BrowseFolderCommand = new RelayCommand(BrowseFolder);
         BrowseApplicationCommand = new RelayCommand(BrowseApplication);
-        AddTagCommand = new RelayCommand<TagViewModel>(AddTag);
-        RemoveTagCommand = new RelayCommand<TagViewModel>(RemoveTag);
+
 
         UpdateUrlPlaceholder();
     }
@@ -178,17 +179,14 @@ public class LinkDialogViewModel : ViewModelBase
         Description = link.Description ?? string.Empty;
         SelectedLinkType = link.Type;
 
-        // Load selected tags
-        SelectedTags.Clear();
-        if (link.LinkTags != null)
+        // Load tags as comma-separated string
+        if (link.LinkTags != null && link.LinkTags.Any())
         {
-            foreach (var linkTag in link.LinkTags)
-            {
-                if (linkTag.Tag != null)
-                {
-                    SelectedTags.Add(new TagViewModel(linkTag.Tag));
-                }
-            }
+            TagsString = string.Join(", ", link.LinkTags.Select(lt => lt.Tag?.Name).Where(n => !string.IsNullOrEmpty(n)));
+        }
+        else
+        {
+            TagsString = string.Empty;
         }
     }
     
@@ -260,14 +258,7 @@ public class LinkDialogViewModel : ViewModelBase
         }
     }
 
-    public void LoadAvailableTags(IEnumerable<Tag> tags)
-    {
-        AvailableTags.Clear();
-        foreach (var tag in tags)
-        {
-            AvailableTags.Add(new TagViewModel(tag));
-        }
-    }
+
 
     private void UpdateUrlPlaceholder()
     {
@@ -343,10 +334,8 @@ public class LinkDialogViewModel : ViewModelBase
         }
         link.UpdatedAt = DateTime.UtcNow;
 
-        var selectedTagIds = SelectedTags.Select(t => t.Tag.Id).ToList();
-
         System.Diagnostics.Debug.WriteLine("Invoking LinkSaved event");
-        LinkSaved?.Invoke(this, new LinkSaveEventArgs(link, selectedTagIds, IsEditMode));
+        LinkSaved?.Invoke(this, new LinkSaveEventArgs(link, TagsString, IsEditMode));
         System.Diagnostics.Debug.WriteLine("LinkSaved event invoked");
     }
 
@@ -431,21 +420,7 @@ public class LinkDialogViewModel : ViewModelBase
         }
     }
 
-    private void AddTag(TagViewModel? tag)
-    {
-        if (tag != null && !SelectedTags.Any(t => t.Tag.Id == tag.Tag.Id))
-        {
-            SelectedTags.Add(tag);
-        }
-    }
 
-    private void RemoveTag(TagViewModel? tag)
-    {
-        if (tag != null)
-        {
-            SelectedTags.Remove(tag);
-        }
-    }
 }
 
 /// <summary>
@@ -471,13 +446,13 @@ public class LinkTypeItem
 public class LinkSaveEventArgs : EventArgs
 {
     public Link Link { get; }
-    public List<int> SelectedTagIds { get; }
+    public string TagsString { get; }
     public bool IsEditMode { get; }
 
-    public LinkSaveEventArgs(Link link, List<int> selectedTagIds, bool isEditMode)
+    public LinkSaveEventArgs(Link link, string tagsString, bool isEditMode)
     {
         Link = link;
-        SelectedTagIds = selectedTagIds;
+        TagsString = tagsString;
         IsEditMode = isEditMode;
     }
 }

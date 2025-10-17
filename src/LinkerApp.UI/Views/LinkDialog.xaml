@@ -447,141 +447,19 @@
                                    Foreground="White" 
                                    FontWeight="Medium"
                                    Margin="0,0,0,8"/>
-                        
-                        <!-- Selected Tags -->
-                        <ItemsControl ItemsSource="{Binding SelectedTags}"
-                                      Margin="0,0,0,8">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="{Binding Color}" 
-                                            CornerRadius="12" 
-                                            Padding="8,4" 
-                                            Margin="4,2">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{Binding Name}" 
-                                                       Foreground="White" 
-                                                       FontSize="11"
-                                                       VerticalAlignment="Center"/>
-                                            <Button Content="✕"
-                                                    Command="{Binding DataContext.RemoveTagCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"
-                                                    Background="Transparent"
-                                                    BorderThickness="0"
-                                                    Foreground="White"
-                                                    FontSize="10"
-                                                    Width="16" Height="16"
-                                                    Margin="4,0,0,0"
-                                                    ToolTip="Remove tag"/>
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                        
-                        <!-- Available Tags -->
-                        <ComboBox ItemsSource="{Binding AvailableTags}"
-                                  DisplayMemberPath="Name"
-                                  SelectedItem="{Binding SelectedAvailableTag, Mode=OneWayToSource}"
-                                  Background="#33FFFFFF"
-                                  Foreground="White"
-                                  BorderBrush="#66FFFFFF"
-                                  BorderThickness="1"
-                                  Padding="12,8"
-                                  FontSize="14">
-                            <ComboBox.Resources>
-                                <!-- Override the default Popup style -->
-                                <Style TargetType="Popup">
-                                    <Setter Property="AllowsTransparency" Value="True"/>
-                                </Style>
-                                <!-- ComboBoxItem style for dropdown -->
-                                <Style TargetType="ComboBoxItem">
-                                    <Setter Property="Background" Value="Transparent"/>
-                                    <Setter Property="Foreground" Value="White"/>
-                                    <Setter Property="Padding" Value="12,8"/>
-                                    <Setter Property="FontSize" Value="14"/>
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="ComboBoxItem">
-                                                <Border Background="{TemplateBinding Background}"
-                                                        Padding="{TemplateBinding Padding}"
-                                                        BorderThickness="0">
-                                                    <ContentPresenter TextBlock.Foreground="White"/>
-                                                </Border>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsHighlighted" Value="True">
-                                                        <Setter Property="Background" Value="#4DFFFFFF"/>
-                                                    </Trigger>
-                                                    <Trigger Property="IsSelected" Value="True">
-                                                        <Setter Property="Background" Value="#66FFFFFF"/>
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </ComboBox.Resources>
-                            <ComboBox.Style>
-                                <Style TargetType="ComboBox">
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="ComboBox">
-                                                <Grid>
-                                                    <ToggleButton x:Name="ToggleButton"
-                                                                  Grid.Column="2"
-                                                                  Focusable="false"
-                                                                  IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
-                                                                  ClickMode="Press"
-                                                                  Background="{TemplateBinding Background}"
-                                                                  BorderBrush="{TemplateBinding BorderBrush}"
-                                                                  BorderThickness="{TemplateBinding BorderThickness}"/>
-                                                    <ContentPresenter x:Name="ContentSite"
-                                                                      IsHitTestVisible="False"
-                                                                      Content="{TemplateBinding SelectionBoxItem}"
-                                                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                                                      ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
-                                                                      Margin="12,8,23,8"
-                                                                      VerticalAlignment="Center"
-                                                                      HorizontalAlignment="Left"
-                                                                      TextBlock.Foreground="White"/>
-                                                    <Popup x:Name="Popup"
-                                                           Placement="Bottom"
-                                                           IsOpen="{TemplateBinding IsDropDownOpen}"
-                                                           AllowsTransparency="True"
-                                                           Focusable="False"
-                                                           PopupAnimation="Slide">
-                                                        <Grid x:Name="DropDown"
-                                                              SnapsToDevicePixels="True"
-                                                              MinWidth="{TemplateBinding ActualWidth}"
-                                                              MaxHeight="{TemplateBinding MaxDropDownHeight}">
-                                                            <Border x:Name="DropDownBorder"
-                                                                    Background="#E6000000"
-                                                                    BorderThickness="1"
-                                                                    BorderBrush="#66FFFFFF"
-                                                                    CornerRadius="4"/>
-                                                            <ScrollViewer Margin="0"
-                                                                          SnapsToDevicePixels="True">
-                                                                <StackPanel IsItemsHost="True"
-                                                                            KeyboardNavigation.DirectionalNavigation="Contained"/>
-                                                            </ScrollViewer>
-                                                        </Grid>
-                                                    </Popup>
-                                                </Grid>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </ComboBox.Style>
-                            <ComboBox.InputBindings>
-                                <KeyBinding Key="Enter" 
-                                            Command="{Binding AddTagCommand}" 
-                                            CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"/>
-                            </ComboBox.InputBindings>
-                        </ComboBox>
+                        <TextBox Text="{Binding TagsString, UpdateSourceTrigger=PropertyChanged}"
+                                 Padding="12,8"
+                                 Background="#33FFFFFF"
+                                 Foreground="White"
+                                 BorderBrush="#66FFFFFF"
+                                 BorderThickness="1"
+                                 FontSize="14"
+                                 ToolTip="Enter tags separated by commas (e.g., work, important, project)"/>
+                        <TextBlock Text="Enter tags separated by commas (e.g., work, important, project)" 
+                                   Foreground="#99FFFFFF" 
+                                   FontSize="11"
+                                   Margin="0,4,0,0"
+                                   TextWrapping="Wrap"/>
                     </StackPanel>
                     
                 </StackPanel>
