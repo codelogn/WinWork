@@ -17,6 +17,31 @@
         WindowStyle="None"
         Background="Transparent">
     
+    <Window.Resources>
+        <!-- Context Menu Style -->
+        <Style x:Key="DarkContextMenuStyle" TargetType="ContextMenu">
+            <Setter Property="Background" Value="#CC000000"/>
+            <Setter Property="BorderBrush" Value="#33FFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="2"/>
+        </Style>
+        
+        <!-- Menu Item Style -->
+        <Style x:Key="DarkMenuItemStyle" TargetType="MenuItem">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Margin" Value="1"/>
+            <Style.Triggers>
+                <Trigger Property="IsHighlighted" Value="True">
+                    <Setter Property="Background" Value="#33FFFFFF"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Foreground" Value="#66FFFFFF"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    
     <!-- DataContext will be set in code-behind -->
     
     <Border Background="#E6000000" 
@@ -150,23 +175,11 @@
                                     Margin="8,0,8,8"
                                     HorizontalAlignment="Right">
                             
-                            <Button Content="🏷️" 
+                            <Button Content="➕ Add New" 
                                     Style="{StaticResource ModernButtonStyle}"
                                     Margin="4,0"
-                                    ToolTip="Manage Tags"
-                                    Click="ManageTags_Click"/>
-                            
-                            <Button Content="+" 
-                                    Style="{StaticResource ModernButtonStyle}"
-                                    Margin="4,0"
-                                    ToolTip="Add Link"
-                                    Click="AddLink_Click"/>
-                            
-                            <Button Content="📁" 
-                                    Style="{StaticResource ModernButtonStyle}"
-                                    Margin="4,0"
-                                    ToolTip="Add Folder"
-                                    Click="AddFolder_Click"/>
+                                    ToolTip="Add New Item"
+                                    Click="AddNew_Click"/>
                             
                             <Button Content="🔄" 
                                     Style="{StaticResource ModernButtonStyle}"
@@ -187,7 +200,8 @@
                                           Foreground="White"
                                           BorderThickness="0"
                                           SelectedItemChanged="LinksTreeView_SelectedItemChanged"
-                                          MouseDoubleClick="LinksTreeView_MouseDoubleClick">
+                                          MouseDoubleClick="LinksTreeView_MouseDoubleClick"
+                                          PreviewMouseRightButtonDown="LinksTreeView_PreviewMouseRightButtonDown">
                                     
                                     <TreeView.Resources>
                                         <!-- Define the hierarchical data template for LinkTreeItemViewModel -->
@@ -209,36 +223,20 @@
                                             <Setter Property="Foreground" Value="White"/>
                                             <Setter Property="FontSize" Value="12"/>
                                             <Setter Property="Margin" Value="0,2,0,2"/>
-                                            <EventSetter Event="MouseRightButtonUp" Handler="TreeViewItem_RightClick"/>
                                             <EventSetter Event="Loaded" Handler="TreeViewItem_Loaded"/>
                                             <Setter Property="ContextMenu">
                                                 <Setter.Value>
-                                                    <ContextMenu Background="#CC000000" BorderBrush="#33FFFFFF" Opened="ItemContextMenu_Opened">
-                                                        <MenuItem Name="EditMenuItem" Header="✏️ Edit" Click="EditItem_Click"/>
-                                                        <MenuItem Name="CopyUrlMenuItem" Header="📋 Copy URL" Click="CopyItemUrl_Click" Visibility="Collapsed"/>
-                                                        <Separator Name="EditSeparator"/>
-                                                        <MenuItem Name="AddFolderMenuItem" Header="📁 Add Folder Here" Click="AddItemFolder_Click" Visibility="Collapsed"/>
-                                                        <MenuItem Name="AddLinkMenuItem" Header="🔗 Add Link Here" Click="AddItemLink_Click" Visibility="Collapsed"/>
-                                                        <Separator Name="DeleteSeparator"/>
-                                                        <MenuItem Name="DeleteMenuItem" Header="🗑️ Delete" Click="DeleteItem_Click"/>
+                                                    <ContextMenu Style="{StaticResource DarkContextMenuStyle}">
+                                                        <MenuItem Header="✏️ Edit" Style="{StaticResource DarkMenuItemStyle}"/>
+                                                        <MenuItem Header="📋 Copy URL" Style="{StaticResource DarkMenuItemStyle}"/>
+                                                        <Separator/>
+                                                        <MenuItem Header="➕ Add New" Style="{StaticResource DarkMenuItemStyle}"/>
+                                                        <MenuItem Header="🗑️ Delete" Style="{StaticResource DarkMenuItemStyle}"/>
                                                     </ContextMenu>
                                                 </Setter.Value>
                                             </Setter>
                                         </Style>
                                     </TreeView.ItemContainerStyle>
-                                    
-                                    <!-- TreeView Context Menu -->
-                                    <TreeView.ContextMenu>
-                                        <ContextMenu Background="#CC000000" BorderBrush="#33FFFFFF" Opened="ContextMenu_Opened">
-                                            <MenuItem Name="EditMenuItem" Header="✏️ Edit" Click="Edit_Click" Visibility="Collapsed"/>
-                                            <MenuItem Name="CopyUrlMenuItem" Header="� Copy URL" Click="CopyUrl_Click" Visibility="Collapsed"/>
-                                            <Separator Name="EditSeparator" Visibility="Collapsed"/>
-                                            <MenuItem Header="�📁 Add Folder Here" Click="AddSubFolder_Click"/>
-                                            <MenuItem Header="🔗 Add Link Here" Click="AddSubLink_Click"/>
-                                            <Separator Name="DeleteSeparator" Visibility="Collapsed"/>
-                                            <MenuItem Name="DeleteMenuItem" Header="🗑️ Delete" Click="Delete_Click" Visibility="Collapsed"/>
-                                        </ContextMenu>
-                                    </TreeView.ContextMenu>
                                 </TreeView>
                             </ScrollViewer>
                             

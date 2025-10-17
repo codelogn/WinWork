@@ -29,6 +29,7 @@ public class LinkerAppDbContext : DbContext
             entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
             entity.Property(e => e.Url).HasMaxLength(2048);
             entity.Property(e => e.Description).HasMaxLength(1000);
+            entity.Property(e => e.Notes).HasMaxLength(10000);
             entity.Property(e => e.IconPath).HasMaxLength(500);
             entity.Property(e => e.Type).HasConversion<int>();
 

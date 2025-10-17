@@ -28,6 +28,11 @@ public class Link
     public string? Description { get; set; }
     
     /// <summary>
+    /// Notes content for Notes type items
+    /// </summary>
+    public string? Notes { get; set; }
+    
+    /// <summary>
     /// Parent folder ID (null for root items)
     /// </summary>
     public int? ParentId { get; set; }

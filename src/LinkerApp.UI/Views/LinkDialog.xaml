@@ -92,8 +92,7 @@
                                    FontWeight="Medium"
                                    Margin="0,0,0,8"/>
                         <ComboBox ItemsSource="{Binding LinkTypes}"
-                                  SelectedValue="{Binding SelectedLinkType}"
-                                  SelectedValuePath="Type"
+                                  SelectedItem="{Binding SelectedLinkTypeItem}"
                                   DisplayMemberPath="DisplayName"
                                   Background="#33FFFFFF"
                                   Foreground="White"
@@ -297,13 +296,13 @@
                                    Margin="0,4,0,0"/>
                     </StackPanel>
                     
-                    <!-- URL/Path (Hidden for Folders) -->
+                    <!-- URL/Path (Hidden for Folders and Notes) -->
                     <StackPanel Margin="0,0,0,16">
                         <StackPanel.Style>
                             <Style TargetType="StackPanel">
                                 <Setter Property="Visibility" Value="Visible"/>
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding SelectedLinkType}" Value="Folder">
+                                    <DataTrigger Binding="{Binding RequiresUrl}" Value="False">
                                         <Setter Property="Visibility" Value="Collapsed"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -439,6 +438,36 @@
                                  TextWrapping="Wrap"
                                  AcceptsReturn="True"
                                  VerticalScrollBarVisibility="Auto"/>
+                    </StackPanel>
+                    
+                    <!-- Notes (Only for Notes type) -->
+                    <StackPanel Margin="0,0,0,16">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsNotesType}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <TextBlock Text="Notes *" 
+                                   Foreground="White" 
+                                   FontWeight="Medium"
+                                   Margin="0,0,0,8"/>
+                        <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                                 Padding="12,8"
+                                 Background="#33FFFFFF"
+                                 Foreground="White"
+                                 BorderBrush="#66FFFFFF"
+                                 BorderThickness="1"
+                                 FontSize="14"
+                                 Height="120"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True"
+                                 VerticalScrollBarVisibility="Auto"
+                                 FontFamily="Consolas"/>
                     </StackPanel>
                     
                     <!-- Tags -->

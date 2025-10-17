@@ -9,6 +9,8 @@ using LinkerApp.Models;
 using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
+using System;
+using System.Collections.ObjectModel;
 
 namespace LinkerApp.UI;
 
@@ -65,28 +67,6 @@ public partial class MainWindow : Window
 
     #region Action Handlers
 
-    private void AddLink_Click(object sender, RoutedEventArgs e)
-    {
-        if (DataContext is MainWindowViewModel viewModel)
-        {
-            viewModel.AddLinkCommand.Execute(null);
-        }
-    }
-
-    private void AddFolder_Click(object sender, RoutedEventArgs e)
-    {
-        System.Diagnostics.Debug.WriteLine("AddFolder_Click triggered");
-        if (DataContext is MainWindowViewModel viewModel)
-        {
-            System.Diagnostics.Debug.WriteLine("ViewModel found, executing command");
-            viewModel.AddFolderCommand.Execute(null);
-        }
-        else
-        {
-            System.Diagnostics.Debug.WriteLine("ViewModel not found!");
-        }
-    }
-
     #endregion
 
     #region Tree View Event Handlers
@@ -105,6 +85,12 @@ public partial class MainWindow : Window
         {
             await viewModel.HandleItemDoubleClick(viewModel.SelectedLink);
         }
+    }
+
+    private void LinksTreeView_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        System.Diagnostics.Debug.WriteLine("DEBUG: LinksTreeView_PreviewMouseRightButtonDown called");
+        // Don't handle the event - let it continue to the context menu
     }
 
     private async void LinkTree_ItemDoubleClicked(object sender, LinkTreeItemViewModel e)
@@ -146,13 +132,14 @@ public partial class MainWindow : Window
 
         try
         {
+            System.Diagnostics.Debug.WriteLine($"DEBUG: OnLinkDialogRequested - LinkToEdit: {e.LinkToEdit?.Name ?? "null"}, Type: {e.LinkToEdit?.Type}, InitialType: {e.InitialType}");
+            
             var dialogViewModel = new LinkDialogViewModel();
             
-
-
             // Set edit mode if editing existing link
             if (e.LinkToEdit != null)
             {
+                System.Diagnostics.Debug.WriteLine($"DEBUG: Setting edit mode for link: {e.LinkToEdit.Name}, Type: {e.LinkToEdit.Type}");
                 dialogViewModel.SetEditMode(e.LinkToEdit);
             }
             // Set initial type if specified
@@ -208,37 +195,7 @@ public partial class MainWindow : Window
 
     #region Tag Management
 
-    private async void ManageTags_Click(object sender, RoutedEventArgs e)
-    {
-        if (DataContext is not MainWindowViewModel viewModel) return;
-
-        try
-        {
-            var tagViewModel = new TagManagementViewModel();
-            
-            // Load existing tags
-            var tags = await viewModel.GetAllTagsAsync();
-            tagViewModel.LoadTags(tags);
-
-            var dialog = new Views.TagManagementDialog(tagViewModel)
-            {
-                Owner = this
-            };
-
-            // Subscribe to tag events
-            tagViewModel.TagAdded += async (s, args) => await HandleTagAdded(args, viewModel);
-            tagViewModel.TagUpdated += async (s, args) => await HandleTagUpdated(args, viewModel);
-            tagViewModel.TagDeleted += async (s, args) => await HandleTagDeleted(args, viewModel);
-
-            dialog.ShowDialog();
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Error opening tag management: {ex.Message}", "Error", 
-                MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-    }
-
+    // Tag management methods kept for potential future use
     private async Task HandleTagAdded(TagEventArgs args, MainWindowViewModel viewModel)
     {
         try
@@ -338,14 +295,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void TreeViewItem_RightClick(object sender, MouseButtonEventArgs e)
-    {
-        if (sender is TreeViewItem item)
-        {
-            item.IsSelected = true;
-            e.Handled = true;
-        }
-    }
+
 
     private void AddSubFolder_Click(object sender, RoutedEventArgs e)
     {
@@ -395,52 +345,8 @@ public partial class MainWindow : Window
 
     private void ContextMenu_Opened(object sender, RoutedEventArgs e)
     {
-        if (sender is ContextMenu contextMenu)
-        {
-            var treeView = FindName("LinksTreeView") as TreeView;
-            var selectedItem = treeView?.SelectedItem as LinkTreeItemViewModel;
-            
-            var editMenuItem = contextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Name == "EditMenuItem");
-            var copyUrlMenuItem = contextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Name == "CopyUrlMenuItem");
-            var deleteMenuItem = contextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Name == "DeleteMenuItem");
-            var editSeparator = contextMenu.Items.OfType<Separator>().FirstOrDefault(s => s.Name == "EditSeparator");
-            var deleteSeparator = contextMenu.Items.OfType<Separator>().FirstOrDefault(s => s.Name == "DeleteSeparator");
-            
-            if (selectedItem != null)
-            {
-                // Show Edit option for both links and folders
-                if (editMenuItem != null)
-                    editMenuItem.Visibility = Visibility.Visible;
-                
-                // Show Copy URL only for web links
-                if (copyUrlMenuItem != null)
-                    copyUrlMenuItem.Visibility = selectedItem.Link.Type == LinkType.WebUrl ? Visibility.Visible : Visibility.Collapsed;
-                
-                // Show Delete option for both links and folders
-                if (deleteMenuItem != null)
-                    deleteMenuItem.Visibility = Visibility.Visible;
-                
-                // Show separators when needed
-                if (editSeparator != null)
-                    editSeparator.Visibility = Visibility.Visible;
-                if (deleteSeparator != null)
-                    deleteSeparator.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                // Hide all item-specific options
-                if (editMenuItem != null)
-                    editMenuItem.Visibility = Visibility.Collapsed;
-                if (copyUrlMenuItem != null)
-                    copyUrlMenuItem.Visibility = Visibility.Collapsed;
-                if (deleteMenuItem != null)
-                    deleteMenuItem.Visibility = Visibility.Collapsed;
-                if (editSeparator != null)
-                    editSeparator.Visibility = Visibility.Collapsed;
-                if (deleteSeparator != null)
-                    deleteSeparator.Visibility = Visibility.Collapsed;
-            }
-        }
+        // Context menu opened - no special handling needed for now
+        System.Diagnostics.Debug.WriteLine("DEBUG: ContextMenu_Opened called");
     }
 
     private void Edit_Click(object sender, RoutedEventArgs e)
@@ -543,10 +449,17 @@ public partial class MainWindow : Window
     // Individual item context menu handlers
     private void EditItem_Click(object sender, RoutedEventArgs e)
     {
+        System.Diagnostics.Debug.WriteLine("DEBUG: EditItem_Click called");
         var linkItem = GetLinkItemFromMenuItem(sender);
+        System.Diagnostics.Debug.WriteLine($"DEBUG: linkItem found: {linkItem?.Name ?? "null"}");
         if (linkItem != null && DataContext is MainWindowViewModel viewModel)
         {
+            System.Diagnostics.Debug.WriteLine($"DEBUG: Calling EditLinkCommand.Execute for: {linkItem.Name}");
             viewModel.EditLinkCommand.Execute(linkItem);
+        }
+        else
+        {
+            System.Diagnostics.Debug.WriteLine($"DEBUG: EditItem_Click failed - linkItem: {linkItem?.Name ?? "null"}, viewModel: {DataContext?.GetType().Name ?? "null"}");
         }
     }
 
@@ -574,7 +487,9 @@ public partial class MainWindow : Window
         var linkItem = GetLinkItemFromMenuItem(sender);
         if (linkItem != null && DataContext is MainWindowViewModel viewModel)
         {
-            viewModel.AddFolderCommand.Execute(linkItem.Link.Id);
+            // Add as sibling at the same level (use parent ID)
+            var parentId = linkItem.Link.ParentId;
+            viewModel.AddFolderCommand.Execute(parentId);
         }
     }
 
@@ -583,13 +498,48 @@ public partial class MainWindow : Window
         var linkItem = GetLinkItemFromMenuItem(sender);
         if (linkItem != null && DataContext is MainWindowViewModel viewModel)
         {
-            viewModel.AddLinkCommand.Execute(linkItem.Link.Id);
+            // Add as sibling at the same level (use parent ID)
+            var parentId = linkItem.Link.ParentId;
+            viewModel.AddLinkCommand.Execute(parentId);
         }
     }
+
+    private void AddNew_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel) return;
+
+        // For the navigation button, just use the AddLinkCommand which will show the unified dialog
+        viewModel.AddLinkCommand.Execute(null);
+    }
+
+    private LinkTreeItemViewModel? GetParentItem(LinkTreeItemViewModel item)
+    {
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            return FindParentInTree(viewModel.RootLinks, item);
+        }
+        return null;
+    }
+    
+    private LinkTreeItemViewModel? FindParentInTree(ObservableCollection<LinkTreeItemViewModel> items, LinkTreeItemViewModel target)
+    {
+        foreach (var item in items)
+        {
+            if (item.Children.Contains(target))
+                return item;
+                
+            var found = FindParentInTree(item.Children, target);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+
 
     private async void DeleteItem_Click(object sender, RoutedEventArgs e)
     {
         var linkItem = GetLinkItemFromMenuItem(sender);
+        
         if (linkItem != null && DataContext is MainWindowViewModel viewModel)
         {
             var itemType = linkItem.Link.Type == LinkType.Folder ? "folder" : "link";
@@ -645,44 +595,27 @@ public partial class MainWindow : Window
 
     private LinkTreeItemViewModel? GetLinkItemFromMenuItem(object sender)
     {
+        System.Diagnostics.Debug.WriteLine($"DEBUG: GetLinkItemFromMenuItem called with sender: {sender?.GetType().Name ?? "null"}");
         if (sender is MenuItem menuItem)
         {
+            System.Diagnostics.Debug.WriteLine($"DEBUG: MenuItem found, parent: {menuItem.Parent?.GetType().Name ?? "null"}");
             // Get the context menu
             var contextMenu = menuItem.Parent as ContextMenu;
             if (contextMenu?.PlacementTarget is TreeViewItem treeViewItem)
             {
-                return treeViewItem.DataContext as LinkTreeItemViewModel;
+                var result = treeViewItem.DataContext as LinkTreeItemViewModel;
+                System.Diagnostics.Debug.WriteLine($"DEBUG: Found TreeViewItem with DataContext: {result?.Name ?? "null"}");
+                return result;
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"DEBUG: PlacementTarget is not TreeViewItem: {contextMenu?.PlacementTarget?.GetType().Name ?? "null"}");
             }
         }
         return null;
     }
 
-    private void ItemContextMenu_Opened(object sender, RoutedEventArgs e)
-    {
-        if (sender is ContextMenu contextMenu && contextMenu.PlacementTarget is TreeViewItem treeViewItem)
-        {
-            var selectedItem = treeViewItem.DataContext as LinkTreeItemViewModel;
-            
-            var editMenuItem = contextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Name == "EditMenuItem");
-            var copyUrlMenuItem = contextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Name == "CopyUrlMenuItem");
-            var addFolderMenuItem = contextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Name == "AddFolderMenuItem");
-            var addLinkMenuItem = contextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Name == "AddLinkMenuItem");
-            var deleteMenuItem = contextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Name == "DeleteMenuItem");
-            
-            if (selectedItem != null)
-            {
-                // Show Copy URL only for web links
-                if (copyUrlMenuItem != null)
-                    copyUrlMenuItem.Visibility = selectedItem.Link.Type == LinkType.WebUrl ? Visibility.Visible : Visibility.Collapsed;
-                
-                // Show Add options only for folders
-                if (addFolderMenuItem != null)
-                    addFolderMenuItem.Visibility = selectedItem.Link.Type == LinkType.Folder ? Visibility.Visible : Visibility.Collapsed;
-                if (addLinkMenuItem != null)
-                    addLinkMenuItem.Visibility = selectedItem.Link.Type == LinkType.Folder ? Visibility.Visible : Visibility.Collapsed;
-            }
-        }
-    }
+
 
     private void TreeViewItem_Loaded(object sender, RoutedEventArgs e)
     {
@@ -699,6 +632,41 @@ public partial class MainWindow : Window
             {
                 item.IsExpanded = true;
                 Console.WriteLine($"TreeViewItem_Loaded: Forced expansion for {dataContext.Name}");
+            }
+            
+            // Attach context menu event handlers programmatically to avoid XAML connection ID issues
+            if (item.ContextMenu != null)
+            {
+                foreach (var menuItem in item.ContextMenu.Items.OfType<MenuItem>())
+                {
+                    // Remove any existing handlers first
+                    menuItem.Click -= EditItem_Click;
+                    menuItem.Click -= CopyItemUrl_Click;
+                    menuItem.Click -= AddNew_Click;
+                    menuItem.Click -= DeleteItem_Click;
+                    
+                    // Attach handlers based on header text
+                    switch (menuItem.Header?.ToString())
+                    {
+                        case "✏️ Edit":
+                            menuItem.Click += EditItem_Click;
+                            break;
+                        case "📋 Copy URL":
+                            menuItem.Click += CopyItemUrl_Click;
+                            // Hide Copy URL for non-web links
+                            if (dataContext?.Link?.Type != LinkType.WebUrl)
+                            {
+                                menuItem.Visibility = Visibility.Collapsed;
+                            }
+                            break;
+                        case "➕ Add New":
+                            menuItem.Click += AddNew_Click;
+                            break;
+                        case "🗑️ Delete":
+                            menuItem.Click += DeleteItem_Click;
+                            break;
+                    }
+                }
             }
         }
     }

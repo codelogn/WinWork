@@ -86,13 +86,11 @@ public class MainWindowViewModel : ViewModelBase
         AvailableParents = new ObservableCollection<LinkTreeItemViewModel>();
         LinkTypes = new ObservableCollection<LinkTypeItem>
         {
-            new LinkTypeItem(LinkType.WebUrl, "🌐 Web Link", "HTTP/HTTPS website"),
-            new LinkTypeItem(LinkType.FilePath, "📄 File Path", "Local file"),
-            new LinkTypeItem(LinkType.Folder, "📁 Folder", "Container for other items"),
-            new LinkTypeItem(LinkType.FolderPath, "📁 Folder Path", "Windows Explorer folder"),
+            new LinkTypeItem(LinkType.Folder, "📁 Folder", "Organize items into groups"),
+            new LinkTypeItem(LinkType.WebUrl, "🌐 Web URL", "Website or web page"),
+            new LinkTypeItem(LinkType.FilePath, "� File", "Local file or document"),
             new LinkTypeItem(LinkType.Application, "⚙️ Application", "Executable program"),
-            new LinkTypeItem(LinkType.WindowsStoreApp, "📱 Windows Store App", "UWP/Store application"),
-            new LinkTypeItem(LinkType.SystemLocation, "🖥️ System Location", "Control Panel, Settings, etc.")
+            new LinkTypeItem(LinkType.Notes, "� Notes", "Text notes and memos")
         };
 
         // Initialize commands
@@ -315,6 +313,7 @@ public class MainWindowViewModel : ViewModelBase
     {
         if (linkTreeItem?.Link != null)
         {
+            System.Diagnostics.Debug.WriteLine($"DEBUG: EditLink called for link: {linkTreeItem.Link.Name}, Type: {linkTreeItem.Link.Type}, ID: {linkTreeItem.Link.Id}");
             _ = ShowLinkDialog(linkTreeItem.Link);
         }
     }
@@ -388,6 +387,7 @@ public class MainWindowViewModel : ViewModelBase
     {
         try
         {
+            System.Diagnostics.Debug.WriteLine($"DEBUG: ShowLinkDialog called - linkToEdit: {linkToEdit?.Name ?? "null"}, initialType: {initialType}, parentItem: {parentItem?.Name ?? "null"}");
             // This will be called from the UI layer
             LinkDialogRequested?.Invoke(this, new LinkDialogRequestEventArgs(linkToEdit, initialType, parentItem));
         }
@@ -401,16 +401,21 @@ public class MainWindowViewModel : ViewModelBase
     {
         try
         {
-            string actionType = link.Type == LinkType.Folder ? "folder" : "link";
+            string actionType = link.Type == LinkType.Folder ? "folder" : 
+                              link.Type == LinkType.Notes ? "note" : "link";
             string action = isEditMode ? "updated" : "created";
             
             if (isEditMode)
             {
+                Console.WriteLine($"HandleLinkSaved: Updating existing {actionType} - ID: {link.Id}, Name: '{link.Name}', Type: {link.Type}");
                 await _linkService.UpdateLinkAsync(link);
+                Console.WriteLine($"HandleLinkSaved: Update completed successfully for {actionType} '{link.Name}'");
             }
             else
             {
+                Console.WriteLine($"HandleLinkSaved: Creating new {actionType} - Name: '{link.Name}', Type: {link.Type}");
                 await _linkService.CreateLinkAsync(link);
+                Console.WriteLine($"HandleLinkSaved: Creation completed successfully for {actionType} '{link.Name}'");
             }
 
             // Handle tags after saving the link
@@ -425,7 +430,8 @@ public class MainWindowViewModel : ViewModelBase
             Console.WriteLine($"ERROR in HandleLinkSaved: {ex.Message}");
             Console.WriteLine($"Stack trace: {ex.StackTrace}");
             
-            string actionType = link.Type == LinkType.Folder ? "folder" : "link";
+            string actionType = link.Type == LinkType.Folder ? "folder" : 
+                              link.Type == LinkType.Notes ? "note" : "link";
             
             // Show detailed error information
             string errorDetails = $"Exception Type: {ex.GetType().Name}\n" +

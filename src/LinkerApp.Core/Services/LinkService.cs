@@ -69,8 +69,8 @@ public class LinkService : ILinkService
         if (string.IsNullOrWhiteSpace(link.Name))
             throw new ArgumentException("Link name is required", nameof(link));
 
-        if (link.Type != LinkType.Folder && string.IsNullOrWhiteSpace(link.Url))
-            throw new ArgumentException("URL is required for non-folder links", nameof(link));
+        if (link.Type != LinkType.Folder && link.Type != LinkType.Notes && string.IsNullOrWhiteSpace(link.Url))
+            throw new ArgumentException("URL is required for link types (except folders and notes)", nameof(link));
 
         return await _linkRepository.CreateAsync(link);
     }
@@ -147,7 +147,7 @@ public class LinkService : ILinkService
         if (string.IsNullOrWhiteSpace(link.Name))
             return Task.FromResult(false);
 
-        if (link.Type != LinkType.Folder)
+        if (link.Type != LinkType.Folder && link.Type != LinkType.Notes)
         {
             if (string.IsNullOrWhiteSpace(link.Url))
                 return Task.FromResult(false);

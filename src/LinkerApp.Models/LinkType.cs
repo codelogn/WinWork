@@ -38,5 +38,10 @@ public enum LinkType
     /// <summary>
     /// System location (Control Panel, Settings, etc.)
     /// </summary>
-    SystemLocation = 6
+    SystemLocation = 6,
+    
+    /// <summary>
+    /// Text notes/memo
+    /// </summary>
+    Notes = 7
 }

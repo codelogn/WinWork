@@ -14,8 +14,10 @@ public class LinkDialogViewModel : ViewModelBase
     private string _name = string.Empty;
     private string _url = string.Empty;
     private string _description = string.Empty;
+    private string _notes = string.Empty;
     private string _tagsString = string.Empty;
     private LinkType _selectedLinkType = LinkType.WebUrl;
+    private LinkTypeItem? _selectedLinkTypeItem;
     private bool _isEditMode;
     private Link? _originalLink;
     private LinkTreeItemViewModel? _parentItem;
@@ -37,12 +39,19 @@ public class LinkDialogViewModel : ViewModelBase
         get
         {
             if (_isEditMode)
-                return "Edit Link";
+                return "Edit Item";
+            
+            string itemType = _selectedLinkType switch
+            {
+                LinkType.Folder => "Folder",
+                LinkType.Notes => "Note",
+                _ => "Link"
+            };
             
             if (_parentItem != null)
-                return $"Add New {(_selectedLinkType == LinkType.Folder ? "Folder" : "Link")} to '{_parentItem.Name}'";
+                return $"Add New {itemType} to '{_parentItem.Name}'";
             
-            return $"Add New {(_selectedLinkType == LinkType.Folder ? "Folder" : "Link")}";
+            return $"Add New {itemType}";
         }
     }
     
@@ -76,6 +85,19 @@ public class LinkDialogViewModel : ViewModelBase
         set => SetProperty(ref _description, value);
     }
 
+    public string Notes
+    {
+        get => _notes;
+        set 
+        { 
+            if (SetProperty(ref _notes, value))
+            {
+                // Trigger validation update when Notes changes
+                System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+            }
+        }
+    }
+
     public string TagsString
     {
         get => _tagsString;
@@ -87,11 +109,53 @@ public class LinkDialogViewModel : ViewModelBase
         get => _selectedLinkType;
         set
         {
+            Console.WriteLine($"DEBUG: SelectedLinkType setter called with value: {value}");
             if (SetProperty(ref _selectedLinkType, value))
             {
+                Console.WriteLine($"DEBUG: SelectedLinkType changed to {value}");
+                
+                // Update the selected item to match the new type (avoid circular reference)
+                var matchingItem = LinkTypes.FirstOrDefault(x => x.Type == value);
+                if (matchingItem != _selectedLinkTypeItem)
+                {
+                    _selectedLinkTypeItem = matchingItem;
+                    OnPropertyChanged(nameof(SelectedLinkTypeItem));
+                }
+                
                 UpdateUrlPlaceholder();
                 OnPropertyChanged(nameof(IsFolderType));
+                OnPropertyChanged(nameof(IsNotesType));
+                OnPropertyChanged(nameof(RequiresUrl));
+                OnPropertyChanged(nameof(DialogTitle));
+                Console.WriteLine($"DEBUG: IsNotesType is now {IsNotesType}");
                 System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+            }
+        }
+    }
+
+    public LinkTypeItem? SelectedLinkTypeItem
+    {
+        get => _selectedLinkTypeItem;
+        set
+        {
+            Console.WriteLine($"DEBUG: SelectedLinkTypeItem setter called with value: {value?.DisplayName ?? "null"}");
+            if (SetProperty(ref _selectedLinkTypeItem, value))
+            {
+                if (value != null && value.Type != _selectedLinkType)
+                {
+                    Console.WriteLine($"DEBUG: Setting SelectedLinkType to {value.Type} from SelectedLinkTypeItem");
+                    _selectedLinkType = value.Type; // Set directly to avoid circular reference
+                    
+                    // Manually trigger the property change notifications
+                    OnPropertyChanged(nameof(SelectedLinkType));
+                    UpdateUrlPlaceholder();
+                    OnPropertyChanged(nameof(IsFolderType));
+                    OnPropertyChanged(nameof(IsNotesType));
+                    OnPropertyChanged(nameof(RequiresUrl));
+                    OnPropertyChanged(nameof(DialogTitle));
+                    Console.WriteLine($"DEBUG: IsNotesType is now {IsNotesType}");
+                    System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+                }
             }
         }
     }
@@ -99,6 +163,18 @@ public class LinkDialogViewModel : ViewModelBase
     public string UrlPlaceholder { get; private set; } = "https://example.com";
 
     public bool IsFolderType => SelectedLinkType == LinkType.Folder;
+    
+    public bool IsNotesType 
+    { 
+        get 
+        { 
+            bool result = SelectedLinkType == LinkType.Notes;
+            Console.WriteLine($"DEBUG: IsNotesType getter called - SelectedLinkType={SelectedLinkType}, result={result}");
+            return result;
+        } 
+    }
+    
+    public bool RequiresUrl => SelectedLinkType != LinkType.Folder && SelectedLinkType != LinkType.Notes;
 
     public bool IsEditMode
     {
@@ -134,29 +210,38 @@ public class LinkDialogViewModel : ViewModelBase
 
     public LinkDialogViewModel()
     {
-        Console.WriteLine("DEBUG: LinkDialogViewModel constructor - IsEditMode = false by default");
+        System.Diagnostics.Debug.WriteLine("DEBUG: LinkDialogViewModel constructor - IsEditMode = false by default");
         LinkTypes = new ObservableCollection<LinkTypeItem>
         {
+            new(LinkType.Folder, "📁 Folder", "Organize items into groups"),
             new(LinkType.WebUrl, "🌐 Web URL", "Website or web page"),
             new(LinkType.FilePath, "📄 File", "Local file or document"),
-            new(LinkType.FolderPath, "📁 Folder", "Local folder or directory"),
             new(LinkType.Application, "⚙️ Application", "Executable program"),
-            new(LinkType.WindowsStoreApp, "📱 Store App", "Windows Store application"),
-            new(LinkType.SystemLocation, "🖥️ System", "System location or setting")
+            new(LinkType.Notes, "📝 Notes", "Text notes and memos")
         };
 
         AvailableParents = new ObservableCollection<LinkTreeItemViewModel>();
 
         // Initialize commands
-        SaveCommand = new RelayCommand(Save, CanSave);
+        SaveCommand = new RelayCommand(() => {
+            System.Diagnostics.Debug.WriteLine("DEBUG: SaveCommand.Execute() called - about to call Save()");
+            Save();
+        }, () => {
+            bool result = CanSave();
+            System.Diagnostics.Debug.WriteLine($"DEBUG: SaveCommand.CanExecute() called - returning {result}");
+            return result;
+        });
         CancelCommand = new RelayCommand(Cancel);
         DeleteCommand = new RelayCommand(Delete, CanDelete);
         BrowseFileCommand = new RelayCommand(BrowseFile);
         BrowseFolderCommand = new RelayCommand(BrowseFolder);
         BrowseApplicationCommand = new RelayCommand(BrowseApplication);
 
-
         UpdateUrlPlaceholder();
+        
+        // Initialize default selection for ComboBox
+        SelectedLinkTypeItem = LinkTypes.FirstOrDefault(x => x.Type == _selectedLinkType);
+        System.Diagnostics.Debug.WriteLine($"DEBUG: Constructor - Initialized SelectedLinkTypeItem to: {SelectedLinkTypeItem?.DisplayName}");
     }
 
     public void SetInitialType(LinkType linkType)
@@ -170,14 +255,31 @@ public class LinkDialogViewModel : ViewModelBase
 
     public void SetEditMode(Link link)
     {
-        Console.WriteLine("DEBUG: SetEditMode called");
+        System.Diagnostics.Debug.WriteLine("DEBUG: SetEditMode called");
+        System.Diagnostics.Debug.WriteLine($"DEBUG: Link type = {link.Type}");
+        System.Diagnostics.Debug.WriteLine($"DEBUG: Link ID = {link.Id}");
+        System.Diagnostics.Debug.WriteLine($"DEBUG: Link Name = '{link.Name}'");
+        System.Diagnostics.Debug.WriteLine($"DEBUG: Link Notes = '{link.Notes ?? "null"}'");
+        
         _originalLink = link;
         IsEditMode = true;
         
         Name = link.Name;
         Url = link.Url ?? string.Empty;
         Description = link.Description ?? string.Empty;
+        Notes = link.Notes ?? string.Empty;
+        
+        System.Diagnostics.Debug.WriteLine($"DEBUG: Setting SelectedLinkType to {link.Type}");
         SelectedLinkType = link.Type;
+        
+        // Set the selected item for ComboBox binding
+        SelectedLinkTypeItem = LinkTypes.FirstOrDefault(x => x.Type == link.Type);
+        System.Diagnostics.Debug.WriteLine($"DEBUG: SelectedLinkTypeItem set to: {SelectedLinkTypeItem?.DisplayName}");
+        
+        System.Diagnostics.Debug.WriteLine($"DEBUG: SelectedLinkType is now {SelectedLinkType}");
+        System.Diagnostics.Debug.WriteLine($"DEBUG: IsNotesType is now {IsNotesType}");
+        System.Diagnostics.Debug.WriteLine($"DEBUG: Notes property is now '{Notes}'");
+        System.Diagnostics.Debug.WriteLine($"DEBUG: IsEditMode is now {IsEditMode}");
 
         // Load tags as comma-separated string
         if (link.LinkTags != null && link.LinkTags.Any())
@@ -277,35 +379,47 @@ public class LinkDialogViewModel : ViewModelBase
 
     private bool CanSave()
     {
-        // Name is always required
+        System.Diagnostics.Debug.WriteLine($"DEBUG: CanSave() called - Name='{_name}', Notes='{_notes}', Type={_selectedLinkType}");
+        
+        // Name is always required for all types
         if (string.IsNullOrWhiteSpace(_name)) 
         {
-            System.Diagnostics.Debug.WriteLine($"CanSave: Name is empty or whitespace: '{_name}'");
+            System.Diagnostics.Debug.WriteLine($"DEBUG: CanSave: Name is empty or whitespace: '{_name}'");
             return false;
         }
         
-        // For folders, URL is optional
-        if (_selectedLinkType == LinkType.Folder) 
+        // Type-specific validation
+        switch (_selectedLinkType)
         {
-            System.Diagnostics.Debug.WriteLine("CanSave: Folder type, returning true");
-            return true;
+            case LinkType.Folder:
+                // Folders only need a name
+                System.Diagnostics.Debug.WriteLine($"DEBUG: CanSave: Folder type, name provided, returning true");
+                return true;
+                
+            case LinkType.Notes:
+                // Notes require both name and notes content
+                bool hasNotes = !string.IsNullOrWhiteSpace(_notes);
+                System.Diagnostics.Debug.WriteLine($"DEBUG: CanSave: Notes type, name='{_name}', notes='{_notes}', hasNotes={hasNotes}");
+                return hasNotes;
+                
+            default:
+                // All other link types require a URL
+                bool hasUrl = !string.IsNullOrWhiteSpace(_url);
+                System.Diagnostics.Debug.WriteLine($"DEBUG: CanSave: {_selectedLinkType} type, URL='{_url}', hasUrl={hasUrl}");
+                return hasUrl;
         }
-        
-        // For other types, URL is required
-        bool hasUrl = !string.IsNullOrWhiteSpace(_url);
-        System.Diagnostics.Debug.WriteLine($"CanSave: Type {_selectedLinkType}, URL '{_url}', hasUrl = {hasUrl}");
-        return hasUrl;
     }
 
     private void Save()
     {
-        System.Diagnostics.Debug.WriteLine("LinkDialogViewModel.Save() called");
-        System.Diagnostics.Debug.WriteLine($"CanSave() = {CanSave()}");
-        System.Diagnostics.Debug.WriteLine($"Name = '{_name}', URL = '{_url}', Type = {_selectedLinkType}");
+        System.Diagnostics.Debug.WriteLine("DEBUG: LinkDialogViewModel.Save() called");
+        System.Diagnostics.Debug.WriteLine($"DEBUG: CanSave() = {CanSave()}");
+        System.Diagnostics.Debug.WriteLine($"DEBUG: Name = '{_name}', URL = '{_url}', Notes = '{_notes}', Type = {_selectedLinkType}");
+        System.Diagnostics.Debug.WriteLine($"DEBUG: IsEditMode = {IsEditMode}");
         
         if (!CanSave()) 
         {
-            System.Diagnostics.Debug.WriteLine("CanSave() returned false, exiting Save()");
+            System.Diagnostics.Debug.WriteLine("DEBUG: CanSave() returned false, exiting Save()");
             return;
         }
 
@@ -314,6 +428,7 @@ public class LinkDialogViewModel : ViewModelBase
         link.Name = _name.Trim();
         link.Url = _url.Trim();
         link.Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim();
+        link.Notes = string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim();
         link.Type = _selectedLinkType;
         
         // Set parent ID based on selected parent (including for edits)
@@ -334,9 +449,10 @@ public class LinkDialogViewModel : ViewModelBase
         }
         link.UpdatedAt = DateTime.UtcNow;
 
-        System.Diagnostics.Debug.WriteLine("Invoking LinkSaved event");
+        System.Diagnostics.Debug.WriteLine("DEBUG: Invoking LinkSaved event");
+        System.Diagnostics.Debug.WriteLine($"DEBUG: Link details before event - ID: {link.Id}, Name: '{link.Name}', Notes: '{link.Notes}', Type: {link.Type}");
         LinkSaved?.Invoke(this, new LinkSaveEventArgs(link, TagsString, IsEditMode));
-        System.Diagnostics.Debug.WriteLine("LinkSaved event invoked");
+        System.Diagnostics.Debug.WriteLine("DEBUG: LinkSaved event invoked");
     }
 
     private void Cancel()
