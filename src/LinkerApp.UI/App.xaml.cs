@@ -369,7 +369,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error creating seed data: {ex.Message}");
+            // Ignore seed data errors silently
         }
     }
 }

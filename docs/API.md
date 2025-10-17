@@ -81,33 +81,12 @@ Searches links by name, URL, or description.
 
 **Returns:** Matching links
 
-### ITagService
-Service for tag management operations.
 
-#### Methods
-
-##### GetAllTagsAsync()
-```csharp
-Task<IEnumerable<Tag>> GetAllTagsAsync()
-```
-Retrieves all available tags.
-
-**Returns:** Collection of all tags
 
 ##### CreateTagAsync(Tag tag)
 ```csharp
-Task<Tag> CreateTagAsync(Tag tag)
-```
-Creates a new tag.
-
-**Parameters:**
-- `tag` - Tag entity to create
-
-**Returns:** Created tag with assigned ID
-
 ##### UpdateTagAsync(Tag tag)
 ```csharp
-Task<Tag> UpdateTagAsync(Tag tag)
 ```
 Updates an existing tag.
 

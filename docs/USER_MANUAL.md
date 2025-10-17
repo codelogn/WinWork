@@ -1,34 +1,14 @@
-# LinkerApp User Manual
-
-## 📖 Table of Contents
-- [Getting Started](#-getting-started)
-- [Main Interface](#-main-interface)
-- [Managing Links](#-managing-links)
-- [Browse Buttons & File Selection](#-browse-buttons--file-selection)
-- [Organizing with Folders](#-organizing-with-folders)
-- [Tag Management](#-tag-management)
-- [Editing & Updates](#-editing--updates)
-- [Search & Navigation](#-search--navigation)
-- [Keyboard Shortcuts](#-keyboard-shortcuts)
-- [Troubleshooting](#-troubleshooting)
 
 ---
 
 ## 🚀 Getting Started
-
-### **System Requirements**
-- **Operating System**: Windows 10/11 (x64)
 - **Runtime**: .NET 9 Runtime ([Download here](https://dotnet.microsoft.com/download/dotnet/9.0))
 - **Storage**: ~50MB for application + your database size
 - **Memory**: 100MB+ RAM recommended
 
 ### **Installation**
-1. **Download** LinkerApp from the releases page or build from source
-2. **Ensure .NET 9 Runtime** is installed on your system
 3. **Run `LinkerApp.UI.exe`** to launch the application
 
-### **First Launch Experience**
-When you first open LinkerApp:
 - ✅ **Database Creation**: Automatic SQLite database setup (`linker.db`)
 - ✅ **Schema Initialization**: All database tables created automatically
 - ✅ **Sample Data**: Pre-created folders "📁 Bookmarks" and "📁 Development Tools" with sample links

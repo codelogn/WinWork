@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
@@ -220,7 +220,6 @@ public class MainWindowViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error loading data: {ex.Message}");
         }
         finally
         {
@@ -278,8 +277,6 @@ public class MainWindowViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error loading links: {ex.Message}");
-            System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
         }
     }
 
@@ -313,7 +310,6 @@ public class MainWindowViewModel : ViewModelBase
 
     private async Task AddFolderAsync()
     {
-        System.Diagnostics.Debug.WriteLine("AddFolderAsync started - showing dialog for folder");
         await ShowLinkDialog(initialType: LinkType.Folder);
     }
 
@@ -321,7 +317,6 @@ public class MainWindowViewModel : ViewModelBase
     {
         if (linkTreeItem?.Link != null)
         {
-            System.Diagnostics.Debug.WriteLine($"DEBUG: EditLink called for link: {linkTreeItem.Link.Name}, Type: {linkTreeItem.Link.Type}, ID: {linkTreeItem.Link.Id}");
             FileLogger.Log($"EditLink called for link: {linkTreeItem.Link.Name}, Type: {linkTreeItem.Link.Type}, ID: {linkTreeItem.Link.Id}");
             _ = ShowLinkDialog(linkTreeItem.Link);
         }
@@ -391,7 +386,6 @@ public class MainWindowViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error opening link: {ex.Message}");
         }
     }
 
@@ -400,7 +394,6 @@ public class MainWindowViewModel : ViewModelBase
     {
         try
         {
-            System.Diagnostics.Debug.WriteLine($"DEBUG: ShowLinkDialog called - linkToEdit: {linkToEdit?.Name ?? "null"}, initialType: {initialType}, parentItem: {parentItem?.Name ?? "null"}");
             FileLogger.Log($"ShowLinkDialog called - linkToEdit: {linkToEdit?.Name ?? "null"} (ID: {linkToEdit?.Id ?? 0}), Type: {linkToEdit?.Type}, initialType: {initialType}, parentItem: {parentItem?.Name ?? "null"}");
             
             if (linkToEdit != null)
@@ -413,7 +406,6 @@ public class MainWindowViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error showing link dialog: {ex.Message}");
             FileLogger.Log($"Error in ShowLinkDialog: {ex.Message}");
         }
     }
@@ -447,7 +439,6 @@ public class MainWindowViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error saving link: {ex.Message}");
             Console.WriteLine($"ERROR in HandleLinkSaved: {ex.Message}");
             Console.WriteLine($"Stack trace: {ex.StackTrace}");
             
@@ -520,7 +511,6 @@ public class MainWindowViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error performing search: {ex.Message}");
         }
     }
 

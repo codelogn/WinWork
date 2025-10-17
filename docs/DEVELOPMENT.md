@@ -1,3 +1,19 @@
+# Development Notes
+
+## Architecture
+- MVVM pattern
+- Entity Framework Core with SQLite
+- Unified dialog for add/edit (Links, Folders, Notes)
+- FileLogger for debug output (logs/debug, auto-cleanup)
+
+## Database
+- See docs/database.md for schema and technical details
+- Migrations managed via EF Core
+- Notes type added to schema
+
+## Logging
+- All debug output written to logs/debug
+- Old logs (>3 days) cleaned up automatically
 # LinkerApp Development Guide
 
 ## Prerequisites

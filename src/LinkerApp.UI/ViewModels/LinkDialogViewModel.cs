@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
@@ -211,7 +211,6 @@ public class LinkDialogViewModel : ViewModelBase
 
     public LinkDialogViewModel()
     {
-        System.Diagnostics.Debug.WriteLine("DEBUG: LinkDialogViewModel constructor - IsEditMode = false by default");
         LinkTypes = new ObservableCollection<LinkTypeItem>
         {
             new(LinkType.Folder, "📁 Folder", "Organize items into groups"),
@@ -225,11 +224,9 @@ public class LinkDialogViewModel : ViewModelBase
 
         // Initialize commands
         SaveCommand = new RelayCommand(() => {
-            System.Diagnostics.Debug.WriteLine("DEBUG: SaveCommand.Execute() called - about to call Save()");
             Save();
         }, () => {
             bool result = CanSave();
-            System.Diagnostics.Debug.WriteLine($"DEBUG: SaveCommand.CanExecute() called - returning {result}");
             return result;
         });
         CancelCommand = new RelayCommand(Cancel);
@@ -242,7 +239,6 @@ public class LinkDialogViewModel : ViewModelBase
         
         // Initialize default selection for ComboBox
         SelectedLinkTypeItem = LinkTypes.FirstOrDefault(x => x.Type == _selectedLinkType);
-        System.Diagnostics.Debug.WriteLine($"DEBUG: Constructor - Initialized SelectedLinkTypeItem to: {SelectedLinkTypeItem?.DisplayName}");
     }
 
     public void SetInitialType(LinkType linkType)
@@ -257,23 +253,18 @@ public class LinkDialogViewModel : ViewModelBase
     public void SetEditMode(Link link)
     {
         var startMessage = "DEBUG: SetEditMode called";
-        System.Diagnostics.Debug.WriteLine(startMessage);
         FileLogger.Log(startMessage);
         
         var linkTypeMessage = $"DEBUG: Link type = {link.Type}";
-        System.Diagnostics.Debug.WriteLine(linkTypeMessage);
         FileLogger.Log(linkTypeMessage);
         
         var linkIdMessage = $"DEBUG: Link ID = {link.Id}";
-        System.Diagnostics.Debug.WriteLine(linkIdMessage);
         FileLogger.Log(linkIdMessage);
         
         var linkNameMessage = $"DEBUG: Link Name = '{link.Name}'";
-        System.Diagnostics.Debug.WriteLine(linkNameMessage);
         FileLogger.Log(linkNameMessage);
         
         var linkNotesMessage = $"DEBUG: Link Notes = '{link.Notes ?? "null"}'";
-        System.Diagnostics.Debug.WriteLine(linkNotesMessage);
         FileLogger.Log(linkNotesMessage);
         
         _originalLink = link;
@@ -285,30 +276,24 @@ public class LinkDialogViewModel : ViewModelBase
         Notes = link.Notes ?? string.Empty;
         
         var settingTypeMessage = $"DEBUG: Setting SelectedLinkType to {link.Type}";
-        System.Diagnostics.Debug.WriteLine(settingTypeMessage);
         FileLogger.Log(settingTypeMessage);
         SelectedLinkType = link.Type;
         
         // Set the selected item for ComboBox binding
         SelectedLinkTypeItem = LinkTypes.FirstOrDefault(x => x.Type == link.Type);
         var selectedItemMessage = $"DEBUG: SelectedLinkTypeItem set to: {SelectedLinkTypeItem?.DisplayName}";
-        System.Diagnostics.Debug.WriteLine(selectedItemMessage);
         FileLogger.Log(selectedItemMessage);
         
         var finalTypeMessage = $"DEBUG: SelectedLinkType is now {SelectedLinkType}";
-        System.Diagnostics.Debug.WriteLine(finalTypeMessage);
         FileLogger.Log(finalTypeMessage);
         
         var isNotesMessage = $"DEBUG: IsNotesType is now {IsNotesType}";
-        System.Diagnostics.Debug.WriteLine(isNotesMessage);
         FileLogger.Log(isNotesMessage);
         
         var notesPropertyMessage = $"DEBUG: Notes property is now '{Notes}'";
-        System.Diagnostics.Debug.WriteLine(notesPropertyMessage);
         FileLogger.Log(notesPropertyMessage);
         
         var editModeMessage = $"DEBUG: IsEditMode is now {IsEditMode}";
-        System.Diagnostics.Debug.WriteLine(editModeMessage);
         FileLogger.Log(editModeMessage);
 
         // Load tags as comma-separated string
@@ -409,12 +394,10 @@ public class LinkDialogViewModel : ViewModelBase
 
     private bool CanSave()
     {
-        System.Diagnostics.Debug.WriteLine($"DEBUG: CanSave() called - Name='{_name}', Notes='{_notes}', Type={_selectedLinkType}");
         
         // Name is always required for all types
         if (string.IsNullOrWhiteSpace(_name)) 
         {
-            System.Diagnostics.Debug.WriteLine($"DEBUG: CanSave: Name is empty or whitespace: '{_name}'");
             return false;
         }
         
@@ -423,33 +406,25 @@ public class LinkDialogViewModel : ViewModelBase
         {
             case LinkType.Folder:
                 // Folders only need a name
-                System.Diagnostics.Debug.WriteLine($"DEBUG: CanSave: Folder type, name provided, returning true");
                 return true;
                 
             case LinkType.Notes:
                 // Notes require both name and notes content
                 bool hasNotes = !string.IsNullOrWhiteSpace(_notes);
-                System.Diagnostics.Debug.WriteLine($"DEBUG: CanSave: Notes type, name='{_name}', notes='{_notes}', hasNotes={hasNotes}");
                 return hasNotes;
                 
             default:
                 // All other link types require a URL
                 bool hasUrl = !string.IsNullOrWhiteSpace(_url);
-                System.Diagnostics.Debug.WriteLine($"DEBUG: CanSave: {_selectedLinkType} type, URL='{_url}', hasUrl={hasUrl}");
                 return hasUrl;
         }
     }
 
     private void Save()
     {
-        System.Diagnostics.Debug.WriteLine("DEBUG: LinkDialogViewModel.Save() called");
-        System.Diagnostics.Debug.WriteLine($"DEBUG: CanSave() = {CanSave()}");
-        System.Diagnostics.Debug.WriteLine($"DEBUG: Name = '{_name}', URL = '{_url}', Notes = '{_notes}', Type = {_selectedLinkType}");
-        System.Diagnostics.Debug.WriteLine($"DEBUG: IsEditMode = {IsEditMode}");
         
         if (!CanSave()) 
         {
-            System.Diagnostics.Debug.WriteLine("DEBUG: CanSave() returned false, exiting Save()");
             return;
         }
 
@@ -479,10 +454,7 @@ public class LinkDialogViewModel : ViewModelBase
         }
         link.UpdatedAt = DateTime.UtcNow;
 
-        System.Diagnostics.Debug.WriteLine("DEBUG: Invoking LinkSaved event");
-        System.Diagnostics.Debug.WriteLine($"DEBUG: Link details before event - ID: {link.Id}, Name: '{link.Name}', Notes: '{link.Notes}', Type: {link.Type}");
         LinkSaved?.Invoke(this, new LinkSaveEventArgs(link, TagsString, IsEditMode));
-        System.Diagnostics.Debug.WriteLine("DEBUG: LinkSaved event invoked");
     }
 
     private void Cancel()
@@ -542,7 +514,6 @@ public class LinkDialogViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error browsing folder: {ex.Message}");
             // Fallback to simple text input
         }
     }

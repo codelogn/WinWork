@@ -232,7 +232,7 @@ public class AsyncRelayCommand : ICommand
         catch (Exception ex)
         {
             // Log or handle the exception appropriately
-            System.Diagnostics.Debug.WriteLine($"Async command error: {ex.Message}");
+            // Ignore async command errors silently
         }
         finally
         {
