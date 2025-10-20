@@ -14,7 +14,7 @@
 ## Logging
 - All debug output written to logs/debug
 - Old logs (>3 days) cleaned up automatically
-# LinkerApp Development Guide
+# WinWork Development Guide
 
 ## Prerequisites
 
@@ -41,19 +41,19 @@
 3. **Clone and Setup Project**
    ```bash
    git clone <repository-url>
-   cd LinkerApp
+   cd WinWork
    dotnet restore
    ```
 
 ## Project Structure
 
 ```
-LinkerApp/
+WinWork/
 ├── src/
-│   ├── LinkerApp.UI/          # WPF Application (Main UI)
-│   ├── LinkerApp.Core/        # Business Logic Services
-│   ├── LinkerApp.Data/        # Data Access Layer & EF Context
-│   └── LinkerApp.Models/      # Data Models & Entities
+│   ├── WinWork.UI/          # WPF Application (Main UI)
+│   ├── WinWork.Core/        # Business Logic Services
+│   ├── WinWork.Data/        # Data Access Layer & EF Context
+│   └── WinWork.Models/      # Data Models & Entities
 ├── tests/                     # Unit & Integration Tests
 ├── docs/                      # Documentation
 └── database/                  # Database files (local development)
@@ -68,7 +68,7 @@ LinkerApp/
 dotnet build
 
 # Build specific project
-dotnet build src/LinkerApp.UI
+dotnet build src/WinWork.UI
 
 # Build in Release mode
 dotnet build --configuration Release
@@ -78,10 +78,10 @@ dotnet build --configuration Release
 
 ```bash
 # Run from solution root
-dotnet run --project src/LinkerApp.UI
+dotnet run --project src/WinWork.UI
 
 # Or navigate to UI project
-cd src/LinkerApp.UI
+cd src/WinWork.UI
 dotnet run
 ```
 
@@ -89,7 +89,7 @@ dotnet run
 
 ```bash
 # Navigate to Data project for EF commands
-cd src/LinkerApp.Data
+cd src/WinWork.Data
 
 # Create new migration
 dotnet ef migrations add <MigrationName>
@@ -117,17 +117,17 @@ dotnet test
 dotnet test --collect:"XPlat Code Coverage"
 
 # Run specific test project
-dotnet test tests/LinkerApp.Tests
+dotnet test tests/WinWork.Tests
 ```
 
 ### Package Management
 
 ```bash
 # Add package to specific project
-dotnet add src/LinkerApp.UI package <PackageName>
+dotnet add src/WinWork.UI package <PackageName>
 
 # Remove package
-dotnet remove src/LinkerApp.UI package <PackageName>
+dotnet remove src/WinWork.UI package <PackageName>
 
 # Update packages
 dotnet list package --outdated
@@ -142,21 +142,21 @@ The application uses SQLite with a local database file. On first run:
 
 ```bash
 # Ensure you're in the Data project directory
-cd src/LinkerApp.Data
+cd src/WinWork.Data
 
 # Create/update database with latest migrations
 dotnet ef database update
 ```
 
-Database file location: `%APPDATA%/LinkerApp/linkerapp.db`
+Database file location: `%APPDATA%/WinWork/WinWork.db`
 
 ### 2. Making Database Schema Changes
 
-1. Modify models in `LinkerApp.Models`
-2. Update DbContext if needed in `LinkerApp.Data`
+1. Modify models in `WinWork.Models`
+2. Update DbContext if needed in `WinWork.Data`
 3. Create migration:
    ```bash
-   cd src/LinkerApp.Data
+   cd src/WinWork.Data
    dotnet ef migrations add YourMigrationName
    ```
 4. Apply migration:
@@ -166,10 +166,10 @@ Database file location: `%APPDATA%/LinkerApp/linkerapp.db`
 
 ### 3. Adding New Features
 
-1. **Models**: Add/modify in `LinkerApp.Models`
-2. **Data Access**: Add repositories in `LinkerApp.Data/Repositories`
-3. **Business Logic**: Add services in `LinkerApp.Core/Services`
-4. **UI**: Add views/controls in `LinkerApp.UI`
+1. **Models**: Add/modify in `WinWork.Models`
+2. **Data Access**: Add repositories in `WinWork.Data/Repositories`
+3. **Business Logic**: Add services in `WinWork.Core/Services`
+4. **UI**: Add views/controls in `WinWork.UI`
 
 ### 4. Debugging
 
@@ -194,23 +194,23 @@ dotnet clean
 dotnet build --configuration Release --no-restore
 
 # Create self-contained executable
-dotnet publish src/LinkerApp.UI --configuration Release --self-contained true --runtime win-x64
+dotnet publish src/WinWork.UI --configuration Release --self-contained true --runtime win-x64
 ```
 
 ### Publishing Options
 
 ```bash
 # Framework-dependent (requires .NET runtime on target machine)
-dotnet publish src/LinkerApp.UI --configuration Release --runtime win-x64
+dotnet publish src/WinWork.UI --configuration Release --runtime win-x64
 
 # Self-contained (includes runtime, larger file size)
-dotnet publish src/LinkerApp.UI --configuration Release --self-contained true --runtime win-x64
+dotnet publish src/WinWork.UI --configuration Release --self-contained true --runtime win-x64
 
 # Single file (everything in one executable)
-dotnet publish src/LinkerApp.UI --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true
+dotnet publish src/WinWork.UI --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true
 
 # Trimmed (smaller size, advanced)
-dotnet publish src/LinkerApp.UI --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true
+dotnet publish src/WinWork.UI --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true
 ```
 
 ## Environment Configuration
@@ -219,8 +219,8 @@ dotnet publish src/LinkerApp.UI --configuration Release --runtime win-x64 --self
 
 The app automatically creates default settings on first run. For development, you can:
 
-1. **Reset Database**: Delete `%APPDATA%/LinkerApp/linkerapp.db`
-2. **Clean Settings**: Delete the entire `%APPDATA%/LinkerApp/` folder
+1. **Reset Database**: Delete `%APPDATA%/WinWork/WinWork.db`
+2. **Clean Settings**: Delete the entire `%APPDATA%/WinWork/` folder
 3. **Custom Database Path**: Modify connection string in `DatabaseConfiguration.cs`
 
 ### Production Deployment
@@ -260,12 +260,12 @@ The app automatically creates default settings on first run. For development, yo
 
 ```bash
 # Full reset (lose all data)
-cd src/LinkerApp.Data
+cd src/WinWork.Data
 dotnet ef database drop
 dotnet ef database update
 
 # Or delete the database file manually
-# Windows: %APPDATA%/LinkerApp/linkerapp.db
+# Windows: %APPDATA%/WinWork/WinWork.db
 ```
 
 ## Code Style & Guidelines

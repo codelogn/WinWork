@@ -2,20 +2,20 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using LinkerApp.Data;
-using LinkerApp.Models;
+using WinWork.Data;
+using WinWork.Models;
 
-namespace LinkerApp.DebugTool;
+namespace WinWork.DebugTool;
 
 class Program
 {
     static async Task Main(string[] args)
     {
-        Console.WriteLine("LinkerApp Database Debug Tool");
+        Console.WriteLine("WinWork Database Debug Tool");
         Console.WriteLine("=============================");
         
         var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var dbPath = Path.Combine(appDataPath, "LinkerApp", "linkerapp.db");
+        var dbPath = Path.Combine(appDataPath, "WinWork", "WinWork.db");
         
         Console.WriteLine($"Database path: {dbPath}");
         Console.WriteLine($"Database exists: {File.Exists(dbPath)}");
@@ -28,11 +28,11 @@ class Program
         
         var connectionString = $"Data Source={dbPath}";
         
-        var options = new DbContextOptionsBuilder<LinkerAppDbContext>()
+        var options = new DbContextOptionsBuilder<WinWorkDbContext>()
             .UseSqlite(connectionString)
             .Options;
             
-        using var context = new LinkerAppDbContext(options);
+        using var context = new WinWorkDbContext(options);
         
         try
         {

@@ -1,7 +1,7 @@
-# LinkerApp Documentation
+# WinWork Documentation
 
 ## Overview
-LinkerApp is a WPF application for managing links, folders, and notes. It uses MVVM architecture and Entity Framework Core for data persistence.
+WinWork is a WPF application for managing links, folders, and notes. It uses MVVM architecture and Entity Framework Core for data persistence.
 ## Key Features
 - Unified add/edit dialog for all item types (Links, Folders, Notes)
 - Notes type (freeform text, no URL required)
@@ -22,7 +22,7 @@ LinkerApp is a WPF application for managing links, folders, and notes. It uses M
 - Notes type added
 - Debug window removed, file-based logging only
 - Database schema updated for Notes
-# LinkerApp - Universal Link Management Application
+# WinWork - Universal Link Management Application
 
 A modern, feature-rich link management application built with .NET 9 and WPF, designed to organize, search, and open any type of link including web URLs, file paths, folders, applications, and system locations.
 
@@ -139,12 +139,12 @@ A modern, feature-rich link management application built with .NET 9 and WPF, de
 
 ## Project Structure
 ```
-LinkerApp/
+WinWork/
 ├── src/
-│   ├── LinkerApp.UI/          # WPF Application
-│   ├── LinkerApp.Core/        # Business Logic
-│   ├── LinkerApp.Data/        # Data Access Layer
-│   └── LinkerApp.Models/      # Data Models
+│   ├── WinWork.UI/          # WPF Application
+│   ├── WinWork.Core/        # Business Logic
+│   ├── WinWork.Data/        # Data Access Layer
+│   └── WinWork.Models/      # Data Models
 ├── tests/
 ├── docs/
 └── database/

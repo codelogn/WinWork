@@ -1,4 +1,4 @@
-# LinkerApp - Universal Link Management Application# LinkerApp - Universal Link Management Application
+# WinWork - Universal Link Management Application# WinWork - Universal Link Management Application
 
 
 
@@ -102,7 +102,7 @@
 
 2. Extract the ZIP file  - **LinkTags Table**: LinkID, TagID (many-to-many relationship)
 
-3. Run `LinkerApp.UI.exe`
+3. Run `WinWork.UI.exe`
 
 - **Link Types**
 
@@ -112,9 +112,9 @@
 
 # Clone the repository  - File Link (local file paths)
 
-git clone https://github.com/yourusername/LinkerApp.git  - Application Link (executable paths)
+git clone https://github.com/yourusername/WinWork.git  - Application Link (executable paths)
 
-cd LinkerApp
+cd WinWork
 
 ### Additional Features
 
@@ -132,7 +132,7 @@ dotnet build  - Auto-hide and minimize to tray functionality
 
 # Run the application- **Tag System**
 
-dotnet run --project src/LinkerApp.UI  - Color-coded tags for visual organization
+dotnet run --project src/WinWork.UI  - Color-coded tags for visual organization
 
 ```  - Filter by tags with multi-select
 
@@ -148,7 +148,7 @@ dotnet run --project src/LinkerApp.UI  - Color-coded tags for visual organizatio
 
 ### **First Launch**  - Recent links history and favorites
 
-1. **Launch LinkerApp** - The application will create a local SQLite database  - Fuzzy search for quick navigation
+1. **Launch WinWork** - The application will create a local SQLite database  - Fuzzy search for quick navigation
 
 2. **Default Structure** - You'll see pre-created folders: "📁 Bookmarks" and "📁 Development Tools"  
 
@@ -226,23 +226,23 @@ dotnet run --project src/LinkerApp.UI  - Color-coded tags for visual organizatio
 
 ``````
 
-LinkerApp/
+WinWork/
 
 ├── src/## Project Structure
 
-│   ├── LinkerApp.UI/          # 🎨 WPF Application & ViewModels```
+│   ├── WinWork.UI/          # 🎨 WPF Application & ViewModels```
 
-│   ├── LinkerApp.Core/        # ⚙️ Business Logic & ServicesLinkerApp/
+│   ├── WinWork.Core/        # ⚙️ Business Logic & ServicesWinWork/
 
-│   ├── LinkerApp.Data/        # 💾 Entity Framework & Repositories├── src/
+│   ├── WinWork.Data/        # 💾 Entity Framework & Repositories├── src/
 
-│   └── LinkerApp.Models/      # 📋 Domain Models & Entities│   ├── LinkerApp.UI/          # WPF Application
+│   └── WinWork.Models/      # 📋 Domain Models & Entities│   ├── WinWork.UI/          # WPF Application
 
-├── docs/                      # 📖 All Documentation│   ├── LinkerApp.Core/        # Business Logic
+├── docs/                      # 📖 All Documentation│   ├── WinWork.Core/        # Business Logic
 
-├── tests/                     # 🧪 Unit & Integration Tests│   ├── LinkerApp.Data/        # Data Access Layer
+├── tests/                     # 🧪 Unit & Integration Tests│   ├── WinWork.Data/        # Data Access Layer
 
-└── LinkerApp.sln              # 🛠️ Visual Studio Solution│   └── LinkerApp.Models/      # Data Models
+└── WinWork.sln              # 🛠️ Visual Studio Solution│   └── WinWork.Models/      # Data Models
 
 ```├── tests/
 
@@ -282,8 +282,8 @@ We welcome contributions! Here's how to get started:
 ### **Development Setup**
 ```bash
 # Clone and setup
-git clone https://github.com/yourusername/LinkerApp.git
-cd LinkerApp
+git clone https://github.com/yourusername/WinWork.git
+cd WinWork
 
 # Install tools
 dotnet tool install --global dotnet-ef

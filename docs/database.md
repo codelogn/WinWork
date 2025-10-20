@@ -1,7 +1,7 @@
-# LinkerApp Database Documentation
+# WinWork Database Documentation
 
 ## Overview
-LinkerApp uses a local SQLite database for persistent storage of all links, folders, notes, tags, and application settings. The database is managed via Entity Framework Core and is automatically created and migrated on first run.
+WinWork uses a local SQLite database for persistent storage of all links, folders, notes, tags, and application settings. The database is managed via Entity Framework Core and is automatically created and migrated on first run.
 
 ## Database File
 - **Location:** `linker.db` (in application data folder)

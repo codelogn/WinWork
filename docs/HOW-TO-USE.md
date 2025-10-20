@@ -1,4 +1,4 @@
-# LinkerApp - How to Use Guide (v1.2.0)
+# WinWork - How to Use Guide (v1.2.0)
 
 ## 📑 Table of Contents
 - [🚀 Getting Started](#-getting-started)
@@ -17,7 +17,7 @@
 ## 🚀 Getting Started
 
 ### **First Launch Experience**
-When you first launch LinkerApp, you'll see:
+When you first launch WinWork, you'll see:
 - **Clean Modern Interface** with tree view (left) and edit panel (right)
 - **Sample Folders**: "📁 Bookmarks" and "📁 Development Tools" with example links
 - **Resizable Panels**: Adjust layout to your preference
@@ -99,7 +99,7 @@ code --new-window --goto package.json:25
 4. **Tag appears immediately** in the tags list
 
 ### **Default Sample Tags**
-LinkerApp comes with sample tags you can use or modify:
+WinWork comes with sample tags you can use or modify:
 - **Work**: Professional and work-related links
 - **Personal**: Personal bookmarks and resources  
 - **Development**: Development tools and programming resources
@@ -161,7 +161,7 @@ LinkerApp comes with sample tags you can use or modify:
   - **🖥️ System Locations**: Open settings, shell locations
 
 ### **Enhanced Application Support**
-LinkerApp now handles complex application launches:
+WinWork now handles complex application launches:
 ```bash
 # These all work perfectly now:
 "C:\Program Files\Git\git-bash.exe" --cd-to-home
@@ -274,7 +274,7 @@ powershell.exe -Command "Get-Process"
 
 ### **Future Global Hotkeys**
 Will be configurable in future versions:
-- **Show/Hide LinkerApp**: Quick access from anywhere
+- **Show/Hide WinWork**: Quick access from anywhere
 - **Quick-Add from Clipboard**: Instant link creation
 - **Focus Search**: Jump directly to search from desktop
 
@@ -393,7 +393,7 @@ Will be configurable in future versions:
 
 ### **Performance & Optimization**
 
-#### **🚀 Keeping LinkerApp Fast**
+#### **🚀 Keeping WinWork Fast**
 1. **Regular Cleanup**: Remove unused or broken links
 2. **Organize Efficiently**: Use folders but avoid excessive nesting
 3. **Database Maintenance**: Restart app occasionally
@@ -453,7 +453,7 @@ When reporting problems, include:
 ## 🎯 Quick Start Checklist (v1.2.0)
 
 ### **Essential First Steps**
-- [ ] **🚀 Launch LinkerApp** - First-time database setup happens automatically
+- [ ] **🚀 Launch WinWork** - First-time database setup happens automatically
 - [ ] **👀 Explore Sample Data** - Check out pre-created folders and example links
 - [ ] **➕ Add Your First Link** - Click [+] button, fill form, experience new larger dialog
 - [ ] **🔧 Try Browse Buttons** - Use browse functionality for easy file/app selection
@@ -477,7 +477,7 @@ When reporting problems, include:
 
 ## 🎉 Success!
 
-**Congratulations!** You're now ready to efficiently manage all your links, shortcuts, and applications with LinkerApp v1.2.0. 
+**Congratulations!** You're now ready to efficiently manage all your links, shortcuts, and applications with WinWork v1.2.0. 
 
 **Key Benefits You'll Enjoy:**
 - 🔍 **Instant Search** across all your organized links

@@ -7,7 +7,7 @@
 - **Memory**: 100MB+ RAM recommended
 
 ### **Installation**
-3. **Run `LinkerApp.UI.exe`** to launch the application
+3. **Run `WinWork.UI.exe`** to launch the application
 
 - ✅ **Database Creation**: Automatic SQLite database setup (`linker.db`)
 - ✅ **Schema Initialization**: All database tables created automatically
@@ -107,7 +107,7 @@
 | **🖥️ System Location** | Windows locations | `shell:desktop`, `ms-settings:display` |
 
 ### **🔧 Application Links with Arguments**
-LinkerApp supports complex application launches:
+WinWork supports complex application launches:
 ```
 "C:\Program Files\Git\git-bash.exe" --cd-to-home
 notepad.exe C:\temp\notes.txt
@@ -267,7 +267,7 @@ code --new-window --goto package.json:25
 
 #### **🎨 "Can't see dropdown text"**
 - **This is fixed** in version 1.2.0+
-- **Update**: Get the latest version of LinkerApp
+- **Update**: Get the latest version of WinWork
 - **Theme**: Ensure you're not using high contrast mode
 
 ### **Performance Tips**
@@ -299,7 +299,7 @@ code --new-window --goto package.json:25
 
 ---
 
-*This manual covers LinkerApp version 1.2.0. For the latest updates and features, check the project documentation and release notes.*
+*This manual covers WinWork version 1.2.0. For the latest updates and features, check the project documentation and release notes.*
 
 **Web URLs:**
 - `https://www.example.com`
@@ -388,7 +388,7 @@ code --new-window --goto package.json:25
 ### Import and Export
 
 #### Importing Bookmarks
-LinkerApp can import from popular browsers:
+WinWork can import from popular browsers:
 
 **Chrome/Edge Bookmarks:**
 1. **Export bookmarks** from Chrome/Edge as HTML or find the bookmarks JSON file
@@ -422,13 +422,13 @@ LinkerApp can import from popular browsers:
 
 ### Global Hotkeys (Coming Soon)
 - **Configure custom shortcuts** for quick access
-- **Show/hide LinkerApp** with global hotkey
+- **Show/hide WinWork** with global hotkey
 - **Quick add link** from anywhere in Windows
 
 ## System Integration
 
 ### System Tray
-LinkerApp can minimize to the system tray:
+WinWork can minimize to the system tray:
 - **Right-click tray icon** for context menu
 - **Double-click** to restore main window
 - **Exit** from tray menu to close completely

@@ -1,0 +1,972 @@
+<Window x:Class="WinWork.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WinWork.UI"
+        xmlns:vm="clr-namespace:WinWork.UI.ViewModels"
+        xmlns:controls="clr-namespace:WinWork.UI.Controls"
+        xmlns:models="clr-namespace:WinWork.Models;assembly=WinWork.Models"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        mc:Ignorable="d"
+        Title="{Binding Title}" 
+        Height="600" Width="1000"
+        MinHeight="400" MinWidth="600"
+        WindowStartupLocation="CenterScreen"
+        AllowsTransparency="True"
+        WindowStyle="None"
+        Background="Transparent">
+    
+    <Window.Resources>
+        <!-- Context Menu Style -->
+        <Style x:Key="DarkContextMenuStyle" TargetType="ContextMenu">
+            <Setter Property="Background" Value="#CC000000"/>
+            <Setter Property="BorderBrush" Value="#33FFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="2"/>
+        </Style>
+        
+        <!-- Menu Item Style -->
+        <Style x:Key="DarkMenuItemStyle" TargetType="MenuItem">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Margin" Value="1"/>
+            <Style.Triggers>
+                <Trigger Property="IsHighlighted" Value="True">
+                    <Setter Property="Background" Value="#33FFFFFF"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Foreground" Value="#66FFFFFF"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    
+    <!-- DataContext will be set in code-behind -->
+    
+    <Border Background="#E6000000" 
+            CornerRadius="12" 
+            BorderBrush="#33FFFFFF" 
+            BorderThickness="1">
+        
+        <!-- Window Chrome Effect -->
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="20" 
+                              ShadowDepth="0" 
+                              Color="Black" 
+                              Opacity="0.3"/>
+        </Border.Effect>
+        
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="40"/> <!-- Title Bar -->
+                <RowDefinition Height="50"/> <!-- Top Navigation Bar -->
+                <RowDefinition Height="*"/>  <!-- Content -->
+            </Grid.RowDefinitions>
+            
+            <!-- Custom Title Bar -->
+            <Border Grid.Row="0" 
+                    Background="#33FFFFFF" 
+                    CornerRadius="12,12,0,0"
+                    MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Title -->
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding Title}"
+                               Foreground="White"
+                               FontSize="14"
+                               FontWeight="Medium"
+                               VerticalAlignment="Center"
+                               Margin="16,0,0,0"/>
+                    
+                    <!-- Window Controls -->
+                    <StackPanel Grid.Column="1" 
+                                Orientation="Horizontal">
+                        
+                        <Button Name="MinimizeButton"
+                                Content="🗕"
+                                Style="{StaticResource WindowControlButtonStyle}"
+                                Click="MinimizeButton_Click"/>
+                        
+                        <Button Name="MaximizeButton"
+                                Content="🗖"
+                                Style="{StaticResource WindowControlButtonStyle}"
+                                Click="MaximizeButton_Click"/>
+                        
+                        <Button Name="CloseButton"
+                                Content="✕"
+                                Style="{StaticResource WindowControlButtonStyle}"
+                                Click="CloseButton_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            
+            <!-- Top Navigation Bar -->
+            <Border Grid.Row="1" 
+                    Background="#26FFFFFF" 
+                    BorderBrush="#33FFFFFF"
+                    BorderThickness="0,1,0,1"
+                    Margin="1,0,1,0">
+                
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Left side - App title/breadcrumb -->
+                    <StackPanel Grid.Column="0" 
+                                Orientation="Horizontal" 
+                                VerticalAlignment="Center"
+                                Margin="16,0,0,0">
+                        <TextBlock Text="📂 WinWork" 
+                                   Foreground="White" 
+                                   FontSize="16" 
+                                   FontWeight="Medium"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="� Manage your links, folders, and notes" 
+                                   Foreground="#AAFFFFFF" 
+                                   FontSize="12" 
+                                   VerticalAlignment="Center"
+                                   Margin="8,0,0,0"/>
+                    </StackPanel>
+                    
+                    <!-- Right side - Export/Import buttons -->
+                    <StackPanel Grid.Column="1" 
+                                Orientation="Horizontal" 
+                                VerticalAlignment="Center"
+                                Margin="0,0,16,0">
+                        
+                        <Button Content="📤 Export Data" 
+                                Style="{StaticResource ModernButtonStyle}"
+                                Margin="4,0"
+                                ToolTip="Export all data to file"
+                                Click="Export_Click"/>
+
+                        <Button Content="📥 Import Data" 
+                                Style="{StaticResource ModernButtonStyle}"
+                                Margin="4,0"
+                                ToolTip="Import data from file"
+                                Click="Import_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            
+            <!-- Main Content Area -->
+            <Grid Grid.Row="2" Margin="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="300" MinWidth="200"/>
+                    <ColumnDefinition Width="5"/>
+                    <ColumnDefinition Width="*" MinWidth="300"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Left Panel - Tree View -->
+                <Border Grid.Column="0" 
+                        Background="#19FFFFFF"
+                        CornerRadius="8"
+                        Margin="8,8,4,8">
+                    
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                        <!-- Search Box -->
+                        <Border Grid.Row="0" 
+                                Background="#33FFFFFF"
+                                CornerRadius="6"
+                                Margin="8">
+                            <TextBox Name="SearchBox"
+                                     Padding="12,8"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Foreground="White"
+                                     FontSize="14"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox">
+                                        <Style.Resources>
+                                            <VisualBrush x:Key="CueBannerBrush" 
+                                                         AlignmentX="Left" 
+                                                         AlignmentY="Center" 
+                                                         Stretch="None">
+                                                <VisualBrush.Visual>
+                                                    <Label Content="🔍 Search links..." 
+                                                           Foreground="#AAFFFFFF" 
+                                                           FontSize="14"/>
+                                                </VisualBrush.Visual>
+                                            </VisualBrush>
+                                        </Style.Resources>
+                                        <Style.Triggers>
+                                            <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                                <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                            </Trigger>
+                                            <Trigger Property="Text" Value="{x:Null}">
+                                                <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                            </Trigger>
+                                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                                <Setter Property="Background" Value="Transparent" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                        </Border>
+                        
+                        <!-- Quick Actions -->
+                        <StackPanel Grid.Row="1" 
+                                    Orientation="Horizontal" 
+                                    Margin="8,0,8,8"
+                                    HorizontalAlignment="Right">
+                            
+                            <Button Content="➕ Add New" 
+                                    Style="{StaticResource ModernButtonStyle}"
+                                    Margin="4,0"
+                                    ToolTip="Add New Item"
+                                    Click="AddNew_Click"/>
+
+                            <Button Content="🔄" 
+                                    Style="{StaticResource ModernButtonStyle}"
+                                    Margin="4,0"
+                                    ToolTip="Refresh"
+                                    Click="Refresh_Click"/>
+                        </StackPanel>
+                        
+                        <!-- Links Tree -->
+                        <Grid Grid.Row="2" Margin="8">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled">
+                                
+                                <!-- Enhanced TreeView with proper hierarchy -->
+                                <TreeView x:Name="LinksTreeView"
+                                          ItemsSource="{Binding RootLinks}"
+                                          Background="Transparent"
+                                          Foreground="White"
+                                          BorderThickness="0"
+                                          AllowDrop="True"
+                                          SelectedItemChanged="LinksTreeView_SelectedItemChanged"
+                                          MouseDoubleClick="LinksTreeView_MouseDoubleClick"
+                                          PreviewMouseRightButtonDown="LinksTreeView_PreviewMouseRightButtonDown"
+                                          Drop="LinksTreeView_Drop"
+                                          DragOver="LinksTreeView_DragOver">
+                                    
+                                    <TreeView.Resources>
+                                        <!-- Define the hierarchical data template for LinkTreeItemViewModel -->
+                                        <HierarchicalDataTemplate DataType="{x:Type vm:LinkTreeItemViewModel}" 
+                                                                  ItemsSource="{Binding Children}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Icon}" 
+                                                           Margin="0,0,5,0"
+                                                           Foreground="Orange"/>
+                                                <TextBlock Text="{Binding Name}" 
+                                                           Foreground="White" 
+                                                           VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </HierarchicalDataTemplate>
+                                    </TreeView.Resources>
+                                    <TreeView.ItemContainerStyle>
+                                        <Style TargetType="TreeViewItem">
+                                            <Setter Property="IsExpanded" Value="True"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                            <Setter Property="FontSize" Value="12"/>
+                                            <Setter Property="Margin" Value="0,2,0,2"/>
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Setter Property="Padding" Value="4,2"/>
+                                            <Setter Property="AllowDrop" Value="True"/>
+                                            <EventSetter Event="Loaded" Handler="TreeViewItem_Loaded"/>
+                                            <EventSetter Event="MouseMove" Handler="TreeViewItem_MouseMove"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="TreeViewItem">
+                                                        <Grid>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto"/>
+                                                                <RowDefinition/>
+                                                            </Grid.RowDefinitions>
+                                                            
+                                                            <!-- Item Content with Highlighting -->
+                                                            <Border x:Name="ItemBorder"
+                                                                    Grid.Row="0"
+                                                                    Background="Transparent"
+                                                                    BorderBrush="Transparent"
+                                                                    BorderThickness="1"
+                                                                    CornerRadius="3"
+                                                                    Padding="{TemplateBinding Padding}"
+                                                                    Margin="0,1">
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                        <ColumnDefinition Width="*"/>
+                                                                    </Grid.ColumnDefinitions>
+                                                                    
+                                                                    <!-- Expander Toggle or Spacer -->
+                                                                    <Border x:Name="ExpanderContainer"
+                                                                            Grid.Column="0"
+                                                                            Width="16"
+                                                                            Height="16"
+                                                                            Margin="0,0,4,0">
+                                                                        <ToggleButton x:Name="Expander"
+                                                                                      Background="Transparent"
+                                                                                      BorderThickness="0"
+                                                                                      ClickMode="Press"
+                                                                                      IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
+                                                                                      Visibility="Hidden"
+                                                                                      Cursor="Hand"
+                                                                                      Focusable="False">
+                                                                            <ToggleButton.Style>
+                                                                                <Style TargetType="ToggleButton">
+                                                                                    <Setter Property="Background" Value="Transparent"/>
+                                                                                    <Setter Property="BorderThickness" Value="0"/>
+                                                                                    <Setter Property="Template">
+                                                                                        <Setter.Value>
+                                                                                            <ControlTemplate TargetType="ToggleButton">
+                                                                                                <Border Background="{TemplateBinding Background}"
+                                                                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                                                                        CornerRadius="2"
+                                                                                                        Padding="2">
+                                                                                                    <ContentPresenter HorizontalAlignment="Center"
+                                                                                                                      VerticalAlignment="Center"/>
+                                                                                                </Border>
+                                                                                                <ControlTemplate.Triggers>
+                                                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                                                        <Setter Property="Background" Value="#20FFFFFF"/>
+                                                                                                    </Trigger>
+                                                                                                    <Trigger Property="IsPressed" Value="True">
+                                                                                                        <Setter Property="Background" Value="#30FFFFFF"/>
+                                                                                                    </Trigger>
+                                                                                                </ControlTemplate.Triggers>
+                                                                                            </ControlTemplate>
+                                                                                        </Setter.Value>
+                                                                                    </Setter>
+                                                                                </Style>
+                                                                            </ToggleButton.Style>
+                                                                            <Path x:Name="ExpanderPath"
+                                                                                  Data="M 0 2 L 4 6 L 0 10 Z"
+                                                                                  Fill="#CCFFFFFF"
+                                                                                  Stroke="Transparent"
+                                                                                  StrokeThickness="0"
+                                                                                  HorizontalAlignment="Center"
+                                                                                  VerticalAlignment="Center"
+                                                                                  Width="8"
+                                                                                  Height="12">
+                                                                                <Path.RenderTransform>
+                                                                                    <RotateTransform x:Name="ExpanderRotation" Angle="0" CenterX="4" CenterY="6"/>
+                                                                                </Path.RenderTransform>
+                                                                            </Path>
+                                                                        </ToggleButton>
+                                                                    </Border>
+                                                                    
+                                                                    <!-- Content Presenter -->
+                                                                    <ContentPresenter x:Name="PART_Header"
+                                                                                      Grid.Column="1"
+                                                                                      ContentSource="Header"
+                                                                                      HorizontalAlignment="Left"
+                                                                                      VerticalAlignment="Center"/>
+                                                                </Grid>
+                                                            </Border>
+                                                            
+                                                            <!-- Child Items -->
+                                                            <ItemsPresenter x:Name="ItemsHost"
+                                                                            Grid.Row="1"
+                                                                            Margin="16,0,0,0"/>
+                                                        </Grid>
+                                                        
+                                                        <ControlTemplate.Triggers>
+                                                            <!-- Has Items Trigger -->
+                                                            <Trigger Property="HasItems" Value="True">
+                                                                <Setter TargetName="Expander" Property="Visibility" Value="Visible"/>
+                                                            </Trigger>
+                                                            
+                                                            <!-- Control ItemsHost visibility based on expansion -->
+                                                            <Trigger Property="IsExpanded" Value="False">
+                                                                <Setter TargetName="ItemsHost" Property="Visibility" Value="Collapsed"/>
+                                                            </Trigger>
+                                                            
+                                                            <!-- Expanded State with Animation -->
+                                                            <Trigger Property="IsExpanded" Value="True">
+                                                                <Trigger.EnterActions>
+                                                                    <BeginStoryboard>
+                                                                        <Storyboard>
+                                                                            <DoubleAnimation Storyboard.TargetName="ExpanderRotation"
+                                                                                             Storyboard.TargetProperty="Angle"
+                                                                                             To="90"
+                                                                                             Duration="0:0:0.15"/>
+                                                                        </Storyboard>
+                                                                    </BeginStoryboard>
+                                                                </Trigger.EnterActions>
+                                                                <Trigger.ExitActions>
+                                                                    <BeginStoryboard>
+                                                                        <Storyboard>
+                                                                            <DoubleAnimation Storyboard.TargetName="ExpanderRotation"
+                                                                                             Storyboard.TargetProperty="Angle"
+                                                                                             To="0"
+                                                                                             Duration="0:0:0.15"/>
+                                                                        </Storyboard>
+                                                                    </BeginStoryboard>
+                                                                </Trigger.ExitActions>
+                                                            </Trigger>
+                                                            
+                                                            <!-- Mouse Over Highlighting -->
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="ItemBorder" Property="Background" Value="#33FFFFFF"/>
+                                                                <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#66FFFFFF"/>
+                                                            </Trigger>
+                                                            
+                                                            <!-- Selection Highlighting -->
+                                                            <Trigger Property="IsSelected" Value="True">
+                                                                <Setter TargetName="ItemBorder" Property="Background" Value="#4D0078D4"/>
+                                                                <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#0078D4"/>
+                                                                <Setter Property="Foreground" Value="White"/>
+                                                            </Trigger>
+                                                            
+                                                            <!-- Selected and Focused -->
+                                                            <MultiTrigger>
+                                                                <MultiTrigger.Conditions>
+                                                                    <Condition Property="IsSelected" Value="True"/>
+                                                                    <Condition Property="IsSelectionActive" Value="True"/>
+                                                                </MultiTrigger.Conditions>
+                                                                <Setter TargetName="ItemBorder" Property="Background" Value="#660078D4"/>
+                                                                <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#0078D4"/>
+                                                            </MultiTrigger>
+                                                            
+                                                            <!-- Disabled State -->
+                                                            <Trigger Property="IsEnabled" Value="False">
+                                                                <Setter Property="Foreground" Value="#FF707070"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </TreeView.ItemContainerStyle>
+                                </TreeView>
+                            </ScrollViewer>
+                            
+                            <!-- Loading/Status Overlay -->
+                            <StackPanel HorizontalAlignment="Center" 
+                                        VerticalAlignment="Center"
+                                        Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Text="Loading..." 
+                                           Foreground="White" 
+                                           FontSize="16" 
+                                           HorizontalAlignment="Center"
+                                           Margin="0,0,0,10"/>
+                                <ProgressBar IsIndeterminate="True" 
+                                             Width="100" 
+                                             Height="4"/>
+                            </StackPanel>
+                            
+                            <!-- Empty State Message -->
+                            <StackPanel HorizontalAlignment="Center" 
+                                        VerticalAlignment="Center">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsLoading}" Value="False"/>
+                                                    <Condition Binding="{Binding RootLinks.Count}" Value="0"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                
+                                <TextBlock Text="📂" 
+                                           FontSize="48" 
+                                           HorizontalAlignment="Center"
+                                           Foreground="#66FFFFFF"/>
+                                <TextBlock Text="No items found" 
+                                           Foreground="#99FFFFFF" 
+                                           FontSize="16" 
+                                           HorizontalAlignment="Center"
+                                           Margin="0,10,0,5"/>
+                                <TextBlock Text="Click '+' to add a link or '📁' to add a folder" 
+                                           Foreground="#66FFFFFF" 
+                                           FontSize="12" 
+                                           HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+                
+                <!-- Splitter -->
+                <GridSplitter Grid.Column="1" 
+                              Background="#33FFFFFF"
+                              HorizontalAlignment="Stretch"
+                              VerticalAlignment="Stretch"
+                              Width="3"/>
+                
+                <!-- Right Panel - Edit Form -->
+                <Border Grid.Column="2" 
+                        Background="#19FFFFFF"
+                        CornerRadius="8"
+                        Margin="4,8,8,8">
+                    
+                    <Grid>
+                        <!-- Edit Form when item selected -->
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                                      Padding="16"
+                                      Visibility="{Binding IsEditingItem, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <StackPanel>
+                                
+                                <!-- Header -->
+                                <TextBlock Text="Edit Item" 
+                                           Foreground="White" 
+                                           FontSize="18"
+                                           FontWeight="Bold"
+                                           Margin="0,0,0,20"/>
+                                
+                                <!-- Name Field -->
+                                <StackPanel Margin="0,0,0,16">
+                                    <TextBlock Text="Name *" 
+                                               Foreground="White" 
+                                               FontWeight="Medium"
+                                               Margin="0,0,0,8"/>
+                                    <TextBox Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="12,8"
+                                             Background="#33FFFFFF"
+                                             Foreground="White"
+                                             BorderBrush="#66FFFFFF"
+                                             BorderThickness="1"
+                                             FontSize="14"/>
+                                </StackPanel>
+                                
+                                <!-- Type Field -->
+                                <StackPanel Margin="0,0,0,16">
+                                    <TextBlock Text="Type" 
+                                               Foreground="White" 
+                                               FontWeight="Medium"
+                                               Margin="0,0,0,8"/>
+                                    <ComboBox ItemsSource="{Binding LinkTypes}"
+                                              SelectedValue="{Binding EditType}"
+                                              SelectedValuePath="Type"
+                                              DisplayMemberPath="DisplayName"
+                                              Background="#33FFFFFF"
+                                              Foreground="White"
+                                              BorderBrush="#66FFFFFF"
+                                              BorderThickness="1"
+                                              Padding="12,8"
+                                              FontSize="14">
+                                        <ComboBox.Resources>
+                                            <!-- Override the default Popup style -->
+                                            <Style TargetType="Popup">
+                                                <Setter Property="AllowsTransparency" Value="True"/>
+                                            </Style>
+                                            <!-- ComboBoxItem style for dropdown -->
+                                            <Style TargetType="ComboBoxItem">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                                <Setter Property="Padding" Value="12,8"/>
+                                                <Setter Property="FontSize" Value="14"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ComboBoxItem">
+                                                            <Border Background="{TemplateBinding Background}"
+                                                                    Padding="{TemplateBinding Padding}"
+                                                                    BorderThickness="0">
+                                                                <ContentPresenter TextBlock.Foreground="White"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsHighlighted" Value="True">
+                                                                    <Setter Property="Background" Value="#4DFFFFFF"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsSelected" Value="True">
+                                                                    <Setter Property="Background" Value="#66FFFFFF"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ComboBox.Resources>
+                                        <ComboBox.Style>
+                                            <Style TargetType="ComboBox">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ComboBox">
+                                                            <Grid>
+                                                                <ToggleButton x:Name="ToggleButton"
+                                                                              Grid.Column="2"
+                                                                              Focusable="false"
+                                                                              IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                                                              ClickMode="Press"
+                                                                              Background="{TemplateBinding Background}"
+                                                                              BorderBrush="{TemplateBinding BorderBrush}"
+                                                                              BorderThickness="{TemplateBinding BorderThickness}"/>
+                                                                <ContentPresenter x:Name="ContentSite"
+                                                                                  IsHitTestVisible="False"
+                                                                                  Content="{TemplateBinding SelectionBoxItem}"
+                                                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                                                  ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                                                  Margin="12,8,23,8"
+                                                                                  VerticalAlignment="Center"
+                                                                                  HorizontalAlignment="Left"
+                                                                                  TextBlock.Foreground="White"/>
+                                                                <Popup x:Name="Popup"
+                                                                       Placement="Bottom"
+                                                                       IsOpen="{TemplateBinding IsDropDownOpen}"
+                                                                       AllowsTransparency="True"
+                                                                       Focusable="False"
+                                                                       PopupAnimation="Slide">
+                                                                    <Grid x:Name="DropDown"
+                                                                          SnapsToDevicePixels="True"
+                                                                          MinWidth="{TemplateBinding ActualWidth}"
+                                                                          MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                                                        <Border x:Name="DropDownBorder"
+                                                                                Background="#E6000000"
+                                                                                BorderThickness="1"
+                                                                                BorderBrush="#66FFFFFF"
+                                                                                CornerRadius="4"/>
+                                                                        <ScrollViewer Margin="0"
+                                                                                      SnapsToDevicePixels="True">
+                                                                            <StackPanel IsItemsHost="True"
+                                                                                        KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                                                        </ScrollViewer>
+                                                                    </Grid>
+                                                                </Popup>
+                                                            </Grid>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ComboBox.Style>
+                                    </ComboBox>
+                                </StackPanel>
+                                
+                                <!-- URL/Path Field (Hidden for Folders and Notes) -->
+                                <StackPanel Margin="0,0,0,16">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding EditType}" Value="Folder">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding EditType}" Value="Notes">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <TextBlock Text="URL/Path *" 
+                                               Foreground="White" 
+                                               FontWeight="Medium"
+                                               Margin="0,0,0,8"/>
+                                    <TextBox Text="{Binding EditUrl, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="12,8"
+                                             Background="#33FFFFFF"
+                                             Foreground="White"
+                                             BorderBrush="#66FFFFFF"
+                                             BorderThickness="1"
+                                             FontSize="14"/>
+                                </StackPanel>
+                                
+                                <!-- Parent Folder Field -->
+                                <StackPanel Margin="0,0,0,16">
+                                    <TextBlock Text="Parent Folder" 
+                                               Foreground="White" 
+                                               FontWeight="Medium"
+                                               Margin="0,0,0,8"/>
+                                    <ComboBox ItemsSource="{Binding AvailableParents}"
+                                              SelectedItem="{Binding EditParent}"
+                                              DisplayMemberPath="Name"
+                                              Background="#33FFFFFF"
+                                              Foreground="White"
+                                              BorderBrush="#66FFFFFF"
+                                              BorderThickness="1"
+                                              Padding="12,8"
+                                              FontSize="14">
+                                        <ComboBox.Resources>
+                                            <!-- Override the default Popup style -->
+                                            <Style TargetType="Popup">
+                                                <Setter Property="AllowsTransparency" Value="True"/>
+                                            </Style>
+                                            <!-- ComboBoxItem style for dropdown -->
+                                            <Style TargetType="ComboBoxItem">
+                                                <Setter Property="Background" Value="#33FFFFFF"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                                <Setter Property="Padding" Value="12,8"/>
+                                                <Setter Property="FontSize" Value="14"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ComboBoxItem">
+                                                            <Border Background="{TemplateBinding Background}"
+                                                                    Padding="{TemplateBinding Padding}"
+                                                                    BorderThickness="0">
+                                                                <ContentPresenter TextBlock.Foreground="White"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsHighlighted" Value="True">
+                                                                    <Setter Property="Background" Value="#4DFFFFFF"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsSelected" Value="True">
+                                                                    <Setter Property="Background" Value="#66FFFFFF"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ComboBox.Resources>
+                                        <ComboBox.Style>
+                                            <Style TargetType="ComboBox">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ComboBox">
+                                                            <Grid>
+                                                                <ToggleButton x:Name="ToggleButton"
+                                                                              Grid.Column="2"
+                                                                              Focusable="false"
+                                                                              IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                                                              ClickMode="Press"
+                                                                              Background="{TemplateBinding Background}"
+                                                                              BorderBrush="{TemplateBinding BorderBrush}"
+                                                                              BorderThickness="{TemplateBinding BorderThickness}"/>
+                                                                <ContentPresenter x:Name="ContentSite"
+                                                                                  IsHitTestVisible="False"
+                                                                                  Content="{TemplateBinding SelectionBoxItem}"
+                                                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                                                  ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                                                  Margin="{TemplateBinding Padding}"
+                                                                                  VerticalAlignment="Center"
+                                                                                  HorizontalAlignment="Left"
+                                                                                  TextBlock.Foreground="White"/>
+                                                                <TextBox x:Name="PART_EditableTextBox"
+                                                                         Style="{x:Null}"
+                                                                         Background="Transparent"
+                                                                         Foreground="White"
+                                                                         HorizontalAlignment="Left"
+                                                                         VerticalAlignment="Center"
+                                                                         Margin="{TemplateBinding Padding}"
+                                                                         Focusable="True"
+                                                                         Visibility="Hidden"
+                                                                         IsReadOnly="{TemplateBinding IsReadOnly}"/>
+                                                                <Popup x:Name="Popup"
+                                                                       Placement="Bottom"
+                                                                       IsOpen="{TemplateBinding IsDropDownOpen}"
+                                                                       AllowsTransparency="True"
+                                                                       Focusable="False"
+                                                                       PopupAnimation="Slide">
+                                                                    <Grid x:Name="DropDown"
+                                                                          SnapsToDevicePixels="True"
+                                                                          MinWidth="{TemplateBinding ActualWidth}"
+                                                                          MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                                                        <Border x:Name="DropDownBorder"
+                                                                                Background="#E6000000"
+                                                                                BorderThickness="1"
+                                                                                BorderBrush="#66FFFFFF"
+                                                                                CornerRadius="4"/>
+                                                                        <ScrollViewer Margin="4,6,4,6" SnapsToDevicePixels="True">
+                                                                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                                                        </ScrollViewer>
+                                                                    </Grid>
+                                                                </Popup>
+                                                            </Grid>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ComboBox.Style>
+                                    </ComboBox>
+                                </StackPanel>
+                                
+                                <!-- Description Field -->
+                                <StackPanel Margin="0,0,0,16">
+                                    <TextBlock Text="Description" 
+                                               Foreground="White" 
+                                               FontWeight="Medium"
+                                               Margin="0,0,0,8"/>
+                                    <TextBox Text="{Binding EditDescription, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="12,8"
+                                             Background="#33FFFFFF"
+                                             Foreground="White"
+                                             BorderBrush="#66FFFFFF"
+                                             BorderThickness="1"
+                                             FontSize="14"
+                                             Height="60"
+                                             TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             VerticalScrollBarVisibility="Auto"/>
+                                </StackPanel>
+                                
+                                <!-- Tags Field -->
+                                <StackPanel Margin="0,0,0,16">
+                                    <TextBlock Text="Tags" 
+                                               Foreground="White" 
+                                               FontWeight="Medium"
+                                               Margin="0,0,0,8"/>
+                                    <TextBox Text="{Binding EditTags, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="12,8"
+                                             Background="#33FFFFFF"
+                                             Foreground="White"
+                                             BorderBrush="#66FFFFFF"
+                                             BorderThickness="1"
+                                             FontSize="14"
+                                             ToolTip="Enter tags separated by commas (e.g., work, important, project)"/>
+                                    <TextBlock Text="Enter tags separated by commas (e.g., work, important, project)" 
+                                               Foreground="#99FFFFFF" 
+                                               FontSize="11"
+                                               Margin="0,4,0,0"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                                
+                                <!-- Notes Field (Only for Notes type) -->
+                                <StackPanel Margin="0,0,0,16">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding EditType}" Value="Notes">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <TextBlock Text="Notes Content *" 
+                                               Foreground="White" 
+                                               FontWeight="Medium"
+                                               Margin="0,0,0,8"/>
+                                    <TextBox Text="{Binding EditNotes, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="12,8"
+                                             Background="#33FFFFFF"
+                                             Foreground="White"
+                                             BorderBrush="#66FFFFFF"
+                                             BorderThickness="1"
+                                             FontSize="14"
+                                             Height="120"
+                                             TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             VerticalScrollBarVisibility="Auto"/>
+                                </StackPanel>
+                                
+                                <!-- Action Buttons -->
+                                <StackPanel Orientation="Horizontal" 
+                                            HorizontalAlignment="Right"
+                                            Margin="0,16,0,0">
+                                    <Button Content="Cancel" 
+                                            Command="{Binding CancelEditCommand}"
+                                            Style="{StaticResource ModernButtonStyle}"
+                                            Width="80" 
+                                            Height="36"
+                                            Margin="0,0,10,0"
+                                            Background="#66666666"
+                                            BorderBrush="#88888888"/>
+                                    <Button Content="🗑️ Delete" 
+                                            Command="{Binding DeleteEditCommand}"
+                                            Style="{StaticResource ModernButtonStyle}"
+                                            Width="90" 
+                                            Height="36"
+                                            Margin="0,0,10,0"
+                                            Background="#33D32F2F"
+                                            BorderBrush="#D32F2F"/>
+                                    <Button Content="Save" 
+                                            Command="{Binding SaveEditCommand}"
+                                            Style="{StaticResource ModernButtonStyle}"
+                                            Width="80" 
+                                            Height="36"
+                                            Background="#059862"
+                                            BorderBrush="#0A7A4F"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                        
+                        <!-- Placeholder when no item selected -->
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Visibility="{Binding IsEditingItem, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                            <TextBlock Text="👆" 
+                                       FontSize="48" 
+                                       HorizontalAlignment="Center"
+                                       Foreground="#66FFFFFF"/>
+                            <TextBlock Text="Select an item to edit" 
+                                       Foreground="#99FFFFFF" 
+                                       FontSize="16" 
+                                       HorizontalAlignment="Center"
+                                       Margin="0,10,0,5"/>
+                            <TextBlock Text="Click on any link or folder in the tree to view and edit its details" 
+                                       Foreground="#66FFFFFF" 
+                                       FontSize="12" 
+                                       HorizontalAlignment="Center"
+                                       TextWrapping="Wrap"
+                                       TextAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+            
+            <!-- Notification Panel -->
+            <Border Grid.Row="1" 
+                    Background="#E6059862" 
+                    CornerRadius="8,8,0,0"
+                    Margin="10,0,10,10"
+                    VerticalAlignment="Bottom"
+                    HorizontalAlignment="Center"
+                    Visibility="{Binding ShowSuccessMessage, Converter={StaticResource BooleanToVisibilityConverter}}"
+                    Padding="15,10">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="?" 
+                               Foreground="White" 
+                               FontWeight="Bold" 
+                               FontSize="16"
+                               Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding StatusMessage}" 
+                               Foreground="White" 
+                               FontSize="14"/>
+                </StackPanel>
+            </Border>
+            
+            <Border Grid.Row="1" 
+                    Background="#E6D32F2F" 
+                    CornerRadius="8,8,0,0"
+                    Margin="10,0,10,10"
+                    VerticalAlignment="Bottom"
+                    HorizontalAlignment="Center"
+                    Visibility="{Binding ShowErrorMessage, Converter={StaticResource BooleanToVisibilityConverter}}"
+                    Padding="15,10">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="?" 
+                               Foreground="White" 
+                               FontWeight="Bold" 
+                               FontSize="16"
+                               Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding StatusMessage}" 
+                               Foreground="White" 
+                               FontSize="14"/>
+                </StackPanel>
+            </Border>
+            
+            <!-- Loading Overlay -->
+            <Border Grid.Row="0" Grid.RowSpan="2"
+                    Background="#80000000"
+                    Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
+                    CornerRadius="12">
+                
+                <StackPanel HorizontalAlignment="Center" 
+                            VerticalAlignment="Center">
+                    <ProgressBar IsIndeterminate="True"
+                                 Width="60"
+                                 Height="6"
+                                 Margin="0,0,0,16"
+                                 Style="{StaticResource ModernProgressBarStyle}"/>
+                    <TextBlock Text="Loading..."
+                               Foreground="White"
+                               FontSize="14"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

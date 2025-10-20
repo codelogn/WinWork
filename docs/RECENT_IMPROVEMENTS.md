@@ -1,7 +1,7 @@
-# LinkerApp - Recent Improvements & Changelog
+# WinWork - Recent Improvements & Changelog
 
 ## Overview
-This document tracks all improvements, bug fixes, and feature additions to LinkerApp, maintaining a comprehensive history of development progress.
+This document tracks all improvements, bug fixes, and feature additions to WinWork, maintaining a comprehensive history of development progress.
 
 ---
 

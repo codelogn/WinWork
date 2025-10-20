@@ -1,4 +1,4 @@
-# LinkerApp Development TODO & Roadmap
+# WinWork Development TODO & Roadmap
 
 - [x] **Database Design & Models**
   - Designed SQLite database schema with proper relationships

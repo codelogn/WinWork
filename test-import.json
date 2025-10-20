@@ -1,0 +1,99 @@
+{
+  "exportDate": "2024-01-15T10:30:00Z",
+  "version": "1.0",
+  "applicationName": "WinWork",
+  "tags": [
+    {
+      "id": 1,
+      "name": "Development",
+      "description": "Development related links",
+      "color": "#4285F4"
+    },
+    {
+      "id": 2,
+      "name": "Documentation",
+      "description": "Documentation and reference materials",
+      "color": "#34A853"
+    },
+    {
+      "id": 3,
+      "name": "Tools",
+      "description": "Development tools and utilities",
+      "color": "#FBBC04"
+    }
+  ],
+  "links": [
+    {
+      "id": 1,
+      "title": "GitHub",
+      "url": "https://github.com",
+      "description": "Source code repository hosting",
+      "icon": "🌐",
+      "linkType": "Website",
+      "parentId": null,
+      "tags": ["Development"],
+      "dateCreated": "2024-01-15T10:00:00Z",
+      "dateModified": "2024-01-15T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "title": "Visual Studio Code",
+      "url": "https://code.visualstudio.com",
+      "description": "Code editor",
+      "icon": "💻",
+      "linkType": "Application",
+      "parentId": null,
+      "tags": ["Development", "Tools"],
+      "dateCreated": "2024-01-15T10:05:00Z",
+      "dateModified": "2024-01-15T10:05:00Z"
+    },
+    {
+      "id": 3,
+      "title": ".NET Documentation",
+      "url": "https://docs.microsoft.com/dotnet",
+      "description": ".NET Framework documentation",
+      "icon": "📄",
+      "linkType": "Document",
+      "parentId": null,
+      "tags": ["Documentation"],
+      "dateCreated": "2024-01-15T10:10:00Z",
+      "dateModified": "2024-01-15T10:10:00Z"
+    },
+    {
+      "id": 4,
+      "title": "GitHub Repositories",
+      "url": "",
+      "description": "My GitHub repositories",
+      "icon": "📁",
+      "linkType": "Folder",
+      "parentId": 1,
+      "tags": ["Development"],
+      "dateCreated": "2024-01-15T10:15:00Z",
+      "dateModified": "2024-01-15T10:15:00Z"
+    },
+    {
+      "id": 5,
+      "title": "WinWork Repository",
+      "url": "https://github.com/username/winwork",
+      "description": "WinWork application repository",
+      "icon": "🌐",
+      "linkType": "Website",
+      "parentId": 4,
+      "tags": ["Development"],
+      "dateCreated": "2024-01-15T10:20:00Z",
+      "dateModified": "2024-01-15T10:20:00Z"
+    },
+    {
+      "id": 6,
+      "title": "Another GitHub Item",
+      "url": "https://github.com/someuser/someproject",
+      "description": "Another project to test duplicate detection",
+      "icon": "🌐",
+      "linkType": "Website",
+      "parentId": 1,
+      "tags": ["Development"],
+      "dateCreated": "2024-01-15T10:25:00Z",
+      "dateModified": "2024-01-15T10:25:00Z"
+    }
+  ]
+}
