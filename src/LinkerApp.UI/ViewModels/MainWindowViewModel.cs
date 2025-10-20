@@ -417,7 +417,7 @@ public class MainWindowViewModel : ViewModelBase
             string actionType = link.Type == LinkType.Folder ? "folder" : 
                               link.Type == LinkType.Notes ? "note" : "link";
             string action = isEditMode ? "updated" : "created";
-            
+
             if (isEditMode)
             {
                 Console.WriteLine($"HandleLinkSaved: Updating existing {actionType} - ID: {link.Id}, Name: '{link.Name}', Type: {link.Type}");
@@ -437,14 +437,22 @@ public class MainWindowViewModel : ViewModelBase
             await LoadLinksAsync();
             DisplaySuccessMessage($"{char.ToUpper(actionType[0])}{actionType.Substring(1)} '{link.Name}' {action} successfully!");
         }
+        catch (ArgumentException argEx)
+        {
+            // Show a friendly error message for validation errors
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            {
+                System.Windows.MessageBox.Show(argEx.Message, "Invalid Input", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            });
+        }
         catch (Exception ex)
         {
             Console.WriteLine($"ERROR in HandleLinkSaved: {ex.Message}");
             Console.WriteLine($"Stack trace: {ex.StackTrace}");
-            
+
             string actionType = link.Type == LinkType.Folder ? "folder" : 
                               link.Type == LinkType.Notes ? "note" : "link";
-            
+
             // Show detailed error information
             string errorDetails = $"Exception Type: {ex.GetType().Name}\n" +
                                 $"Message: {ex.Message}\n" +
@@ -455,7 +463,7 @@ public class MainWindowViewModel : ViewModelBase
                                 $"  - URL: {link.Url}\n" +
                                 $"  - IsEditMode: {isEditMode}\n" +
                                 $"Stack Trace:\n{ex.StackTrace}";
-            
+
             // Use App's ShowErrorDialog for better error display
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {

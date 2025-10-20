@@ -194,9 +194,12 @@ public class LinkOpenerService : ILinkOpenerService
         if (string.IsNullOrWhiteSpace(url))
             return false;
 
-        // Allow URLs with or without protocol
-        var urlPattern = @"^(https?://)?([\da-z\.-]+)\.([a-z\.]{2,6})([/\w \.-]*)*/?$";
-        return Regex.IsMatch(url, urlPattern, RegexOptions.IgnoreCase);
+        // Use Uri.TryCreate for robust validation (accepts fragments, queries, etc.)
+        if (Uri.TryCreate(url, UriKind.Absolute, out var uriResult))
+        {
+            return uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps;
+        }
+        return false;
     }
 
     private bool ValidateFilePath(string filePath)
