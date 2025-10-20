@@ -86,6 +86,7 @@ public class LinkRepository : ILinkRepository
             .Where(l => l.Name.ToLower().Contains(searchTerm) ||
                        (l.Description != null && l.Description.ToLower().Contains(searchTerm)) ||
                        (l.Url != null && l.Url.ToLower().Contains(searchTerm)) ||
+                       (l.Notes != null && l.Notes.ToLower().Contains(searchTerm)) ||
                        l.LinkTags.Any(lt => lt.Tag.Name.ToLower().Contains(searchTerm)))
             .OrderByDescending(l => l.AccessCount)
             .ThenByDescending(l => l.LastAccessedAt)

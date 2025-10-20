@@ -239,9 +239,9 @@ public partial class MainWindow : Window
             
             var dialogViewModel = new LinkDialogViewModel();
             
-            // Set available parents (all folders) first
-            var allFolders = GetAllFolders(viewModel.RootLinks);
-            dialogViewModel.SetAvailableParents(allFolders);
+            // Set available parents (all items) first
+            var allItems = GetAllItems(viewModel.RootLinks);
+            dialogViewModel.SetAvailableParents(allItems);
             
             // Set edit mode if editing existing link
             if (e.LinkToEdit != null)
@@ -628,8 +628,12 @@ public partial class MainWindow : Window
     {
         if (DataContext is not MainWindowViewModel viewModel) return;
 
-        // For the navigation button, just use the AddLinkCommand which will show the unified dialog
-        viewModel.AddLinkCommand.Execute(null);
+        // Get the context item the same way Edit and Delete do
+        var linkItem = GetLinkItemFromMenuItem(sender);
+        Console.WriteLine($"AddNew_Click: Retrieved linkItem = {linkItem?.Name ?? "null"} (ID: {linkItem?.Link?.Id ?? 0})");
+        
+        // Use the context item as the parent for the new link
+        _ = viewModel.AddLinkAsync(linkItem);
     }
 
     private LinkTreeItemViewModel? GetParentItem(LinkTreeItemViewModel item)
@@ -723,7 +727,15 @@ public partial class MainWindow : Window
             var menuItemMessage = $"DEBUG: MenuItem found, parent: {menuItem.Parent?.GetType().Name ?? "null"}";
             FileLogger.Log(menuItemMessage);
             
-            // Get the context menu
+            // First check if the MenuItem has a DataContext (new approach)
+            if (menuItem.DataContext is LinkTreeItemViewModel menuDataContext)
+            {
+                var menuContextMessage = $"DEBUG: Found MenuItem DataContext: {menuDataContext.Name}";
+                FileLogger.Log(menuContextMessage);
+                return menuDataContext;
+            }
+            
+            // Fallback to the old approach via PlacementTarget
             var contextMenu = menuItem.Parent as ContextMenu;
             if (contextMenu?.PlacementTarget is TreeViewItem treeViewItem)
             {
@@ -869,7 +881,8 @@ public partial class MainWindow : Window
             Header = "✏️ Edit",
             Foreground = System.Windows.Media.Brushes.White,
             Padding = new Thickness(8, 4, 8, 4),
-            Margin = new Thickness(1)
+            Margin = new Thickness(1),
+            DataContext = dataContext
         };
         editMenuItem.Click += EditItem_Click;
         contextMenu.Items.Add(editMenuItem);
@@ -882,7 +895,8 @@ public partial class MainWindow : Window
                 Header = "📋 Copy URL",
                 Foreground = System.Windows.Media.Brushes.White,
                 Padding = new Thickness(8, 4, 8, 4),
-                Margin = new Thickness(1)
+                Margin = new Thickness(1),
+                DataContext = dataContext
             };
             copyMenuItem.Click += CopyUrl_Click;
             contextMenu.Items.Add(copyMenuItem);
@@ -897,7 +911,8 @@ public partial class MainWindow : Window
             Header = "➕ Add New",
             Foreground = System.Windows.Media.Brushes.White,
             Padding = new Thickness(8, 4, 8, 4),
-            Margin = new Thickness(1)
+            Margin = new Thickness(1),
+            DataContext = dataContext
         };
         addMenuItem.Click += AddItem_Click;
         contextMenu.Items.Add(addMenuItem);
@@ -908,13 +923,36 @@ public partial class MainWindow : Window
             Header = "🗑️ Delete",
             Foreground = System.Windows.Media.Brushes.White,
             Padding = new Thickness(8, 4, 8, 4),
-            Margin = new Thickness(1)
+            Margin = new Thickness(1),
+            DataContext = dataContext
         };
         deleteMenuItem.Click += DeleteItem_Click;
         contextMenu.Items.Add(deleteMenuItem);
 
         // Assign context menu to item
         item.ContextMenu = contextMenu;
+    }
+    
+    /// <summary>
+    /// Recursively gets all items from the tree structure
+    /// </summary>
+    private static List<LinkTreeItemViewModel> GetAllItems(IEnumerable<LinkTreeItemViewModel> items)
+    {
+        var allItems = new List<LinkTreeItemViewModel>();
+        
+        foreach (var item in items)
+        {
+            // Add this item regardless of type
+            allItems.Add(item);
+            
+            // Recursively add items from children
+            if (item.Children?.Count > 0)
+            {
+                allItems.AddRange(GetAllItems(item.Children));
+            }
+        }
+        
+        return allItems;
     }
     
     /// <summary>

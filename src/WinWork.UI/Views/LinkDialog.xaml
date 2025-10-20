@@ -186,9 +186,9 @@
                         </ComboBox>
                     </StackPanel>
                     
-                    <!-- Parent Folder Selection -->
+                    <!-- Parent Item Selection -->
                     <StackPanel Margin="0,0,0,16">
-                        <TextBlock Text="Parent Folder" 
+                        <TextBlock Text="Parent Item" 
                                    Foreground="White" 
                                    FontWeight="Medium"
                                    Margin="0,0,0,8"/>

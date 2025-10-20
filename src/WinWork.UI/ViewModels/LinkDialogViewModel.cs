@@ -339,7 +339,7 @@ public class LinkDialogViewModel : ViewModelBase
         Console.WriteLine($"SetParentContext: Final SelectedParent = {SelectedParent?.Name ?? "null"}, Dialog title updated to: {DialogTitle}");
     }
 
-    public void SetAvailableParents(IEnumerable<LinkTreeItemViewModel> allFolders)
+    public void SetAvailableParents(IEnumerable<LinkTreeItemViewModel> allItems)
     {
         try
         {
@@ -354,16 +354,15 @@ public class LinkDialogViewModel : ViewModelBase
             });
             AvailableParents.Add(rootOption);
             
-            // Add all folders except the one being edited (to prevent circular references)
-            var foldersToAdd = allFolders?.Where(f => f?.Link != null && 
-                                                      f.Link.Type == LinkType.Folder && 
-                                                      f.Link.Id != _originalLink?.Id) ?? Enumerable.Empty<LinkTreeItemViewModel>();
+            // Add all items except the one being edited (to prevent circular references)
+            var itemsToAdd = allItems?.Where(f => f?.Link != null && 
+                                                  f.Link.Id != _originalLink?.Id) ?? Enumerable.Empty<LinkTreeItemViewModel>();
             
-            foreach (var folder in foldersToAdd)
+            foreach (var item in itemsToAdd)
             {
-                if (folder != null)
+                if (item != null)
                 {
-                    AvailableParents.Add(folder);
+                    AvailableParents.Add(item);
                 }
             }
             

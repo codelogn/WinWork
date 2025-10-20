@@ -76,11 +76,11 @@ public class MainWindowViewModel : ViewModelBase
     private LinkType _editType = LinkType.WebUrl;
     private bool _isEditingItem = false;
     private Link? _originalLinkForEdit;
-    private LinkTreeItemViewModel? _editParent;
+    private LinkTreeItemViewModel? _editParentItem;
 
     public ObservableCollection<LinkTreeItemViewModel> RootLinks { get; }
     public ObservableCollection<LinkTypeItem> LinkTypes { get; }
-    public ObservableCollection<LinkTreeItemViewModel> AvailableParents { get; }
+    public ObservableCollection<LinkTreeItemViewModel> AvailableParentItems { get; }
 
     // Commands
     public ICommand AddLinkCommand { get; }
@@ -107,7 +107,7 @@ public class MainWindowViewModel : ViewModelBase
         _importExportService = importExportService;
 
         RootLinks = new ObservableCollection<LinkTreeItemViewModel>();
-        AvailableParents = new ObservableCollection<LinkTreeItemViewModel>();
+    AvailableParentItems = new ObservableCollection<LinkTreeItemViewModel>();
         LinkTypes = new ObservableCollection<LinkTypeItem>
         {
             new LinkTypeItem(LinkType.Folder, "📁 Folder", "Organize items into groups"),
@@ -210,10 +210,10 @@ public class MainWindowViewModel : ViewModelBase
         set => SetProperty(ref _isEditingItem, value);
     }
 
-    public LinkTreeItemViewModel? EditParent
+    public LinkTreeItemViewModel? EditParentItem
     {
-        get => _editParent;
-        set => SetProperty(ref _editParent, value);
+        get => _editParentItem;
+        set => SetProperty(ref _editParentItem, value);
     }
 
     public string StatusMessage
@@ -563,6 +563,7 @@ public class MainWindowViewModel : ViewModelBase
     // Search functionality
     private async Task PerformSearchAsync(string searchTerm)
     {
+        IsLoading = true;
         try
         {
             if (string.IsNullOrWhiteSpace(searchTerm))
@@ -574,7 +575,6 @@ public class MainWindowViewModel : ViewModelBase
             {
                 // Search links
                 var searchResults = await _linkService.SearchLinksAsync(searchTerm);
-                
                 RootLinks.Clear();
                 foreach (var link in searchResults)
                 {
@@ -585,6 +585,10 @@ public class MainWindowViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+        }
+        finally
+        {
+            IsLoading = false;
         }
     }
 
@@ -604,7 +608,7 @@ public class MainWindowViewModel : ViewModelBase
             
             // Populate available parents and set current parent
             PopulateAvailableParents();
-            EditParent = FindParentInAvailableParents(_selectedLink.Link.ParentId);
+            EditParentItem = FindParentInAvailableParents(_selectedLink.Link.ParentId);
         }
         else
         {
@@ -621,16 +625,16 @@ public class MainWindowViewModel : ViewModelBase
         EditTags = string.Empty;
         EditNotes = string.Empty;
         EditType = LinkType.WebUrl;
-        EditParent = null;
+    EditParentItem = null;
         IsEditingItem = false;
     }
 
     private void PopulateAvailableParents()
     {
-        AvailableParents.Clear();
+    AvailableParentItems.Clear();
         
         // Add "No Parent" option
-        AvailableParents.Add(new LinkTreeItemViewModel(new Link 
+        AvailableParentItems.Add(new LinkTreeItemViewModel(new Link 
         { 
             Id = 0, 
             Name = "🏠 Root Level", 
@@ -640,20 +644,19 @@ public class MainWindowViewModel : ViewModelBase
         // Add all items as potential parents with hierarchical indentation
         foreach (var rootItem in RootLinks)
         {
-            AddItemsToAvailableParents(rootItem, 0);
+            AddItemsToAvailableParentItems(rootItem, 0);
         }
     }
 
-    private void AddItemsToAvailableParents(LinkTreeItemViewModel item, int level)
+    private void AddItemsToAvailableParentItems(LinkTreeItemViewModel item, int level)
     {
-        // Don't add the item being edited or any of its children as potential parents
+        // Allow any item to be a parent (except itself and its descendants)
         if (_originalLinkForEdit != null && IsDescendantOf(item, _originalLinkForEdit.Id))
             return;
-            
-        // Create a copy of the item with hierarchical display name
+
         var indentation = new string(' ', level * 3); // 3 spaces per level
         var prefix = level > 0 ? $"{indentation}+- " : "";
-        
+
         var displayItem = new LinkTreeItemViewModel(new Link
         {
             Id = item.Link.Id,
@@ -666,13 +669,11 @@ public class MainWindowViewModel : ViewModelBase
             CreatedAt = item.Link.CreatedAt,
             UpdatedAt = item.Link.UpdatedAt
         });
-        
-        // Allow any item type to be a parent (folders, links, etc.)
-        AvailableParents.Add(displayItem);
-        
+        AvailableParentItems.Add(displayItem);
+
         foreach (var child in item.Children)
         {
-            AddItemsToAvailableParents(child, level + 1);
+            AddItemsToAvailableParentItems(child, level + 1);
         }
     }
 
@@ -687,9 +688,9 @@ public class MainWindowViewModel : ViewModelBase
     private LinkTreeItemViewModel? FindParentInAvailableParents(int? parentId)
     {
         if (parentId == null)
-            return AvailableParents.FirstOrDefault(p => p.Link.Id == 0); // Root level
-            
-        return AvailableParents.FirstOrDefault(p => p.Link.Id == parentId);
+            return AvailableParentItems.FirstOrDefault(p => p.Link.Id == 0); // Root level
+        
+        return AvailableParentItems.FirstOrDefault(p => p.Link.Id == parentId);
     }
 
     private async Task SaveEditAsync()
@@ -704,7 +705,7 @@ public class MainWindowViewModel : ViewModelBase
             _originalLinkForEdit.Description = string.IsNullOrWhiteSpace(EditDescription) ? null : EditDescription.Trim();
             _originalLinkForEdit.Notes = EditType == LinkType.Notes ? (string.IsNullOrWhiteSpace(EditNotes) ? null : EditNotes.Trim()) : null;
             _originalLinkForEdit.Type = EditType;
-            _originalLinkForEdit.ParentId = EditParent?.Link.Id == 0 ? null : EditParent?.Link.Id;
+            _originalLinkForEdit.ParentId = EditParentItem?.Link.Id == 0 ? null : EditParentItem?.Link.Id;
             _originalLinkForEdit.UpdatedAt = DateTime.UtcNow;
 
             await _linkService.UpdateLinkAsync(_originalLinkForEdit);
