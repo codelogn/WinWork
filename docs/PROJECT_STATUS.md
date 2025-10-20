@@ -1,3 +1,13 @@
+
+## Latest Features & Changes (v1.2.0)
+- Context menu improvements (Open/Edit/Add/Delete)
+- "Open" menu added to right-click context menu
+- Parent selection logic improved for Add New
+- "Parent Folder" renamed to "Parent Item" (can be any type)
+- All item types can be parents
+- Search now includes Notes field
+- Added loading spinner during async search operations
+- Export now includes timestamp metadata
 # Project Status Report - WinWork
 
 **Date:** October 15, 2025  

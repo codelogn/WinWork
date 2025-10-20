@@ -583,6 +583,15 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void OpenItem_Click(object sender, RoutedEventArgs e)
+    {
+        var linkItem = GetLinkItemFromMenuItem(sender);
+        if (linkItem != null && DataContext is MainWindowViewModel viewModel)
+        {
+            await viewModel.HandleItemDoubleClick(linkItem);
+        }
+    }
+
     private void CopyItemUrl_Click(object sender, RoutedEventArgs e)
     {
         var linkItem = GetLinkItemFromMenuItem(sender);
@@ -886,6 +895,21 @@ public partial class MainWindow : Window
         };
         editMenuItem.Click += EditItem_Click;
         contextMenu.Items.Add(editMenuItem);
+
+        // Open menu item (only for items that can be opened - not folders)
+        if (dataContext.Link.Type != LinkType.Folder)
+        {
+            var openMenuItem = new MenuItem
+            {
+                Header = "🚀 Open",
+                Foreground = System.Windows.Media.Brushes.White,
+                Padding = new Thickness(8, 4, 8, 4),
+                Margin = new Thickness(1),
+                DataContext = dataContext
+            };
+            openMenuItem.Click += OpenItem_Click;
+            contextMenu.Items.Add(openMenuItem);
+        }
 
         // Copy URL menu item (only for web URLs)
         if (dataContext.Link.Type == LinkType.WebUrl)

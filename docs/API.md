@@ -1,3 +1,14 @@
+
+## Latest Features & Changes (v1.2.0)
+- Notes type (freeform text, no URL required)
+- Tagging system with color-coded tags
+- Hierarchical folders and subfolders (unlimited nesting)
+- "Parent Folder" renamed to "Parent Item" (can be any type)
+- All item types can be parents
+- Context menu with Open/Edit/Add/Delete
+- Real-time search includes Notes field
+- Loading spinner for async operations
+- Export includes timestamp
 # API Documentation
 
 ## Service Layer Architecture

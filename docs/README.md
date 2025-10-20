@@ -3,25 +3,36 @@
 ## Overview
 WinWork is a WPF application for managing links, folders, and notes. It uses MVVM architecture and Entity Framework Core for data persistence.
 ## Key Features
-- Unified add/edit dialog for all item types (Links, Folders, Notes)
-- Notes type (freeform text, no URL required)
-- Tagging system with color-coded tags
-- Hierarchical folders and subfolders
-- File-based logging (logs/debug, auto-cleanup >3 days)
-- SQLite database (see database.md)
-- Entity Framework Core migrations
+ - Unified add/edit dialog for all item types (Links, Folders, Notes)
+ - Notes type (freeform text, no URL required)
+ - Tagging system with color-coded tags
+ - Hierarchical folders and subfolders (unlimited nesting)
+ - File-based logging (logs/debug, auto-cleanup >3 days)
+ - SQLite database (see database.md)
+ - Entity Framework Core migrations
+ - Browse buttons for applications, files, folders
+ - Application links with command-line arguments
+ - Context menu with Open/Edit/Add/Delete
+ - Real-time search includes Notes field
+ - Loading spinner for async operations
+ - "Parent Folder" renamed to "Parent Item" (can be any type)
+ - Export includes timestamp
 
 ## Architecture
-- **MVVM Pattern**: Separation of UI, logic, and data
-- **Dialogs**: Single dialog for adding/editing all item types
-- **Logging**: All debug output written to logs/debug, cleaned up automatically
-- **Database**: See [database.md](database.md) for schema and technical details
 
 ## Recent Changes
-- Unified dialog for add/edit
-- Notes type added
-- Debug window removed, file-based logging only
-- Database schema updated for Notes
+ - Unified dialog for add/edit (Links, Folders, Notes)
+ - Notes type added
+ - Tagging system with color-coded tags
+ - Browse buttons for applications, files, folders
+ - Application links with command-line arguments
+ - Context menu improvements (Open/Edit/Add/Delete)
+ - Real-time search includes Notes field
+ - Loading spinner for async operations
+ - "Parent Folder" renamed to "Parent Item" (can be any type)
+ - Export includes timestamp
+ - Debug window removed, file-based logging only
+ - Database schema updated for Notes
 # WinWork - Universal Link Management Application
 
 A modern, feature-rich link management application built with .NET 9 and WPF, designed to organize, search, and open any type of link including web URLs, file paths, folders, applications, and system locations.

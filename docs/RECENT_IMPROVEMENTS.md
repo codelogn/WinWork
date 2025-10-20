@@ -230,12 +230,20 @@ This document tracks all improvements, bug fixes, and feature additions to WinWo
    - Loading states should appear during operations
 
 ## Performance Notes
-- UI thread dispatching ensures smooth updates
-- Async operations prevent UI blocking
-- Efficient ObservableCollection updates
-- Minimal database query overhead
 
----
+#### **7. Context Menu Improvements**
+- Added "Open" menu to right-click context menu for all item types
+- Context menu now supports Open, Edit, Add, Delete, Copy URL
+- Parent selection logic improved for Add New
+- "Parent Folder" renamed to "Parent Item" (can be any type)
+- All item types can be parents
+
+#### **8. Search & Loading Enhancements**
+- Search now includes Notes field
+- Added loading spinner during async search operations
+
+#### **9. Export Improvements**
+- Export now includes timestamp metadata
 
 **Status**: All improvements implemented and tested successfully ✅
 **Build**: Successful with standard .NET 9 compatibility warnings

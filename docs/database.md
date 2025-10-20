@@ -113,11 +113,14 @@ public class LinkTag {
 ---
 
 ## Notes
-- **Notes type**: No URL required, only Name and Notes content
-- **Folders**: Only Name required, can have children
-- **All other types**: Require Name and URL
-- **Tags**: Color-coded, many-to-many with links
-- **AppSettings**: Used for user preferences, theme, etc.
+
+## Latest Features & Changes (v1.2.0)
+- Notes type (freeform text, no URL required)
+- Tagging system with color-coded tags
+- Hierarchical folders and subfolders (unlimited nesting)
+- "Parent Folder" renamed to "Parent Item" (can be any type)
+- All item types can be parents
+- Export includes timestamp
 
 ---
 

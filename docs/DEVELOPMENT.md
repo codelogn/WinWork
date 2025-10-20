@@ -16,6 +16,19 @@
 - Old logs (>3 days) cleaned up automatically
 # WinWork Development Guide
 
+## Latest Features & Changes (v1.2.0)
+- Unified add/edit dialog for all item types (Links, Folders, Notes)
+- Notes type (freeform text, no URL required)
+- Tagging system with color-coded tags
+- Hierarchical folders and subfolders (unlimited nesting)
+- Browse buttons for applications, files, folders
+- Application links with command-line arguments
+- Context menu with Open/Edit/Add/Delete
+- Real-time search includes Notes field
+- Loading spinner for async operations
+- "Parent Folder" renamed to "Parent Item" (can be any type)
+- Export includes timestamp
+
 ## Prerequisites
 
 ### Required Software
