@@ -247,9 +247,7 @@
                                           HorizontalScrollBarVisibility="Auto"
                                           Padding="8,4,4,4"
                                           CanContentScroll="True"
-                                          ScrollViewer.PanningMode="Both"
-                                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                          ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                          PanningMode="Both">
                                 
                                 <!-- Enhanced TreeView with proper hierarchy -->
                                 <TreeView x:Name="LinksTreeView"

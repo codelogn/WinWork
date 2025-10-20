@@ -878,6 +878,7 @@ public class MainWindowViewModel : ViewModelBase
 
     private async Task ExportDataAsync()
     {
+        var exportStartTime = DateTime.Now;
         try
         {
             var saveDialog = new Microsoft.Win32.SaveFileDialog
@@ -925,10 +926,18 @@ public class MainWindowViewModel : ViewModelBase
                 var exportData = new
                 {
                     ExportDate = DateTime.UtcNow,
+                    ExportDateLocal = DateTime.Now,
+                    ExportTimezone = TimeZoneInfo.Local.DisplayName,
                     Version = "1.0",
                     Application = "WinWork",
                     Links = exportLinks,
-                    Tags = exportTags
+                    Tags = exportTags,
+                    Statistics = new
+                    {
+                        TotalLinks = exportLinks.Count,
+                        TotalTags = exportTags.Count,
+                        ExportDurationMs = (DateTime.Now - exportStartTime).TotalMilliseconds
+                    }
                 };
 
                 var jsonOptions = new System.Text.Json.JsonSerializerOptions 
@@ -940,7 +949,12 @@ public class MainWindowViewModel : ViewModelBase
                 var json = System.Text.Json.JsonSerializer.Serialize(exportData, jsonOptions);
                 await System.IO.File.WriteAllTextAsync(saveDialog.FileName, json);
 
-                DisplaySuccessMessage($"Data exported successfully to {System.IO.Path.GetFileName(saveDialog.FileName)}! ({exportLinks.Count} links, {exportTags.Count} tags)");
+                var exportDuration = DateTime.Now - exportStartTime;
+                var exportTimeFormatted = exportStartTime.ToString("yyyy-MM-dd HH:mm:ss");
+                DisplaySuccessMessage($"Data exported successfully to {System.IO.Path.GetFileName(saveDialog.FileName)}!\n" +
+                                    $"📊 {exportLinks.Count} links, {exportTags.Count} tags\n" +
+                                    $"🕒 Exported on {exportTimeFormatted}\n" +
+                                    $"⚡ Completed in {exportDuration.TotalMilliseconds:F0}ms");
             }
         }
         catch (Exception ex)
