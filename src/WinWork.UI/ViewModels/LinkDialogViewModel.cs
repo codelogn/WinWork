@@ -311,9 +311,32 @@ public class LinkDialogViewModel : ViewModelBase
     {
         Console.WriteLine($"SetParentContext: Setting parent = {parentItem?.Name ?? "null"} (ID: {parentItem?.Link?.Id ?? 0})");
         _parentItem = parentItem;
-        SelectedParent = parentItem;
+        
+        if (parentItem?.Link != null)
+        {
+            // Find the matching parent in the AvailableParents list
+            var matchingParent = AvailableParents.FirstOrDefault(p => p?.Link?.Id == parentItem.Link.Id);
+            if (matchingParent != null)
+            {
+                SelectedParent = matchingParent;
+                Console.WriteLine($"SetParentContext: Found matching parent in available list: {matchingParent.Name}");
+            }
+            else
+            {
+                SelectedParent = parentItem;
+                Console.WriteLine($"SetParentContext: No match found in available list, using provided parent directly");
+            }
+        }
+        else
+        {
+            // Parent is null, select root level
+            var rootOption = AvailableParents.FirstOrDefault(p => p?.Link?.Id == 0);
+            SelectedParent = rootOption;
+            Console.WriteLine($"SetParentContext: Parent is null, selecting root level");
+        }
+        
         OnPropertyChanged(nameof(DialogTitle));
-        Console.WriteLine($"SetParentContext: Dialog title updated to: {DialogTitle}");
+        Console.WriteLine($"SetParentContext: Final SelectedParent = {SelectedParent?.Name ?? "null"}, Dialog title updated to: {DialogTitle}");
     }
 
     public void SetAvailableParents(IEnumerable<LinkTreeItemViewModel> allFolders)
@@ -362,9 +385,15 @@ public class LinkDialogViewModel : ViewModelBase
             else
             {
                 // For new items, default to root level if no parent context was set
+                // But don't override if SelectedParent was already set by SetParentContext
                 if (SelectedParent == null)
                 {
                     SelectedParent = rootOption;
+                    Console.WriteLine($"SetAvailableParents: Defaulted to root level for new item");
+                }
+                else
+                {
+                    Console.WriteLine($"SetAvailableParents: Keeping existing SelectedParent: {SelectedParent?.Name ?? "null"}");
                 }
             }
         }

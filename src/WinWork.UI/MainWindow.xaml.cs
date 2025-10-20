@@ -239,6 +239,10 @@ public partial class MainWindow : Window
             
             var dialogViewModel = new LinkDialogViewModel();
             
+            // Set available parents (all folders) first
+            var allFolders = GetAllFolders(viewModel.RootLinks);
+            dialogViewModel.SetAvailableParents(allFolders);
+            
             // Set edit mode if editing existing link
             if (e.LinkToEdit != null)
             {
@@ -250,15 +254,11 @@ public partial class MainWindow : Window
                 dialogViewModel.SetInitialType(e.InitialType.Value);
             }
             
-            // Set parent context if provided
+            // Set parent context if provided (this should be called after SetAvailableParents)
             if (e.ParentItem != null)
             {
                 dialogViewModel.SetParentContext(e.ParentItem);
             }
-            
-            // Set available parents (all folders)
-            var allFolders = GetAllFolders(viewModel.RootLinks);
-            dialogViewModel.SetAvailableParents(allFolders);
 
             var dialog = new LinkDialog(dialogViewModel)
             {
@@ -574,7 +574,12 @@ public partial class MainWindow : Window
     {
         if (DataContext is MainWindowViewModel viewModel)
         {
-            viewModel.AddLinkCommand.Execute(null);
+            // Get the context item the same way Edit and Delete do
+            var linkItem = GetLinkItemFromMenuItem(sender);
+            Console.WriteLine($"AddItem_Click: Retrieved linkItem = {linkItem?.Name ?? "null"} (ID: {linkItem?.Link?.Id ?? 0})");
+            
+            // Use the context item as the parent for the new link
+            _ = viewModel.AddLinkAsync(linkItem);
         }
     }
 

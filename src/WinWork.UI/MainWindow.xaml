@@ -170,7 +170,8 @@
                 <Border Grid.Column="0" 
                         Background="#19FFFFFF"
                         CornerRadius="8"
-                        Margin="8,8,4,8">
+                        Margin="8,8,4,8"
+                        Padding="4">
                     
                     <Grid>
                         <Grid.RowDefinitions>
@@ -241,9 +242,14 @@
                         </StackPanel>
                         
                         <!-- Links Tree -->
-                        <Grid Grid.Row="2" Margin="8">
+                        <Grid Grid.Row="2" Margin="12">
                             <ScrollViewer VerticalScrollBarVisibility="Auto"
-                                          HorizontalScrollBarVisibility="Disabled">
+                                          HorizontalScrollBarVisibility="Auto"
+                                          Padding="8,4,4,4"
+                                          CanContentScroll="True"
+                                          ScrollViewer.PanningMode="Both"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                          ScrollViewer.VerticalScrollBarVisibility="Auto">
                                 
                                 <!-- Enhanced TreeView with proper hierarchy -->
                                 <TreeView x:Name="LinksTreeView"
@@ -252,6 +258,7 @@
                                           Foreground="White"
                                           BorderThickness="0"
                                           AllowDrop="True"
+                                          Margin="4,0,4,0"
                                           SelectedItemChanged="LinksTreeView_SelectedItemChanged"
                                           MouseDoubleClick="LinksTreeView_MouseDoubleClick"
                                           PreviewMouseRightButtonDown="LinksTreeView_PreviewMouseRightButtonDown"

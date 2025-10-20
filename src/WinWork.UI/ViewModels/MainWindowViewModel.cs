@@ -332,6 +332,12 @@ public class MainWindowViewModel : ViewModelBase
         await ShowLinkDialog();
     }
 
+    public async Task AddLinkAsync(LinkTreeItemViewModel? parentItem)
+    {
+        Console.WriteLine($"AddLinkAsync: Received parentItem = {parentItem?.Name ?? "null"} (ID: {parentItem?.Link?.Id ?? 0})");
+        await ShowLinkDialog(parentItem: parentItem);
+    }
+
     private async Task AddFolderAsync()
     {
         await ShowLinkDialog(initialType: LinkType.Folder);
