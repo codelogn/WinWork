@@ -681,7 +681,7 @@
                                                FontWeight="Medium"
                                                Margin="0,0,0,8"/>
                                     <ComboBox ItemsSource="{Binding AvailableParentItems}"
-                                              SelectedItem="{Binding EditParentItem}"
+                                              SelectedItem="{Binding EditParentItem, Mode=TwoWay}"
                                               DisplayMemberPath="Name"
                                               Background="#33FFFFFF"
                                               Foreground="White"
@@ -696,7 +696,7 @@
                                             </Style>
                                             <!-- ComboBoxItem style for dropdown -->
                                             <Style TargetType="ComboBoxItem">
-                                                <Setter Property="Background" Value="#33FFFFFF"/>
+                                                <Setter Property="Background" Value="#E6000000"/>
                                                 <Setter Property="Foreground" Value="White"/>
                                                 <Setter Property="Padding" Value="12,8"/>
                                                 <Setter Property="FontSize" Value="14"/>
@@ -744,16 +744,6 @@
                                                                                   VerticalAlignment="Center"
                                                                                   HorizontalAlignment="Left"
                                                                                   TextBlock.Foreground="White"/>
-                                                                <TextBox x:Name="PART_EditableTextBox"
-                                                                         Style="{x:Null}"
-                                                                         Background="Transparent"
-                                                                         Foreground="White"
-                                                                         HorizontalAlignment="Left"
-                                                                         VerticalAlignment="Center"
-                                                                         Margin="{TemplateBinding Padding}"
-                                                                         Focusable="True"
-                                                                         Visibility="Hidden"
-                                                                         IsReadOnly="{TemplateBinding IsReadOnly}"/>
                                                                 <Popup x:Name="Popup"
                                                                        Placement="Bottom"
                                                                        IsOpen="{TemplateBinding IsDropDownOpen}"

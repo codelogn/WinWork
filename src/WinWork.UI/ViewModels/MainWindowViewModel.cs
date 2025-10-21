@@ -254,51 +254,25 @@ public class MainWindowViewModel : ViewModelBase
 
     public async Task LoadLinksAsync()
     {
-        Console.WriteLine("LoadLinksAsync started");
         try
         {
             var rootLinks = await _linkService.GetRootLinksAsync();
-            Console.WriteLine($"LoadLinksAsync: Got {rootLinks.Count()} root links from service");
             
             // Ensure UI updates happen on UI thread
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 RootLinks.Clear();
-                Console.WriteLine("RootLinks cleared on UI thread");
             });
             
             foreach (var link in rootLinks)
             {
-                Console.WriteLine($"Processing root link: {link.Name} (Type: {link.Type}, ParentId: {link.ParentId})");
                 var viewModel = await CreateLinkTreeItemAsync(link);
                 
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     RootLinks.Add(viewModel);
-                    Console.WriteLine($"Added {link.Name} to RootLinks on UI thread with {viewModel.Children.Count} children");
                 });
             }
-            
-            // Log final structure
-            Console.WriteLine("=== FINAL TREE STRUCTURE ===");
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-            {
-                foreach (var rootItem in RootLinks)
-                {
-                    Console.WriteLine($"ROOT: {rootItem.Name} ({rootItem.Children.Count} children)");
-                    foreach (var child in rootItem.Children)
-                    {
-                        Console.WriteLine($"  CHILD: {child.Name} ({child.Children.Count} children)");
-                        foreach (var grandChild in child.Children)
-                        {
-                            Console.WriteLine($"    GRANDCHILD: {grandChild.Name}");
-                        }
-                    }
-                }
-            });
-            Console.WriteLine("=== END TREE STRUCTURE ===");
-            
-            Console.WriteLine($"LoadLinksAsync completed: RootLinks collection now has {RootLinks.Count} items");
         }
         catch (Exception ex)
         {
@@ -307,16 +281,12 @@ public class MainWindowViewModel : ViewModelBase
 
     private async Task<LinkTreeItemViewModel> CreateLinkTreeItemAsync(Link link)
     {
-            Console.WriteLine($"CreateLinkTreeItemAsync: Processing link '{link.Name}' (ID: {link.Id})");
-        
         var children = await _linkService.GetChildLinksAsync(link.Id);
-        Console.WriteLine($"CreateLinkTreeItemAsync: Found {children.Count()} children for '{link.Name}'");
         
         var childViewModels = new List<LinkTreeItemViewModel>();
         
         foreach (var child in children)
         {
-            Console.WriteLine($"  - Child: '{child.Name}' (Type: {child.Type}, ParentId: {child.ParentId})");
             var childViewModel = await CreateLinkTreeItemAsync(child);
             childViewModel.Parent = null; // will set below
             childViewModels.Add(childViewModel);
@@ -328,7 +298,6 @@ public class MainWindowViewModel : ViewModelBase
         {
             childVM.Parent = treeItem;
         }
-        Console.WriteLine($"CreateLinkTreeItemAsync: Created TreeItem for '{link.Name}' with {treeItem.Children.Count} children");
         
         return treeItem;
     }
@@ -615,8 +584,11 @@ public class MainWindowViewModel : ViewModelBase
             IsEditingItem = true;
             
             // Populate available parents and set current parent
+            Console.WriteLine($"DEBUG: LoadSelectedItemForEdit - Selected item: {_selectedLink.Link.Name} (ID: {_selectedLink.Link.Id})");
+            Console.WriteLine($"DEBUG: LoadSelectedItemForEdit - Item's ParentId: {_selectedLink.Link.ParentId}");
             PopulateAvailableParents();
             EditParentItem = FindParentInAvailableParents(_selectedLink.Link.ParentId);
+            Console.WriteLine($"DEBUG: LoadSelectedItemForEdit - Final EditParentItem: {EditParentItem?.Link.Name} (ID: {EditParentItem?.Link.Id})");
         }
         else
         {
@@ -658,9 +630,19 @@ public class MainWindowViewModel : ViewModelBase
 
     private void AddItemsToAvailableParentItems(LinkTreeItemViewModel item, int level)
     {
-        // Allow any item to be a parent (except itself and its descendants)
-        if (_originalLinkForEdit != null && IsDescendantOf(item, _originalLinkForEdit.Id))
+        // Don't add the item being edited as a potential parent of itself
+        if (_originalLinkForEdit != null && item.Link.Id == _originalLinkForEdit.Id)
+        {
+            Console.WriteLine($"DEBUG: Excluding item being edited: {item.Link.Name} (ID: {item.Link.Id})");
             return;
+        }
+            
+        // Don't add descendants of the item being edited (prevent circular references)
+        if (_originalLinkForEdit != null && IsDescendantOf(item, _originalLinkForEdit.Id))
+        {
+            Console.WriteLine($"DEBUG: Excluding descendant of edited item: {item.Link.Name} (ID: {item.Link.Id})");
+            return;
+        }
 
         var indentation = new string(' ', level * 3); // 3 spaces per level
         var prefix = level > 0 ? $"{indentation}+- " : "";
@@ -687,18 +669,108 @@ public class MainWindowViewModel : ViewModelBase
 
     private bool IsDescendantOf(LinkTreeItemViewModel item, int ancestorId)
     {
-        if (item.Link.Id == ancestorId)
-            return true;
-            
-        return item.Children.Any(child => IsDescendantOf(child, ancestorId));
+        // Check if 'item' is a descendant of 'ancestorId'
+        // We need to walk up the parent chain of 'item' to see if we find 'ancestorId'
+        var current = item;
+        while (current != null && current.Link.ParentId != null)
+        {
+            if (current.Link.ParentId == ancestorId)
+            {
+                Console.WriteLine($"DEBUG: {item.Link.Name} (ID: {item.Link.Id}) IS a descendant of {ancestorId}");
+                return true;
+            }
+            // Find the parent in the tree to continue walking up
+            current = FindItemInTree(current.Link.ParentId.Value);
+        }
+        
+        Console.WriteLine($"DEBUG: {item.Link.Name} (ID: {item.Link.Id}) is NOT a descendant of {ancestorId}");
+        return false;
     }
 
     private LinkTreeItemViewModel? FindParentInAvailableParents(int? parentId)
     {
-        if (parentId == null)
-            return AvailableParentItems.FirstOrDefault(p => p.Link.Id == 0); // Root level
+        Console.WriteLine($"DEBUG: FindParentInAvailableParents called with parentId: {parentId}");
+        Console.WriteLine($"DEBUG: AvailableParentItems count: {AvailableParentItems.Count}");
+        Console.WriteLine($"DEBUG: Available parent IDs: {string.Join(", ", AvailableParentItems.Select(p => p.Link.Id))}");
         
-        return AvailableParentItems.FirstOrDefault(p => p.Link.Id == parentId);
+        if (parentId == null)
+        {
+            Console.WriteLine("DEBUG: ParentId is null, returning Root Level");
+            return AvailableParentItems.FirstOrDefault(p => p.Link.Id == 0); // Root level
+        }
+        
+        // First try to find the parent in available parents
+        var result = AvailableParentItems.FirstOrDefault(p => p.Link.Id == parentId);
+        
+        if (result != null)
+        {
+            Console.WriteLine($"DEBUG: Found parent directly: {result.Link.Name} (ID: {result.Link.Id})");
+            return result;
+        }
+        
+        Console.WriteLine($"DEBUG: Parent ID {parentId} not found in available parents");
+        
+        // If parent not found in available parents, it might be excluded to prevent circular reference
+        // Let's find the actual parent in the tree and see if we can find a safe alternative
+        var actualParent = FindItemInTree(parentId.Value);
+        if (actualParent != null)
+        {
+            Console.WriteLine($"DEBUG: Found actual parent in tree: {actualParent.Link.Name} (ID: {actualParent.Link.Id}, ParentId: {actualParent.Link.ParentId})");
+            
+            // If the actual parent exists, try to find its parent (grandparent) as the selection
+            // This provides a more intelligent fallback than always going to root
+            if (actualParent.Link.ParentId != null)
+            {
+                var grandParent = AvailableParentItems.FirstOrDefault(p => p.Link.Id == actualParent.Link.ParentId);
+                if (grandParent != null)
+                {
+                    Console.WriteLine($"DEBUG: Using grandparent as fallback: {grandParent.Link.Name} (ID: {grandParent.Link.Id})");
+                    return grandParent;
+                }
+                else
+                {
+                    Console.WriteLine($"DEBUG: Grandparent with ID {actualParent.Link.ParentId} not found in available parents");
+                }
+            }
+            else
+            {
+                Console.WriteLine("DEBUG: Actual parent has no parent (is root level)");
+            }
+        }
+        else
+        {
+            Console.WriteLine($"DEBUG: Could not find parent with ID {parentId} in tree");
+        }
+        
+        // Last resort: default to Root Level
+        Console.WriteLine("DEBUG: Defaulting to Root Level");
+        return AvailableParentItems.FirstOrDefault(p => p.Link.Id == 0);
+    }
+    
+    private LinkTreeItemViewModel? FindItemInTree(int itemId)
+    {
+        foreach (var rootItem in RootLinks)
+        {
+            var found = FindItemInSubtree(rootItem, itemId);
+            if (found != null)
+                return found;
+        }
+        return null;
+    }
+    
+    private LinkTreeItemViewModel? FindItemInSubtree(LinkTreeItemViewModel item, int itemId)
+    {
+        if (item.Link.Id == itemId)
+            return item;
+            
+        foreach (var child in item.Children)
+        {
+            var found = FindItemInSubtree(child, itemId);
+            if (found != null)
+                return found;
+        }
+        
+        return null;
     }
 
     private async Task SaveEditAsync()

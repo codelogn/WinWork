@@ -313,28 +313,19 @@ public class LinkDialogViewModel : ViewModelBase
         Console.WriteLine($"SetParentContext: Setting parent = {parentItem?.Name ?? "null"} (ID: {parentItem?.Link?.Id ?? 0})");
         _parentItem = parentItem;
 
-        if (parentItem?.Link != null)
+        int parentId = parentItem?.Link?.Id ?? 0;
+        var matchingParent = AvailableParents.FirstOrDefault(p => p?.Link?.Id == parentId);
+        if (matchingParent != null)
         {
-            // Always select by ID from AvailableParents
-            var matchingParent = AvailableParents.FirstOrDefault(p => p?.Link?.Id == parentItem.Link.Id);
-            if (matchingParent != null)
-            {
-                SelectedParent = matchingParent;
-                Console.WriteLine($"SetParentContext: Found matching parent in available list: {matchingParent.Name}");
-            }
-            else
-            {
-                // Fallback: select by ID if possible
-                SelectedParent = AvailableParents.FirstOrDefault(p => p?.Link?.Id == parentItem.Link.Id);
-                Console.WriteLine($"SetParentContext: Fallback to ID match, SelectedParent: {SelectedParent?.Name ?? "null"}");
-            }
+            SelectedParent = matchingParent;
+            Console.WriteLine($"SetParentContext: Selected parent by ID: {matchingParent.Name}");
         }
         else
         {
-            // Parent is null, select root level
+            // Fallback to root if not found
             var rootOption = AvailableParents.FirstOrDefault(p => p?.Link?.Id == 0);
             SelectedParent = rootOption;
-            Console.WriteLine($"SetParentContext: Parent is null, selecting root level");
+            Console.WriteLine($"SetParentContext: Parent not found, selecting root level");
         }
 
         OnPropertyChanged(nameof(DialogTitle));

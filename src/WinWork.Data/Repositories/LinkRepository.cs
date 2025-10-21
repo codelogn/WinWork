@@ -42,9 +42,24 @@ public class LinkRepository : ILinkRepository
         var totalCount = await _context.Links.CountAsync();
         System.Diagnostics.Debug.WriteLine($"Total links in database: {totalCount}");
         
-        var rootCount = await _context.Links.Where(l => l.ParentId == null).CountAsync();
-        System.Diagnostics.Debug.WriteLine($"Root links in database: {rootCount}");
+        // Check for orphaned items (items whose ParentId points to non-existent parents)
+        var orphanedItems = await _context.Links
+            .Where(l => l.ParentId != null && !_context.Links.Any(parent => parent.Id == l.ParentId))
+            .ToListAsync();
         
+        if (orphanedItems.Any())
+        {
+            System.Diagnostics.Debug.WriteLine($"WARNING: Found {orphanedItems.Count} orphaned items (ParentId points to non-existent parents):");
+            foreach (var orphan in orphanedItems)
+            {
+                System.Diagnostics.Debug.WriteLine($"  - ORPHANED: {orphan.Name} (ID: {orphan.Id}, ParentId: {orphan.ParentId})");
+            }
+        }
+        
+        var rootCount = await _context.Links.Where(l => l.ParentId == null).CountAsync();
+        System.Diagnostics.Debug.WriteLine($"True root links in database (ParentId == null): {rootCount}");
+        
+        // Get only true root items (ParentId == null) - orphaned items should be handled separately
         var result = await _context.Links
             .Include(l => l.Children.OrderBy(c => c.SortOrder))
             .Include(l => l.LinkTags)
@@ -56,7 +71,7 @@ public class LinkRepository : ILinkRepository
         System.Diagnostics.Debug.WriteLine($"GetRootLinksAsync returning {result.Count} items");
         foreach (var link in result)
         {
-            System.Diagnostics.Debug.WriteLine($"  - {link.Name} (Type: {link.Type}, ParentId: {link.ParentId})");
+            System.Diagnostics.Debug.WriteLine($"  - ROOT: {link.Name} (ID: {link.Id}, Type: {link.Type}, ParentId: {link.ParentId})");
         }
         
         return result;
