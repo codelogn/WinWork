@@ -318,10 +318,16 @@ public class MainWindowViewModel : ViewModelBase
         {
             Console.WriteLine($"  - Child: '{child.Name}' (Type: {child.Type}, ParentId: {child.ParentId})");
             var childViewModel = await CreateLinkTreeItemAsync(child);
+            childViewModel.Parent = null; // will set below
             childViewModels.Add(childViewModel);
         }
         
         var treeItem = new LinkTreeItemViewModel(link, childViewModels);
+        // Assign parent for all children
+        foreach (var childVM in treeItem.Children)
+        {
+            childVM.Parent = treeItem;
+        }
         Console.WriteLine($"CreateLinkTreeItemAsync: Created TreeItem for '{link.Name}' with {treeItem.Children.Count} children");
         
         return treeItem;
@@ -349,7 +355,8 @@ public class MainWindowViewModel : ViewModelBase
         if (linkTreeItem?.Link != null)
         {
             FileLogger.Log($"EditLink called for link: {linkTreeItem.Link.Name}, Type: {linkTreeItem.Link.Type}, ID: {linkTreeItem.Link.Id}");
-            _ = ShowLinkDialog(linkTreeItem.Link);
+            // Pass parent item for correct selection in edit dialog
+            _ = ShowLinkDialog(linkTreeItem.Link, null, linkTreeItem.Parent);
         }
         else
         {

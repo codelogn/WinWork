@@ -19,7 +19,9 @@ public class SettingsService : ISettingsService
         { "StartWithWindows", "false" },
         { "ShowNotifications", "true" },
         { "AutoBackup", "true" },
-        { "BackupInterval", "7" }
+        { "BackupInterval", "7" },
+        { "BackgroundColor", "#FF2B2D30" },
+        { "BackgroundOpacity", "95" }
     };
     public async Task<bool> GetShowNotificationsAsync()
     {
@@ -164,6 +166,47 @@ public class SettingsService : ISettingsService
         }
 
         return success;
+    }
+
+    public async Task<string> GetBackgroundColorAsync()
+    {
+        return await GetSettingAsync("BackgroundColor") ?? "#FF2B2D30";
+    }
+
+    public async Task<bool> SetBackgroundColorAsync(string color)
+    {
+        if (string.IsNullOrWhiteSpace(color))
+            return false;
+
+        // Basic validation for hex color format
+        if (!IsValidHexColor(color))
+            return false;
+
+        return await SetSettingAsync("BackgroundColor", color);
+    }
+
+    public async Task<int> GetBackgroundOpacityAsync()
+    {
+        var value = await GetSettingAsync<int>("BackgroundOpacity");
+        return value ?? 95;
+    }
+
+    public async Task<bool> SetBackgroundOpacityAsync(int opacity)
+    {
+        if (opacity < 10 || opacity > 100)
+            return false;
+
+        return await SetSettingAsync("BackgroundOpacity", opacity);
+    }
+
+    private bool IsValidHexColor(string color)
+    {
+        if (string.IsNullOrWhiteSpace(color))
+            return false;
+
+        // Check if it's a valid hex color (with or without #)
+        var pattern = @"^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$";
+        return System.Text.RegularExpressions.Regex.IsMatch(color, pattern);
     }
 
     private bool IsValidHotkey(string hotkey)

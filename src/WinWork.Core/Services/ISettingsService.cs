@@ -25,4 +25,8 @@ public interface ISettingsService
     Task<bool> SetStartWithWindowsAsync(bool startWithWindows);
     Task<bool> GetShowNotificationsAsync();
     Task<bool> SetShowNotificationsAsync(bool showNotifications);
+    Task<string> GetBackgroundColorAsync();
+    Task<bool> SetBackgroundColorAsync(string color);
+    Task<int> GetBackgroundOpacityAsync();
+    Task<bool> SetBackgroundOpacityAsync(int opacity);
 }

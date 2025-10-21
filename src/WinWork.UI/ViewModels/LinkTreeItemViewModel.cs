@@ -12,6 +12,7 @@ namespace WinWork.UI.ViewModels;
 /// </summary>
 public class LinkTreeItemViewModel : INotifyPropertyChanged
 {
+    public LinkTreeItemViewModel? Parent { get; set; }
     private bool _isExpanded;
     private bool _isSelected;
 

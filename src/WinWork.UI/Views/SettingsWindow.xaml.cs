@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.IO;
 using Microsoft.Win32;
 using WinWork.UI.ViewModels;
@@ -487,26 +488,10 @@ public partial class SettingsWindow : Window
             var mainWindow = Application.Current.MainWindow as MainWindow;
             if (mainWindow == null) return;
 
-            // Helper to update all text foregrounds in a window
+            // Helper to update all text foregrounds in a window recursively
             void UpdateForegrounds(Window window, System.Windows.Media.Brush brush)
             {
-                if (window.Content is Grid grid)
-                {
-                    foreach (var child in grid.Children)
-                    {
-                        if (child is TextBlock tb) tb.Foreground = brush;
-                        if (child is StackPanel sp)
-                        {
-                            foreach (var spChild in sp.Children)
-                            {
-                                if (spChild is TextBlock tb2) tb2.Foreground = brush;
-                                if (spChild is Button btn) btn.Foreground = brush;
-                                if (spChild is ComboBox cb) cb.Foreground = brush;
-                                if (spChild is CheckBox cbx) cbx.Foreground = brush;
-                            }
-                        }
-                    }
-                }
+                UpdateElementForegrounds(window, brush);
             }
 
             switch (theme.ToLower())
@@ -522,6 +507,8 @@ public partial class SettingsWindow : Window
                     ApplyLightTheme(this);
                     UpdateForegrounds(mainWindow, System.Windows.Media.Brushes.Black);
                     UpdateForegrounds(this, System.Windows.Media.Brushes.Black);
+                    // Force refresh the settings content to apply light theme
+                    RefreshSettingsUI();
                     break;
                 case "auto":
                     // For now, default to dark theme for auto mode
@@ -535,6 +522,42 @@ public partial class SettingsWindow : Window
         catch (Exception ex)
         {
             MessageBox.Show($"Failed to apply theme: {ex.Message}", "Theme Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void UpdateElementForegrounds(System.Windows.DependencyObject element, System.Windows.Media.Brush brush)
+    {
+        if (element is TextBlock textBlock)
+        {
+            textBlock.Foreground = brush;
+        }
+        else if (element is Button button)
+        {
+            button.Foreground = brush;
+        }
+        else if (element is ComboBox comboBox)
+        {
+            comboBox.Foreground = brush;
+        }
+        else if (element is CheckBox checkBox)
+        {
+            checkBox.Foreground = brush;
+        }
+
+        // Recursively update children
+        for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(element); i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(element, i);
+            UpdateElementForegrounds(child, brush);
+        }
+    }
+
+    private void RefreshSettingsUI()
+    {
+        // Refresh the currently displayed settings to apply the new theme
+        if (SettingsTreeView.SelectedItem is TreeViewItem selectedItem && selectedItem.Tag is string tag)
+        {
+            LoadSettingsContent(tag);
         }
     }
 
@@ -562,10 +585,77 @@ public partial class SettingsWindow : Window
         lightBackground.GradientStops.Add(new System.Windows.Media.GradientStop(System.Windows.Media.Color.FromArgb(255, 240, 240, 240), 0.0));
         lightBackground.GradientStops.Add(new System.Windows.Media.GradientStop(System.Windows.Media.Color.FromArgb(255, 255, 255, 255), 1.0));
         
+        // Apply light background to the window itself
+        window.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 245, 245, 245));
+        
         if (window.Content is Grid grid)
         {
             grid.Background = lightBackground;
         }
+
+        // Update Border elements for light theme
+        UpdateBordersForLightTheme(window);
+    }
+
+    private void UpdateBordersForLightTheme(Window window)
+    {
+        if (window.Content is Border mainBorder)
+        {
+            // Update main border for light theme
+            mainBorder.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(230, 250, 250, 250));
+            mainBorder.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(100, 100, 100, 100));
+            
+            // Find and update nested elements
+            UpdateElementsForLightTheme(mainBorder);
+        }
+        else if (window.Content is Grid grid)
+        {
+            UpdateElementsForLightTheme(grid);
+        }
+    }
+
+    private void UpdateElementsForLightTheme(System.Windows.DependencyObject parent)
+    {
+        for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+            
+            if (child is Border border)
+            {
+                // Update borders to light theme colors
+                var currentBg = border.Background as System.Windows.Media.SolidColorBrush;
+                if (currentBg != null && IsLikelyDarkColor(currentBg.Color))
+                {
+                    border.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(200, 255, 255, 255));
+                }
+                
+                var currentBorderBrush = border.BorderBrush as System.Windows.Media.SolidColorBrush;
+                if (currentBorderBrush != null)
+                {
+                    border.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(150, 100, 100, 100));
+                }
+            }
+            else if (child is TextBlock textBlock)
+            {
+                // Update text colors for light theme
+                textBlock.Foreground = System.Windows.Media.Brushes.Black;
+            }
+            else if (child is TreeView treeView)
+            {
+                // Update TreeView styling for light theme
+                treeView.Background = System.Windows.Media.Brushes.Transparent;
+            }
+            
+            // Recursively update children
+            UpdateElementsForLightTheme(child);
+        }
+    }
+
+    private bool IsLikelyDarkColor(System.Windows.Media.Color color)
+    {
+        // Consider a color dark if its brightness is below a threshold
+        double brightness = (color.R * 0.299 + color.G * 0.587 + color.B * 0.114);
+        return brightness < 128;
     }
 
     private void ApplyGlassmorphismEffects(bool enable)

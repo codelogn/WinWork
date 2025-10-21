@@ -12,6 +12,7 @@ namespace WinWork.UI.ViewModels;
 /// </summary>
 public class LinkDialogViewModel : ViewModelBase
 {
+    public bool CanSave => CanSaveInternal();
     private string _name = string.Empty;
     private string _url = string.Empty;
     private string _description = string.Empty;
@@ -226,7 +227,7 @@ public class LinkDialogViewModel : ViewModelBase
         SaveCommand = new RelayCommand(() => {
             Save();
         }, () => {
-            bool result = CanSave();
+            bool result = CanSave;
             return result;
         });
         CancelCommand = new RelayCommand(Cancel);
@@ -311,10 +312,10 @@ public class LinkDialogViewModel : ViewModelBase
     {
         Console.WriteLine($"SetParentContext: Setting parent = {parentItem?.Name ?? "null"} (ID: {parentItem?.Link?.Id ?? 0})");
         _parentItem = parentItem;
-        
+
         if (parentItem?.Link != null)
         {
-            // Find the matching parent in the AvailableParents list
+            // Always select by ID from AvailableParents
             var matchingParent = AvailableParents.FirstOrDefault(p => p?.Link?.Id == parentItem.Link.Id);
             if (matchingParent != null)
             {
@@ -323,8 +324,9 @@ public class LinkDialogViewModel : ViewModelBase
             }
             else
             {
-                SelectedParent = parentItem;
-                Console.WriteLine($"SetParentContext: No match found in available list, using provided parent directly");
+                // Fallback: select by ID if possible
+                SelectedParent = AvailableParents.FirstOrDefault(p => p?.Link?.Id == parentItem.Link.Id);
+                Console.WriteLine($"SetParentContext: Fallback to ID match, SelectedParent: {SelectedParent?.Name ?? "null"}");
             }
         }
         else
@@ -334,7 +336,7 @@ public class LinkDialogViewModel : ViewModelBase
             SelectedParent = rootOption;
             Console.WriteLine($"SetParentContext: Parent is null, selecting root level");
         }
-        
+
         OnPropertyChanged(nameof(DialogTitle));
         Console.WriteLine($"SetParentContext: Final SelectedParent = {SelectedParent?.Name ?? "null"}, Dialog title updated to: {DialogTitle}");
     }
@@ -392,14 +394,14 @@ public class LinkDialogViewModel : ViewModelBase
                 }
                 else
                 {
+                    // Respect SelectedParent set by SetParentContext
                     Console.WriteLine($"SetAvailableParents: Keeping existing SelectedParent: {SelectedParent?.Name ?? "null"}");
                 }
             }
         }
-        catch (Exception ex)
+    catch (Exception)
         {
-            Console.WriteLine($"ERROR in SetAvailableParents: {ex.Message}");
-            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            Console.WriteLine($"ERROR in SetAvailableParents");
         }
     }
 
@@ -420,7 +422,7 @@ public class LinkDialogViewModel : ViewModelBase
         OnPropertyChanged(nameof(UrlPlaceholder));
     }
 
-    private bool CanSave()
+    private bool CanSaveInternal()
     {
         
         // Name is always required for all types
@@ -451,7 +453,7 @@ public class LinkDialogViewModel : ViewModelBase
     private void Save()
     {
         
-        if (!CanSave()) 
+    if (!CanSave) 
         {
             return;
         }
@@ -540,7 +542,7 @@ public class LinkDialogViewModel : ViewModelBase
                 }
             }
         }
-        catch (Exception ex)
+    catch (Exception)
         {
             // Fallback to simple text input
         }

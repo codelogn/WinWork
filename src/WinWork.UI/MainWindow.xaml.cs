@@ -14,19 +14,37 @@ using System.Linq;
 using System;
 using System.Collections.ObjectModel;
 
-namespace WinWork.UI;
+namespace WinWork.UI
+{
 
 /// <summary>
 /// Interaction logic for MainWindow.xaml
 /// </summary>
 public partial class MainWindow : Window
 {
-    public MainWindowViewModel ViewModel => DataContext as MainWindowViewModel;
-    public MainWindow(MainWindowViewModel viewModel)
+    // Enable mouse wheel scrolling for left navigation area
+    private void LinksTreeScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        var scrollViewer = sender as ScrollViewer;
+        if (scrollViewer != null)
+        {
+            if (e.Delta != 0)
+            {
+                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - e.Delta / 3.0);
+                e.Handled = true;
+            }
+        }
+    }
+    public MainWindowViewModel ViewModel => (MainWindowViewModel)DataContext;
+
+    public MainWindow()
     {
         InitializeComponent();
+    }
+
+    public MainWindow(MainWindowViewModel viewModel) : this()
+    {
         DataContext = viewModel;
-        
         // Subscribe to dialog requests
         viewModel.LinkDialogRequested += OnLinkDialogRequested;
     }
@@ -247,25 +265,20 @@ public partial class MainWindow : Window
             
             var dialogViewModel = new LinkDialogViewModel();
             
-            // Set available parents (all items) first
-            var allItems = GetAllItems(viewModel.RootLinks);
-            dialogViewModel.SetAvailableParents(allItems);
-            
-            // Set edit mode if editing existing link
             if (e.LinkToEdit != null)
             {
                 dialogViewModel.SetEditMode(e.LinkToEdit);
+                var allItems = GetAllItems(viewModel.RootLinks);
+                dialogViewModel.SetAvailableParents(allItems);
             }
-            // Set initial type if specified
-            else if (e.InitialType.HasValue)
+            else
             {
-                dialogViewModel.SetInitialType(e.InitialType.Value);
-            }
-            
-            // Set parent context if provided (this should be called after SetAvailableParents)
-            if (e.ParentItem != null)
-            {
-                dialogViewModel.SetParentContext(e.ParentItem);
+                if (e.InitialType.HasValue)
+                    dialogViewModel.SetInitialType(e.InitialType.Value);
+                if (e.ParentItem != null)
+                    dialogViewModel.SetParentContext(e.ParentItem);
+                var allItems = GetAllItems(viewModel.RootLinks);
+                dialogViewModel.SetAvailableParents(allItems);
             }
 
             var dialog = new LinkDialog(dialogViewModel)
@@ -1012,4 +1025,5 @@ public partial class MainWindow : Window
     }
 
     #endregion
+}
 }

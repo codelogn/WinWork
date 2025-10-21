@@ -241,7 +241,8 @@
                                           HorizontalScrollBarVisibility="Auto"
                                           Padding="8,4,4,4"
                                           CanContentScroll="True"
-                                          PanningMode="Both">
+                                          PanningMode="Both"
+                                          PreviewMouseWheel="LinksTreeScrollViewer_PreviewMouseWheel">
                                 
                                 <!-- Enhanced TreeView with proper hierarchy -->
                                 <TreeView x:Name="LinksTreeView"

@@ -525,9 +525,18 @@
                     
                     <Button Content="{Binding IsEditMode, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Update|Save'}"
                             Command="{Binding SaveCommand}"
-                            Style="{StaticResource ModernButtonStyle}"
-                            Padding="20,8"
-                            Background="#334CAF50"/>
+                            Padding="20,8">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+                                <Setter Property="Background" Value="#334CAF50"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Path=CanSave, Mode=OneWay}" Value="True">
+                                        <Setter Property="Background" Value="#FF4CAF50"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
                 </StackPanel>
             </Border>
         </Grid>
