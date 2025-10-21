@@ -23,4 +23,6 @@ public interface ISettingsService
     Task<bool> SetMinimizeToTrayAsync(bool minimizeToTray);
     Task<bool> GetStartWithWindowsAsync();
     Task<bool> SetStartWithWindowsAsync(bool startWithWindows);
+    Task<bool> GetShowNotificationsAsync();
+    Task<bool> SetShowNotificationsAsync(bool showNotifications);
 }

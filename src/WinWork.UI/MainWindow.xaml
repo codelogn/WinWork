@@ -137,23 +137,17 @@
                                    Margin="8,0,0,0"/>
                     </StackPanel>
                     
-                    <!-- Right side - Export/Import buttons -->
+                    <!-- Right side - Settings button only -->
                     <StackPanel Grid.Column="1" 
                                 Orientation="Horizontal" 
                                 VerticalAlignment="Center"
                                 Margin="0,0,16,0">
-                        
-                        <Button Content="📤 Export Data" 
-                                Style="{StaticResource ModernButtonStyle}"
-                                Margin="4,0"
-                                ToolTip="Export all data to file"
-                                Click="Export_Click"/>
 
-                        <Button Content="📥 Import Data" 
+                        <Button Content="⚙️ Settings" 
                                 Style="{StaticResource ModernButtonStyle}"
                                 Margin="4,0"
-                                ToolTip="Import data from file"
-                                Click="Import_Click"/>
+                                ToolTip="Application settings"
+                                Click="Settings_Click"/>
                     </StackPanel>
                 </Grid>
             </Border>

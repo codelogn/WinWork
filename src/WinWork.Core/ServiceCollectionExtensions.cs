@@ -15,7 +15,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddWinWorkCore(this IServiceCollection services)
     {
         // Register services
-        services.AddScoped<ILinkService, LinkService>();
+        services.AddScoped<WinWork.Core.Interfaces.ILinkService, LinkService>();
         services.AddScoped<ITagService, TagService>();
         services.AddScoped<ISettingsService, SettingsService>();
         services.AddScoped<ILinkOpenerService, LinkOpenerService>();

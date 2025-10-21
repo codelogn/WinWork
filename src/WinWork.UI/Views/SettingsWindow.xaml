@@ -1,0 +1,288 @@
+<Window x:Class="WinWork.UI.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WinWork.UI.Views"
+        mc:Ignorable="d"
+        Title="Settings - WinWork" 
+    Height="600" Width="900"
+    MinHeight="500" MinWidth="700"
+    WindowStartupLocation="CenterOwner"
+    ResizeMode="CanResize"
+    WindowStyle="SingleBorderWindow"
+    Background="#222">
+    
+    <Window.Resources>
+        <!-- TreeView Item Style for Settings Navigation -->
+        <Style TargetType="TreeViewItem">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="Margin" Value="0,1"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#33FFFFFF"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#19FFFFFF"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <!-- ComboBox Style for Settings with proper dropdown visibility -->
+        <Style TargetType="ComboBox">
+            <Setter Property="Background" Value="#33FFFFFF"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#66FFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton x:Name="ToggleButton"
+                                          Grid.Column="2"
+                                          Focusable="false"
+                                          IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          ClickMode="Press"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}"/>
+                            <ContentPresenter x:Name="ContentSite"
+                                              IsHitTestVisible="False"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                              Margin="8,8,23,8"
+                                              VerticalAlignment="Center"
+                                              HorizontalAlignment="Left"
+                                              TextBlock.Foreground="White"/>
+                            <Popup x:Name="Popup"
+                                   Placement="Bottom"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   PopupAnimation="Slide">
+                                <Grid x:Name="DropDown"
+                                      SnapsToDevicePixels="True"
+                                      MinWidth="{TemplateBinding ActualWidth}"
+                                      MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <Border x:Name="DropDownBorder"
+                                            Background="#E6000000"
+                                            BorderThickness="1"
+                                            BorderBrush="#66FFFFFF"
+                                            CornerRadius="4"/>
+                                    <ScrollViewer Margin="0"
+                                                  SnapsToDevicePixels="True">
+                                        <StackPanel IsItemsHost="True"
+                                                    KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                    </ScrollViewer>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- ComboBoxItem Style for proper visibility -->
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}"
+                                BorderThickness="0">
+                            <ContentPresenter TextBlock.Foreground="White"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter Property="Background" Value="#4DFFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#66FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    
+    <Border Background="#E6000000" 
+            CornerRadius="12" 
+            BorderBrush="#33FFFFFF" 
+            BorderThickness="1">
+        
+        <!-- Window Chrome Effect -->
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="20" 
+                              ShadowDepth="0" 
+                              Color="Black" 
+                              Opacity="0.3"/>
+        </Border.Effect>
+        
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="40"/> <!-- Title Bar -->
+                <RowDefinition Height="50"/> <!-- Header -->
+                <RowDefinition Height="*"/>  <!-- Content -->
+            </Grid.RowDefinitions>
+            
+            <!-- Custom Title Bar -->
+            <Border Grid.Row="0" 
+                    Background="#33FFFFFF" 
+                    CornerRadius="12,12,0,0"
+                    MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Title -->
+                    <TextBlock Grid.Column="0"
+                               Text="Settings - WinWork"
+                               Foreground="White"
+                               FontSize="14"
+                               FontWeight="Medium"
+                               VerticalAlignment="Center"
+                               Margin="16,0,0,0"/>
+                    
+                    <!-- Window Controls -->
+                    <StackPanel Grid.Column="1" 
+                                Orientation="Horizontal">
+                        
+                        <Button Name="CloseButton"
+                                Content="✕"
+                                Style="{StaticResource WindowControlButtonStyle}"
+                                Click="CloseButton_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            
+            <!-- Header -->
+            <Border Grid.Row="1" 
+                    Background="#19FFFFFF" 
+                    BorderBrush="#33FFFFFF" 
+                    BorderThickness="0,1,0,1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <StackPanel Orientation="Horizontal" 
+                                VerticalAlignment="Center"
+                                Margin="16,0">
+                        <TextBlock Text="⚙️ Settings" 
+                                   Foreground="White" 
+                                   FontSize="16" 
+                                   FontWeight="Medium"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="📋 Configure your WinWork preferences" 
+                                   Foreground="#AAFFFFFF" 
+                                   FontSize="12" 
+                                   VerticalAlignment="Center"
+                                   Margin="8,0,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            
+            <!-- Main Content Area -->
+            <Grid Grid.Row="2" Margin="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="250" MinWidth="200"/>
+                    <ColumnDefinition Width="5"/>
+                    <ColumnDefinition Width="*" MinWidth="300"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Left Panel - Settings Categories -->
+                <Border Grid.Column="0" 
+                        Background="#0CFFFFFF" 
+                        CornerRadius="8" 
+                        BorderBrush="#33FFFFFF" 
+                        BorderThickness="1"
+                        Margin="8,8,4,8">
+                    
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <TreeView Name="SettingsTreeView"
+                                  Background="Transparent"
+                                  BorderThickness="0"
+                                  Margin="8"
+                                  SelectedItemChanged="SettingsTreeView_SelectedItemChanged">
+                            
+                            <TreeViewItem Header="General Settings" 
+                                          IsExpanded="True"
+                                          Tag="General">
+                                <TreeViewItem Header="Application" Tag="Application"/>
+                                <TreeViewItem Header="Interface" Tag="Interface"/>
+                                <TreeViewItem Header="Startup" Tag="Startup"/>
+                            </TreeViewItem>
+                            
+                            <TreeViewItem Header="Data &amp; Storage" 
+                                          IsExpanded="False"
+                                          Tag="Data">
+                                <TreeViewItem Header="Database" Tag="Database"/>
+                                <TreeViewItem Header="Backup" Tag="Backup"/>
+                                <TreeViewItem Header="Import/Export" Tag="ImportExport"/>
+                            </TreeViewItem>
+                            
+                            <TreeViewItem Header="Advanced" 
+                                          IsExpanded="False"
+                                          Tag="Advanced">
+                                <TreeViewItem Header="Performance" Tag="Performance"/>
+                                <TreeViewItem Header="Security" Tag="Security"/>
+                                <TreeViewItem Header="Logging" Tag="Logging"/>
+                            </TreeViewItem>
+                            
+                            <TreeViewItem Header="About" Tag="About"/>
+                        </TreeView>
+                    </ScrollViewer>
+                </Border>
+                
+                <!-- Splitter -->
+                <GridSplitter Grid.Column="1" 
+                              Background="#33FFFFFF" 
+                              HorizontalAlignment="Stretch"/>
+                
+                <!-- Right Panel - Settings Content -->
+                <Border Grid.Column="2" 
+                        Background="#0CFFFFFF" 
+                        CornerRadius="8" 
+                        BorderBrush="#33FFFFFF" 
+                        BorderThickness="1"
+                        Margin="4,8,8,8">
+                    
+                    <ScrollViewer Name="SettingsContentScrollViewer"
+                                  VerticalScrollBarVisibility="Auto"
+                                  Padding="16">
+                        
+                        <StackPanel x:Name="SettingsContentPanel">
+                            <!-- Default welcome content -->
+                            <TextBlock Text="Welcome to Settings"
+                                       FontSize="20"
+                                       FontWeight="Bold"
+                                       Foreground="White"
+                                       Margin="0,0,0,16"/>
+                            
+                            <TextBlock Text="Select a category from the left panel to configure your WinWork settings."
+                                       FontSize="14"
+                                       Foreground="#CCFFFFFF"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                        
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

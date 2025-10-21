@@ -6,8 +6,14 @@ namespace WinWork.Core.Services;
 /// <summary>
 /// Service implementation for link management operations
 /// </summary>
-public class LinkService : ILinkService
+public class LinkService : WinWork.Core.Interfaces.ILinkService
 {
+    // Legacy method to satisfy interface; use DeleteLinkRecursiveAsync instead
+    public async Task<bool> DeleteLinkAsync(int id)
+    {
+        var deleted = await DeleteLinkRecursiveAsync(id);
+        return deleted.Count > 0;
+    }
     private readonly ILinkRepository _linkRepository;
     private readonly ILinkOpenerService _linkOpenerService;
 
@@ -87,19 +93,27 @@ public class LinkService : ILinkService
         return await _linkRepository.UpdateAsync(link);
     }
 
-    public async Task<bool> DeleteLinkAsync(int id)
+    public async Task<List<(string Name, LinkType Type)>> DeleteLinkRecursiveAsync(int id)
     {
+        var deletedItems = new List<(string Name, LinkType Type)>();
         var link = await _linkRepository.GetByIdAsync(id);
         if (link == null)
-            return false;
+            return deletedItems;
 
-        // Check if it's a folder with children
-        if (link.Type == LinkType.Folder && link.Children.Any())
+        // Recursively delete children first
+        if (link.Children != null && link.Children.Any())
         {
-            throw new InvalidOperationException("Cannot delete folder with children. Move or delete children first.");
+            foreach (var child in link.Children.ToList())
+            {
+                var childDeleted = await DeleteLinkRecursiveAsync(child.Id);
+                deletedItems.AddRange(childDeleted);
+            }
         }
 
-        return await _linkRepository.DeleteAsync(id);
+        // Delete this link
+        await _linkRepository.DeleteAsync(id);
+        deletedItems.Add((link.Name, link.Type));
+        return deletedItems;
     }
 
     public async Task<bool> MoveLinkAsync(int linkId, int? newParentId, int newSortOrder)

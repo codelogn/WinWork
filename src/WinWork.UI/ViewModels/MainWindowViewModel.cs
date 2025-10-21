@@ -53,8 +53,9 @@ public abstract class ViewModelBase : INotifyPropertyChanged
 /// </summary>
 public class MainWindowViewModel : ViewModelBase
 {
-    private readonly ILinkService _linkService;
+    private readonly WinWork.Core.Interfaces.ILinkService _linkService;
     private readonly ITagService _tagService;
+    public ISettingsService SettingsService => _settingsService;
     private readonly ISettingsService _settingsService;
     private readonly ILinkOpenerService _linkOpenerService;
     private readonly IImportExportService _importExportService;
@@ -94,7 +95,7 @@ public class MainWindowViewModel : ViewModelBase
     public ICommand ImportDataCommand { get; }
 
     public MainWindowViewModel(
-        ILinkService linkService,
+    WinWork.Core.Interfaces.ILinkService linkService,
         ITagService tagService,
         ISettingsService settingsService,
         ILinkOpenerService linkOpenerService,
@@ -770,17 +771,22 @@ public class MainWindowViewModel : ViewModelBase
 
             if (result == System.Windows.MessageBoxResult.Yes)
             {
-                Console.WriteLine("DEBUG: User confirmed deletion, calling DeleteLinkAsync...");
-                await _linkService.DeleteLinkAsync(linkId);
-                
-                Console.WriteLine("DEBUG: DeleteLinkAsync completed, clearing edit form...");
+                Console.WriteLine("DEBUG: User confirmed deletion, calling DeleteLinkRecursiveAsync...");
+                var deletedItems = await _linkService.DeleteLinkRecursiveAsync(linkId);
+
+                Console.WriteLine("DEBUG: DeleteLinkRecursiveAsync completed, clearing edit form...");
                 ClearEditForm(); // Clear the edit form first
-                
+
                 Console.WriteLine("DEBUG: Edit form cleared, refreshing tree...");
                 await LoadLinksAsync(); // Refresh the tree
-                
+
+                // Build summary string
+                var summary = "The following items were deleted:\n\n" + string.Join("\n", deletedItems.Select(x => $"- {x.Name} ({x.Type})"));
+
+                System.Windows.MessageBox.Show(summary, "Delete Summary", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+
                 Console.WriteLine("DEBUG: Tree refreshed, showing success message...");
-                DisplaySuccessMessage($"'{linkName}' deleted successfully!");
+                DisplaySuccessMessage($"{deletedItems.Count} item(s) deleted successfully!");
                 Console.WriteLine("DEBUG: Delete operation completed successfully");
             }
         }

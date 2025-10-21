@@ -17,9 +17,20 @@ public class SettingsService : ISettingsService
         { "GlobalHotkey", "Ctrl+Alt+L" },
         { "MinimizeToTray", "true" },
         { "StartWithWindows", "false" },
+        { "ShowNotifications", "true" },
         { "AutoBackup", "true" },
         { "BackupInterval", "7" }
     };
+    public async Task<bool> GetShowNotificationsAsync()
+    {
+        var value = await GetSettingAsync<bool>("ShowNotifications");
+        return value ?? true;
+    }
+
+    public async Task<bool> SetShowNotificationsAsync(bool showNotifications)
+    {
+        return await SetSettingAsync("ShowNotifications", showNotifications);
+    }
 
     public SettingsService(ISettingsRepository settingsRepository)
     {

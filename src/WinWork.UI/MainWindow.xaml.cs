@@ -21,6 +21,7 @@ namespace WinWork.UI;
 /// </summary>
 public partial class MainWindow : Window
 {
+    public MainWindowViewModel ViewModel => DataContext as MainWindowViewModel;
     public MainWindow(MainWindowViewModel viewModel)
     {
         InitializeComponent();
@@ -83,6 +84,13 @@ public partial class MainWindow : Window
         {
             viewModel.ImportDataCommand?.Execute(null);
         }
+    }
+
+    private void Settings_Click(object sender, RoutedEventArgs e)
+    {
+        var settingsWindow = new Views.SettingsWindow();
+        settingsWindow.Owner = this;
+        settingsWindow.ShowDialog();
     }
     #endregion
 
