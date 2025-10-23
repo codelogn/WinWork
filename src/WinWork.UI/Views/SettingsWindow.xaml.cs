@@ -571,8 +571,13 @@ public partial class SettingsWindow : Window
     AddCheckBox("Enable automatic backups", true);
     AddNumericSetting("Backup interval (hours):", 24);
     AddNumericSetting("Keep backups for (days):", 30);
-    AddTextSetting("Backup folder:", backupFolder);
+
+    // Show the current backup folder path in a file-path style control
+    AddFilePathSetting("Backup folder:", string.IsNullOrWhiteSpace(backupFolder) ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\WinWork\\Backups" : backupFolder);
+
+    // Browse and Create Backup actions
     AddButton("📂 Choose Backup Folder", () => ChooseBackupFolder());
+    AddButton("🛟 Create Backup Now", () => CreateBackupNow());
     }
 
     private void LoadImportExportSettings()
@@ -1385,23 +1390,7 @@ public partial class SettingsWindow : Window
         }
     }
 
-    private void CreateBackupNow()
-    {
-        try
-        {
-            var mainWindow = Application.Current.MainWindow as MainWindow;
-            if (mainWindow?.DataContext is MainWindowViewModel viewModel)
-            {
-                // Use the export functionality to create a backup
-                viewModel.ExportDataCommand?.Execute(null);
-                MessageBox.Show("Backup created successfully!", "Backup Complete", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Failed to create backup: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-    }
+    
 
     private void ExportAllData()
     {
@@ -1469,12 +1458,17 @@ public partial class SettingsWindow : Window
 
     private string GetCurrentDatabasePath()
     {
-        // Get the default database path (in the application directory)
-        var appDirectory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? "";
-        var defaultPath = System.IO.Path.Combine(appDirectory, "linker.db");
-        
-        // TODO: In a real implementation, this would come from configuration
-        return defaultPath;
+        // Use the application's default database path (AppData\WinWork\winwork.db)
+        try
+        {
+            return WinWork.Data.DatabaseConfiguration.GetDefaultDatabasePath();
+        }
+        catch
+        {
+            // Fallback: application directory name (legacy)
+            var appDirectory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? "";
+            return System.IO.Path.Combine(appDirectory, "winwork.db");
+        }
     }
 
     private string GetDatabaseFileSize(string path)
@@ -1634,14 +1628,14 @@ public partial class SettingsWindow : Window
     private void ResetDatabaseToDefault()
     {
         var result = MessageBox.Show(
-            "This will reset the database path to the default location (linker.db in the application directory).\n\nDo you want to continue?",
+            "This will reset the database path to the default location (AppData\\WinWork\\winwork.db).\n\nDo you want to continue?",
             "Reset Database Path",
             MessageBoxButton.YesNo,
             MessageBoxImage.Question);
 
         if (result == MessageBoxResult.Yes)
         {
-            // Find the database path textbox and reset it
+            // Find the database path textbox and reset it to the standard AppData location
             var defaultPath = GetCurrentDatabasePath();
             
             // Update the textbox (this is a simplified approach - in a real app you'd use proper data binding)
@@ -1747,8 +1741,25 @@ public partial class SettingsWindow : Window
             if (saveFileDialog.ShowDialog() == true)
             {
                 var selectedPath = Path.GetDirectoryName(saveFileDialog.FileName) ?? "";
-                MessageBox.Show($"Backup folder set to:\n{selectedPath}", 
-                    "Backup Folder Updated", MessageBoxButton.OK, MessageBoxImage.Information);
+                if (!string.IsNullOrWhiteSpace(selectedPath))
+                {
+                    // Persist selected backup folder to settings
+                    var mainWindow = Application.Current.MainWindow as MainWindow;
+                    var settingsService = mainWindow?.ViewModel?.SettingsService;
+                    try
+                    {
+                        if (!Directory.Exists(selectedPath)) Directory.CreateDirectory(selectedPath);
+                        if (settingsService != null)
+                        {
+                            // Save as simple string setting
+                            settingsService.SetSettingAsync("BackupFolder", selectedPath).Wait();
+                        }
+                    }
+                    catch { }
+
+                    MessageBox.Show($"Backup folder set to:\n{selectedPath}", 
+                        "Backup Folder Updated", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
             }
         }
         catch (Exception ex)
@@ -1774,6 +1785,47 @@ public partial class SettingsWindow : Window
         {
             MessageBox.Show($"Failed to open log folder: {ex.Message}", 
                 "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void CreateBackupNow()
+    {
+        try
+        {
+            var mainWindow = Application.Current.MainWindow as MainWindow;
+            var settingsService = mainWindow?.ViewModel?.SettingsService;
+
+            // Determine backup folder: priority - saved setting, default Documents\WinWork\Backups
+            string backupFolder = settingsService != null ? (settingsService.GetSettingAsync("BackupFolder").Result ?? "") : "";
+            if (string.IsNullOrWhiteSpace(backupFolder))
+            {
+                backupFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "WinWork", "Backups");
+            }
+
+            if (!Directory.Exists(backupFolder))
+            {
+                Directory.CreateDirectory(backupFolder);
+            }
+
+            // Locate current DB
+            var dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "WinWork", "winwork.db");
+            if (!File.Exists(dbPath))
+            {
+                MessageBox.Show($"Database file not found: {dbPath}", "Backup Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            var destFile = Path.Combine(backupFolder, $"winwork_backup_{timestamp}.db");
+
+            // Copy the DB file (overwrite if exists)
+            File.Copy(dbPath, destFile, overwrite: true);
+
+            MessageBox.Show($"Backup created:\n{destFile}", "Backup Created", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Failed to create backup: {ex.Message}", "Backup Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
