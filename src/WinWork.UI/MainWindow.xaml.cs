@@ -291,6 +291,26 @@ public partial class MainWindow : Window
             LinkDeleteEventArgs? deleteArgs = null;
             dialogViewModel.LinkSaved += (s, e) => saveArgs = e;
             dialogViewModel.LinkDeleted += (s, e) => deleteArgs = e;
+            dialogViewModel.TestRequested += async (s, e) =>
+            {
+                try
+                {
+                    // Use the window's DataContext ViewModel to access services
+                    if (DataContext is MainWindowViewModel mwvm)
+                    {
+                        var args = e as WinWork.UI.ViewModels.LinkDialogViewModel.TerminalTestEventArgs;
+                        if (args != null)
+                        {
+                            // Use the link opener service to start the terminal
+                            await mwvm.HandleItemDoubleClick(new WinWork.UI.ViewModels.LinkTreeItemViewModel(new WinWork.Models.Link { Type = WinWork.Models.LinkType.Terminal, TerminalType = args.TerminalType, Command = args.Command }));
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to launch terminal: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            };
 
             if (dialog.ShowDialog() == true)
             {

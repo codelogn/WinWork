@@ -38,6 +38,7 @@ public class LinkDialogViewModel : ViewModelBase
     public ICommand BrowseFileCommand { get; }
     public ICommand BrowseFolderCommand { get; }
     public ICommand BrowseApplicationCommand { get; }
+    public ICommand TestCommand { get; private set; }
 
 
     public string DialogTitle 
@@ -262,6 +263,7 @@ public class LinkDialogViewModel : ViewModelBase
     public event EventHandler<LinkSaveEventArgs>? LinkSaved;
     public event EventHandler? DialogCancelled;
     public event EventHandler<LinkDeleteEventArgs>? LinkDeleted;
+    public event EventHandler<TerminalTestEventArgs>? TestRequested;
 
     private readonly WinWork.Core.Services.ISettingsService? _uiSettingsService;
 
@@ -287,6 +289,7 @@ public class LinkDialogViewModel : ViewModelBase
         BrowseFileCommand = new RelayCommand(BrowseFile);
         BrowseFolderCommand = new RelayCommand(BrowseFolder);
         BrowseApplicationCommand = new RelayCommand(BrowseApplication);
+    TestCommand = new RelayCommand(() => OnTestRequested(), () => IsTerminalType && !string.IsNullOrWhiteSpace(Command));
 
         UpdateUrlPlaceholder();
 
@@ -294,6 +297,15 @@ public class LinkDialogViewModel : ViewModelBase
         TerminalOptions.Add("PowerShell");
         TerminalOptions.Add("Git Bash");
         TerminalOptions.Add("CMD");
+
+        // Ensure Command change reevaluates TestCommand availability
+        PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(Command) || e.PropertyName == nameof(TerminalType) || e.PropertyName == nameof(SelectedLinkType))
+            {
+                System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+            }
+        };
 
     // Note: do not force SelectedLinkTypeItem here; SetEditMode will assign it when editing
 
@@ -705,6 +717,24 @@ public class LinkDialogViewModel : ViewModelBase
             {
                 Name = System.IO.Path.GetFileNameWithoutExtension(dialog.FileName);
             }
+        }
+    }
+
+    private void OnTestRequested()
+    {
+        // Raise an event so the UI host can execute the terminal without saving
+        TestRequested?.Invoke(this, new TerminalTestEventArgs(TerminalType, Command));
+    }
+
+    public class TerminalTestEventArgs : EventArgs
+    {
+        public string TerminalType { get; }
+        public string Command { get; }
+
+        public TerminalTestEventArgs(string terminalType, string command)
+        {
+            TerminalType = terminalType ?? string.Empty;
+            Command = command ?? string.Empty;
         }
     }
 

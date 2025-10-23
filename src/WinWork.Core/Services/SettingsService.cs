@@ -27,7 +27,9 @@ public class SettingsService : ISettingsService
     // Convenience accessors for terminal settings
     public async Task<string> GetTerminalPowerShellPathAsync()
     {
-        return await GetSettingAsync("Terminal.PowerShellPath") ?? "powershell.exe";
+        var val = await GetSettingAsync("Terminal.PowerShellPath");
+        if (string.IsNullOrWhiteSpace(val)) return "powershell.exe";
+        return val;
     }
 
     public async Task<bool> SetTerminalPowerShellPathAsync(string path)
@@ -37,7 +39,9 @@ public class SettingsService : ISettingsService
 
     public async Task<string> GetTerminalGitBashPathAsync()
     {
-        return await GetSettingAsync("Terminal.GitBashPath") ?? string.Empty;
+        var val = await GetSettingAsync("Terminal.GitBashPath");
+        if (string.IsNullOrWhiteSpace(val)) return string.Empty;
+        return val;
     }
 
     public async Task<bool> SetTerminalGitBashPathAsync(string path)
@@ -47,7 +51,9 @@ public class SettingsService : ISettingsService
 
     public async Task<string> GetTerminalCmdPathAsync()
     {
-        return await GetSettingAsync("Terminal.CmdPath") ?? "cmd.exe";
+        var val = await GetSettingAsync("Terminal.CmdPath");
+        if (string.IsNullOrWhiteSpace(val)) return "cmd.exe";
+        return val;
     }
 
     public async Task<bool> SetTerminalCmdPathAsync(string path)

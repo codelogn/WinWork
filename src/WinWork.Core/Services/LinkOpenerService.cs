@@ -15,6 +15,27 @@ public class LinkOpenerService : ILinkOpenerService
     {
         _settingsService = settingsService;
     }
+
+    // Convert a Windows path (C:\...) to a MSYS-style path (/c/...) for bash/mintty
+    private static string ConvertToMsysPath(string windowsPath)
+    {
+        if (string.IsNullOrWhiteSpace(windowsPath)) return windowsPath;
+        try
+        {
+            var full = Path.GetFullPath(windowsPath).Replace('\\', '/');
+            // C:/path -> /c/path
+            if (Regex.IsMatch(full, "^[A-Za-z]:/"))
+            {
+                var drive = char.ToLower(full[0]);
+                return "/" + drive + full.Substring(2);
+            }
+            return full;
+        }
+        catch
+        {
+            return windowsPath;
+        }
+    }
     public async Task<bool> OpenAsync(Link link)
     {
         if (link == null)
@@ -375,38 +396,224 @@ public class LinkOpenerService : ILinkOpenerService
             {
                 // Prefer configured Git Bash path if available
                 var configuredGit = _settingsService != null ? await _settingsService.GetTerminalGitBashPathAsync() : string.Empty;
-                if (!string.IsNullOrWhiteSpace(configuredGit) && File.Exists(configuredGit))
+                Console.WriteLine($"[LinkOpener] Configured Git Bash value from settings: '{configuredGit}'");
+                if (!string.IsNullOrWhiteSpace(configuredGit))
                 {
-                    var psi = new ProcessStartInfo
+                    // Support configured value that may include arguments (exe + args). Parse it.
+                    var (configuredExe, configuredArgs) = ParseApplicationPath(configuredGit);
+                    Console.WriteLine($"[LinkOpener] Parsed configuredExe='{configuredExe}', configuredArgs='{configuredArgs}'");
+                    if (!string.IsNullOrWhiteSpace(configuredExe) && File.Exists(configuredExe))
                     {
-                        FileName = configuredGit,
-                        Arguments = $"--login -i -c \"{(command ?? string.Empty).Replace("\"", "\\\"") }\"",
-                        UseShellExecute = true
-                    };
-                    return await StartProcessAsync(psi);
+                        Console.WriteLine($"[LinkOpener] Found configured exe at: {configuredExe}");
+                        // Build arguments by merging configured args with the command wrapper.
+                        if (string.IsNullOrWhiteSpace(command))
+                        {
+                            var startInfo = new ProcessStartInfo
+                            {
+                                FileName = configuredExe,
+                                Arguments = configuredArgs,
+                                UseShellExecute = true
+                            };
+                            if (await StartProcessAsync(startInfo)) return true;
+                        }
+                        else
+                        {
+                            var cmdEscaped = (command ?? string.Empty).Replace("\"", "\\\"");
+                            var exeName = Path.GetFileName(configuredExe).ToLowerInvariant();
+
+                            // Merge configured args then append a wrapper that keeps bash interactive.
+                            string finalArgs;
+                            bool useShellExecute = true;
+
+                            if (exeName.Contains("mintty"))
+                            {
+                                // mintty: pass through configured args and then run bash -lc "...; exec bash"
+                                finalArgs = (string.IsNullOrWhiteSpace(configuredArgs) ? string.Empty : configuredArgs + " ")
+                                    + $"-e \"/usr/bin/bash\" -lc \"{cmdEscaped}; exec bash\"";
+                                useShellExecute = false;
+                            }
+                            else if (exeName.Contains("bash"))
+                            {
+                                // bash.exe: pass configured args then -lc
+                                finalArgs = (string.IsNullOrWhiteSpace(configuredArgs) ? string.Empty : configuredArgs + " ")
+                                    + $"-lc \"{cmdEscaped}; exec bash\"";
+                            }
+                            else if (exeName.Contains("git-bash"))
+                            {
+                                // git-bash.exe launcher: append configured args and a -c wrapper (may not be supported by launcher)
+                                finalArgs = (string.IsNullOrWhiteSpace(configuredArgs) ? string.Empty : configuredArgs + " ")
+                                    + $"--login -i -c \"{cmdEscaped}; exec bash\"";
+                            }
+                            else
+                            {
+                                // Generic executable: pass configured args and the command as-is
+                                finalArgs = (string.IsNullOrWhiteSpace(configuredArgs) ? string.Empty : configuredArgs + " ") + cmdEscaped;
+                            }
+
+                            var startInfo = new ProcessStartInfo
+                            {
+                                FileName = configuredExe,
+                                Arguments = finalArgs,
+                                UseShellExecute = useShellExecute
+                            };
+                            Console.WriteLine($"[LinkOpener] Starting configured exe: {configuredExe} {finalArgs} (UseShellExecute={useShellExecute})");
+                            if (await StartProcessAsync(startInfo)) return true;
+                        }
+                    }
+
+                    // If configured path didn't start (or didn't exist), fall back to searching common locations
+                    try
+                    {
+                        var dir = Path.GetDirectoryName(configuredGit) ?? string.Empty;
+                        var possibleMintty = Path.Combine(dir, "usr", "bin", "mintty.exe");
+                        Console.WriteLine($"[LinkOpener] Checking for possible mintty at: {possibleMintty}");
+                        var possibleBash = Path.Combine(dir, "usr", "bin", "bash.exe");
+                        Console.WriteLine($"[LinkOpener] Checking for possible bash at: {possibleBash}");
+
+                        if (File.Exists(possibleMintty))
+                        {
+                            if (string.IsNullOrWhiteSpace(command))
+                            {
+                                var startInfo = new ProcessStartInfo
+                                {
+                                    FileName = possibleMintty,
+                                    Arguments = "-e \"/usr/bin/bash\" -i -l",
+                                    UseShellExecute = false
+                                };
+                                return await StartProcessAsync(startInfo);
+                            }
+
+                            var tempPath = Path.Combine(Path.GetTempPath(), $"winwork_cmd_{Guid.NewGuid():N}.sh");
+                            var scriptContent = command + Environment.NewLine + "exec bash" + Environment.NewLine;
+                            File.WriteAllText(tempPath, scriptContent);
+                            var msysPath = ConvertToMsysPath(tempPath);
+
+                            var args = $"-e \"/usr/bin/bash\" -lc \"source {msysPath}; exec bash\"";
+
+                            var startInfo2 = new ProcessStartInfo
+                            {
+                                FileName = possibleMintty,
+                                Arguments = args,
+                                UseShellExecute = false
+                            };
+                            Console.WriteLine($"[LinkOpener] Launching mintty: {possibleMintty} {args}");
+                            return await StartProcessAsync(startInfo2);
+                        }
+
+                        if (File.Exists(possibleBash))
+                        {
+                            if (string.IsNullOrWhiteSpace(command))
+                            {
+                                var startInfo = new ProcessStartInfo
+                                {
+                                    FileName = possibleBash,
+                                    Arguments = "-i",
+                                    UseShellExecute = true
+                                };
+                                return await StartProcessAsync(startInfo);
+                            }
+
+                            var tempPath = Path.Combine(Path.GetTempPath(), $"winwork_cmd_{Guid.NewGuid():N}.sh");
+                            var scriptContent = command + Environment.NewLine + "exec bash" + Environment.NewLine;
+                            File.WriteAllText(tempPath, scriptContent);
+                            var msysPath = ConvertToMsysPath(tempPath);
+
+                            var args = $"-lc \"source {msysPath}; exec bash\"";
+
+                            var startInfo3 = new ProcessStartInfo
+                            {
+                                FileName = possibleBash,
+                                Arguments = args,
+                                UseShellExecute = true
+                            };
+                            Console.WriteLine($"[LinkOpener] Launching bash.exe: {possibleBash} {args}");
+                            return await StartProcessAsync(startInfo3);
+                        }
+                    }
+                    catch
+                    {
+                        // fallthrough
+                    }
+
+                    return false;
                 }
 
                 // Try common Git Bash path
                 var gitBashPath = "C:\\Program Files\\Git\\git-bash.exe";
                 if (File.Exists(gitBashPath))
                 {
-                    var psi = new ProcessStartInfo
+                    // Prefer the underlying bash.exe located relative to git-bash.exe
+                    try
+                    {
+                        var dir = Path.GetDirectoryName(gitBashPath) ?? string.Empty;
+                        var possibleMintty = Path.Combine(dir, "usr", "bin", "mintty.exe");
+                        var possibleBash = Path.Combine(dir, "usr", "bin", "bash.exe");
+
+                        if (File.Exists(possibleMintty))
+                        {
+                            var cmdEscaped = (command ?? string.Empty).Replace("\"", "\\\"");
+                            var args = string.IsNullOrWhiteSpace(cmdEscaped)
+                                ? "-e \"/usr/bin/bash\" -i -l"
+                                : $"-e \"/usr/bin/bash\" -lc \"{cmdEscaped}; exec bash\"";
+
+                            var psi = new ProcessStartInfo
+                            {
+                                FileName = possibleMintty,
+                                Arguments = args,
+                                UseShellExecute = false
+                            };
+                            return await StartProcessAsync(psi);
+                        }
+
+                        if (File.Exists(possibleBash))
+                        {
+                            var cmdEscaped = (command ?? string.Empty).Replace("\"", "\\\"");
+                            var args = string.IsNullOrWhiteSpace(cmdEscaped)
+                                ? "-i"
+                                : $"-lc \"{cmdEscaped}; exec bash\"";
+
+                            var psi = new ProcessStartInfo
+                            {
+                                FileName = possibleBash,
+                                Arguments = args,
+                                UseShellExecute = true
+                            };
+                            return await StartProcessAsync(psi);
+                        }
+                    }
+                    catch
+                    {
+                        // fallthrough to launching git-bash.exe
+                    }
+
+                    // Fallback: start git-bash.exe directly
+                    var cmdEscapedFallback2 = (command ?? string.Empty).Replace("\"", "\\\"");
+                    var argsFallback2 = string.IsNullOrWhiteSpace(cmdEscapedFallback2)
+                        ? "--login -i"
+                        : $"--login -i -c \"{cmdEscapedFallback2}; exec bash\"";
+
+                    var psi2 = new ProcessStartInfo
                     {
                         FileName = gitBashPath,
-                        Arguments = $"--login -i -c \"{(command ?? string.Empty).Replace("\"", "\\\"") }\"",
+                        Arguments = argsFallback2,
                         UseShellExecute = true
                     };
-                    return await StartProcessAsync(psi);
+                    return await StartProcessAsync(psi2);
                 }
 
                 // Fallback to bash if available
                 var bashPath = "C:\\Program Files\\Git\\usr\\bin\\bash.exe";
                 if (File.Exists(bashPath))
                 {
+                    var cmdEscaped = (command ?? string.Empty).Replace("\"", "\\\"");
+                    var args = string.IsNullOrWhiteSpace(cmdEscaped)
+                        ? "-i"
+                        : $"-lc \"{cmdEscaped}; exec bash\"";
+
                     var psi = new ProcessStartInfo
                     {
                         FileName = bashPath,
-                        Arguments = $"-lc \"{(command ?? string.Empty).Replace("\"", "\\\"") }\"",
+                        Arguments = args,
                         UseShellExecute = true
                     };
                     return await StartProcessAsync(psi);

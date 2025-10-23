@@ -266,6 +266,31 @@ public partial class SettingsWindow : Window
         var cmdPath = settingsService != null ? await settingsService.GetTerminalCmdPathAsync() : "cmd.exe";
         var defaultTerminal = settingsService != null ? await settingsService.GetDefaultTerminalAsync() : "PowerShell";
 
+        // If the stored Git Bash path is empty, try to auto-detect common Git for Windows locations
+        if (string.IsNullOrWhiteSpace(gitPath))
+        {
+            var candidates = new[]
+            {
+                "C:\\Program Files\\Git\\git-bash.exe",
+                "C:\\Program Files (x86)\\Git\\git-bash.exe",
+                "C:\\Program Files\\Git\\usr\\bin\\bash.exe",
+                "C:\\Program Files (x86)\\Git\\usr\\bin\\bash.exe"
+            };
+
+            foreach (var c in candidates)
+            {
+                try
+                {
+                    if (System.IO.File.Exists(c))
+                    {
+                        gitPath = c;
+                        break;
+                    }
+                }
+                catch { }
+            }
+        }
+
     AddSectionSubHeader("Terminal Settings");
     AddFilePathSetting("PowerShell path:", psPath);
     AddFilePathSetting("Git Bash path:", gitPath);
@@ -279,7 +304,9 @@ public partial class SettingsWindow : Window
         {
             if (child is StackPanel sp && sp.Children.Count >= 2 && sp.Children[0] is TextBlock tb && tb.Text == label)
             {
-                if (sp.Children[1] is TextBox tbx) return tbx.Text ?? string.Empty;
+                // The TextBox may be directly the second child or nested inside another panel (e.g., a horizontal pathPanel)
+                var target = FindNestedTextBox(sp.Children[1]);
+                if (target != null) return target.Text ?? string.Empty;
             }
         }
         return string.Empty;
@@ -291,10 +318,60 @@ public partial class SettingsWindow : Window
         {
             if (child is StackPanel sp && sp.Children.Count >= 2 && sp.Children[0] is TextBlock tb && tb.Text == label)
             {
-                if (sp.Children[1] is ComboBox cb && cb.SelectedItem != null) return cb.SelectedItem.ToString() ?? string.Empty;
+                var cb = FindNestedComboBox(sp.Children[1]);
+                if (cb != null && cb.SelectedItem != null) return cb.SelectedItem.ToString() ?? string.Empty;
             }
         }
         return string.Empty;
+    }
+
+    // Recursive helpers to find nested controls inside a container
+    System.Windows.Controls.TextBox? FindNestedTextBox(object? obj)
+    {
+        if (obj == null) return null;
+        if (obj is System.Windows.Controls.TextBox tb) return tb;
+        if (obj is System.Windows.DependencyObject dobj)
+        {
+            // If it's a Panel, iterate children
+            if (dobj is System.Windows.Controls.Panel panel)
+            {
+                foreach (var child in panel.Children)
+                {
+                    var found = FindNestedTextBox(child);
+                    if (found != null) return found;
+                }
+            }
+            // If it's a ContentControl, check Content
+            if (dobj is System.Windows.Controls.ContentControl cc && cc.Content != null)
+            {
+                var found = FindNestedTextBox(cc.Content);
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    System.Windows.Controls.ComboBox? FindNestedComboBox(object? obj)
+    {
+        if (obj == null) return null;
+        if (obj is System.Windows.Controls.ComboBox cb) return cb;
+        if (obj is System.Windows.DependencyObject dobj)
+        {
+            if (dobj is System.Windows.Controls.Panel panel)
+            {
+                foreach (var child in panel.Children)
+                {
+                    var found = FindNestedComboBox(child);
+                    if (found != null) return found;
+                }
+            }
+            if (dobj is System.Windows.Controls.ContentControl cc && cc.Content != null)
+            {
+                var found = FindNestedComboBox(cc.Content);
+                if (found != null) return found;
+            }
+        }
+        return null;
     }
 
     // Save button for terminal settings
@@ -313,9 +390,10 @@ public partial class SettingsWindow : Window
             var newCmd = FindTextBoxValue("CMD path:");
             var newDefault = FindComboBoxValue("Default terminal:");
 
-            await settingsService.SetTerminalPowerShellPathAsync(newPs);
-            await settingsService.SetTerminalGitBashPathAsync(newGit);
-            await settingsService.SetTerminalCmdPathAsync(newCmd);
+            // Only update non-empty values to avoid accidentally clearing existing configured paths
+            if (!string.IsNullOrWhiteSpace(newPs)) await settingsService.SetTerminalPowerShellPathAsync(newPs);
+            if (!string.IsNullOrWhiteSpace(newGit)) await settingsService.SetTerminalGitBashPathAsync(newGit);
+            if (!string.IsNullOrWhiteSpace(newCmd)) await settingsService.SetTerminalCmdPathAsync(newCmd);
             if (!string.IsNullOrWhiteSpace(newDefault)) await settingsService.SetDefaultTerminalAsync(newDefault);
 
             MessageBox.Show("Terminal settings saved.", "Saved", MessageBoxButton.OK, MessageBoxImage.Information);

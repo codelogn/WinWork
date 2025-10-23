@@ -775,6 +775,12 @@
                                              TextWrapping="Wrap"
                                              AcceptsReturn="True"
                                              VerticalScrollBarVisibility="Auto"/>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                                        <Button Content="Test"
+                                                Command="{Binding TestEditCommand}"
+                                                Style="{StaticResource ModernButtonStyle}"
+                                                Width="80" Height="36"/>
+                                    </StackPanel>
                                 </StackPanel>
                                 
                                 <!-- URL/Path Field (Hidden for Folders, Notes and Terminal) -->

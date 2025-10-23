@@ -94,6 +94,7 @@ public class MainWindowViewModel : ViewModelBase
     public ICommand SaveEditCommand { get; }
     public ICommand CancelEditCommand { get; }
     public ICommand DeleteEditCommand { get; }
+    public ICommand TestEditCommand { get; }
     public ICommand ExportDataCommand { get; }
     public ICommand ImportDataCommand { get; }
 
@@ -129,6 +130,7 @@ public class MainWindowViewModel : ViewModelBase
         SaveEditCommand = new AsyncRelayCommand(SaveEditAsync, CanSaveEdit);
         CancelEditCommand = new RelayCommand(CancelEdit);
         DeleteEditCommand = new AsyncRelayCommand(DeleteEditAsync, CanDeleteEdit);
+    TestEditCommand = new RelayCommand(async () => await RunTestForEditAsync(), () => CanRunTestForEdit());
         ExportDataCommand = new AsyncRelayCommand(ExportDataAsync);
         ImportDataCommand = new AsyncRelayCommand(ImportDataAsync);
         
@@ -193,6 +195,31 @@ public class MainWindowViewModel : ViewModelBase
             {
                 System.Windows.Input.CommandManager.InvalidateRequerySuggested();
             }
+        }
+    }
+
+    private bool CanRunTestForEdit()
+    {
+        return !string.IsNullOrWhiteSpace(EditCommand) && EditType == LinkType.Terminal;
+    }
+
+    private async Task RunTestForEditAsync()
+    {
+        try
+        {
+            // Construct a temporary Link to pass to the opener
+            var tempLink = new Link
+            {
+                Type = LinkType.Terminal,
+                TerminalType = EditTerminalType,
+                Command = EditCommand
+            };
+
+            await _linkOpenerService.OpenAsync(tempLink);
+        }
+        catch (Exception ex)
+        {
+            DisplayErrorMessage($"Failed to run test: {ex.Message}");
         }
     }
 
