@@ -29,4 +29,14 @@ public interface ISettingsService
     Task<bool> SetBackgroundColorAsync(string color);
     Task<int> GetBackgroundOpacityAsync();
     Task<bool> SetBackgroundOpacityAsync(int opacity);
+
+    // Terminal specific settings
+    Task<string> GetTerminalPowerShellPathAsync();
+    Task<bool> SetTerminalPowerShellPathAsync(string path);
+    Task<string> GetTerminalGitBashPathAsync();
+    Task<bool> SetTerminalGitBashPathAsync(string path);
+    Task<string> GetTerminalCmdPathAsync();
+    Task<bool> SetTerminalCmdPathAsync(string path);
+    Task<string> GetDefaultTerminalAsync();
+    Task<bool> SetDefaultTerminalAsync(string terminal);
 }

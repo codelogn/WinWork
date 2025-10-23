@@ -23,6 +23,50 @@ public class SettingsService : ISettingsService
         { "BackgroundColor", "#FF2B2D30" },
         { "BackgroundOpacity", "95" }
     };
+    
+    // Convenience accessors for terminal settings
+    public async Task<string> GetTerminalPowerShellPathAsync()
+    {
+        return await GetSettingAsync("Terminal.PowerShellPath") ?? "powershell.exe";
+    }
+
+    public async Task<bool> SetTerminalPowerShellPathAsync(string path)
+    {
+        return await SetSettingAsync("Terminal.PowerShellPath", path ?? string.Empty);
+    }
+
+    public async Task<string> GetTerminalGitBashPathAsync()
+    {
+        return await GetSettingAsync("Terminal.GitBashPath") ?? string.Empty;
+    }
+
+    public async Task<bool> SetTerminalGitBashPathAsync(string path)
+    {
+        return await SetSettingAsync("Terminal.GitBashPath", path ?? string.Empty);
+    }
+
+    public async Task<string> GetTerminalCmdPathAsync()
+    {
+        return await GetSettingAsync("Terminal.CmdPath") ?? "cmd.exe";
+    }
+
+    public async Task<bool> SetTerminalCmdPathAsync(string path)
+    {
+        return await SetSettingAsync("Terminal.CmdPath", path ?? string.Empty);
+    }
+
+    public async Task<string> GetDefaultTerminalAsync()
+    {
+        return await GetSettingAsync("Terminal.Default") ?? "PowerShell";
+    }
+
+    public async Task<bool> SetDefaultTerminalAsync(string terminal)
+    {
+        if (string.IsNullOrWhiteSpace(terminal)) return false;
+        var valid = new[] { "PowerShell", "Git Bash", "CMD" };
+        if (!valid.Contains(terminal, StringComparer.OrdinalIgnoreCase)) return false;
+        return await SetSettingAsync("Terminal.Default", terminal);
+    }
     public async Task<bool> GetShowNotificationsAsync()
     {
         var value = await GetSettingAsync<bool>("ShowNotifications");

@@ -9,9 +9,25 @@ namespace WinWork.Core.Services;
 /// </summary>
 public class LinkOpenerService : ILinkOpenerService
 {
+    private readonly ISettingsService? _settingsService;
+
+    public LinkOpenerService(ISettingsService? settingsService = null)
+    {
+        _settingsService = settingsService;
+    }
     public async Task<bool> OpenAsync(Link link)
     {
-        if (link == null || string.IsNullOrWhiteSpace(link.Url))
+        if (link == null)
+            return false;
+
+        if (link.Type == LinkType.Terminal)
+        {
+            // For Terminal type, use TerminalType first; fallback to Url for older entries
+            var shell = !string.IsNullOrWhiteSpace(link.TerminalType) ? link.TerminalType : (link.Url ?? string.Empty);
+            return await OpenTerminalAsync(shell, link.Command);
+        }
+
+        if (string.IsNullOrWhiteSpace(link.Url))
             return false;
 
         return await OpenAsync(link.Url, link.Type);
@@ -32,6 +48,7 @@ public class LinkOpenerService : ILinkOpenerService
                 LinkType.Application => await OpenApplicationAsync(url),
                 LinkType.WindowsStoreApp => await OpenWindowsStoreAppAsync(url),
                 LinkType.SystemLocation => await OpenSystemLocationAsync(url),
+                LinkType.Terminal => await OpenTerminalAsync(url, null),
                 _ => false
             };
         }
@@ -54,6 +71,7 @@ public class LinkOpenerService : ILinkOpenerService
             LinkType.Application => true,
             LinkType.WindowsStoreApp => true,
             LinkType.SystemLocation => true,
+            LinkType.Terminal => true,
             _ => false
         };
     }
@@ -328,5 +346,104 @@ public class LinkOpenerService : ILinkOpenerService
         // System locations: shell:, ms-settings:, etc.
         var systemPrefixes = new[] { "shell:", "ms-settings:", "ms-", "control.exe", "rundll32.exe" };
         return systemPrefixes.Any(prefix => location.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task<bool> OpenTerminalAsync(string shell, string? command)
+    {
+        // shell: expected values like "PowerShell", "Git Bash", "CMD" or path to shell
+        // command: command(s) to run in the terminal
+        if (string.IsNullOrWhiteSpace(shell)) return false;
+
+        try
+        {
+            shell = shell.Trim();
+
+            if (shell.Equals("PowerShell", StringComparison.OrdinalIgnoreCase))
+            {
+                // Prefer configured PowerShell path if available
+                var psPath = _settingsService != null ? await _settingsService.GetTerminalPowerShellPathAsync() : "powershell.exe";
+                var psi = new ProcessStartInfo
+                {
+                    FileName = string.IsNullOrWhiteSpace(psPath) ? "powershell.exe" : psPath,
+                    Arguments = $"-NoExit -Command \"{(command ?? string.Empty).Replace("\"", "\\\"") }\"",
+                    UseShellExecute = true
+                };
+                return await StartProcessAsync(psi);
+            }
+
+            if (shell.Equals("Git Bash", StringComparison.OrdinalIgnoreCase) || shell.Equals("GitBash", StringComparison.OrdinalIgnoreCase))
+            {
+                // Prefer configured Git Bash path if available
+                var configuredGit = _settingsService != null ? await _settingsService.GetTerminalGitBashPathAsync() : string.Empty;
+                if (!string.IsNullOrWhiteSpace(configuredGit) && File.Exists(configuredGit))
+                {
+                    var psi = new ProcessStartInfo
+                    {
+                        FileName = configuredGit,
+                        Arguments = $"--login -i -c \"{(command ?? string.Empty).Replace("\"", "\\\"") }\"",
+                        UseShellExecute = true
+                    };
+                    return await StartProcessAsync(psi);
+                }
+
+                // Try common Git Bash path
+                var gitBashPath = "C:\\Program Files\\Git\\git-bash.exe";
+                if (File.Exists(gitBashPath))
+                {
+                    var psi = new ProcessStartInfo
+                    {
+                        FileName = gitBashPath,
+                        Arguments = $"--login -i -c \"{(command ?? string.Empty).Replace("\"", "\\\"") }\"",
+                        UseShellExecute = true
+                    };
+                    return await StartProcessAsync(psi);
+                }
+
+                // Fallback to bash if available
+                var bashPath = "C:\\Program Files\\Git\\usr\\bin\\bash.exe";
+                if (File.Exists(bashPath))
+                {
+                    var psi = new ProcessStartInfo
+                    {
+                        FileName = bashPath,
+                        Arguments = $"-lc \"{(command ?? string.Empty).Replace("\"", "\\\"") }\"",
+                        UseShellExecute = true
+                    };
+                    return await StartProcessAsync(psi);
+                }
+
+                return false;
+            }
+
+            if (shell.Equals("CMD", StringComparison.OrdinalIgnoreCase) || shell.Equals("Command Prompt", StringComparison.OrdinalIgnoreCase))
+            {
+                var configuredCmd = _settingsService != null ? await _settingsService.GetTerminalCmdPathAsync() : "cmd.exe";
+                var psi = new ProcessStartInfo
+                {
+                    FileName = string.IsNullOrWhiteSpace(configuredCmd) ? "cmd.exe" : configuredCmd,
+                    Arguments = $"/k {(command ?? string.Empty)}",
+                    UseShellExecute = true
+                };
+                return await StartProcessAsync(psi);
+            }
+
+            // If shell is a path to an executable, just start it with the command as arguments
+            if (File.Exists(shell))
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = shell,
+                    Arguments = command ?? string.Empty,
+                    UseShellExecute = true
+                };
+                return await StartProcessAsync(psi);
+            }
+
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

@@ -75,6 +75,8 @@ public class MainWindowViewModel : ViewModelBase
     private string _editTags = string.Empty;
     private string _editNotes = string.Empty;
     private LinkType _editType = LinkType.WebUrl;
+    private string _editCommand = string.Empty;
+    private string _editTerminalType = string.Empty;
     private bool _isEditingItem = false;
     private Link? _originalLinkForEdit;
     private LinkTreeItemViewModel? _editParentItem;
@@ -82,6 +84,7 @@ public class MainWindowViewModel : ViewModelBase
     public ObservableCollection<LinkTreeItemViewModel> RootLinks { get; }
     public ObservableCollection<LinkTypeItem> LinkTypes { get; }
     public ObservableCollection<LinkTreeItemViewModel> AvailableParentItems { get; }
+    public ObservableCollection<string> TerminalOptions { get; }
 
     // Commands
     public ICommand AddLinkCommand { get; }
@@ -109,13 +112,13 @@ public class MainWindowViewModel : ViewModelBase
 
         RootLinks = new ObservableCollection<LinkTreeItemViewModel>();
     AvailableParentItems = new ObservableCollection<LinkTreeItemViewModel>();
-        LinkTypes = new ObservableCollection<LinkTypeItem>
+        // Use the centralized provider so all UI places show the same LinkType options
+        LinkTypes = new ObservableCollection<LinkTypeItem>(LinkTypeProvider.DefaultLinkTypes);
+        TerminalOptions = new ObservableCollection<string>
         {
-            new LinkTypeItem(LinkType.Folder, "📁 Folder", "Organize items into groups"),
-            new LinkTypeItem(LinkType.WebUrl, "🌐 Web URL", "Website or web page"),
-            new LinkTypeItem(LinkType.FilePath, "📄 File", "Local file or document"),
-            new LinkTypeItem(LinkType.Application, "💻 Application", "Executable program"),
-            new LinkTypeItem(LinkType.Notes, "📝 Notes", "Text notes and memos")
+            "PowerShell",
+            "Git Bash",
+            "CMD"
         };
 
         // Initialize commands
@@ -181,6 +184,24 @@ public class MainWindowViewModel : ViewModelBase
         set => SetProperty(ref _editUrl, value);
     }
 
+    public string EditCommand
+    {
+        get => _editCommand;
+        set
+        {
+            if (SetProperty(ref _editCommand, value))
+            {
+                System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+            }
+        }
+    }
+
+    public string EditTerminalType
+    {
+        get => _editTerminalType;
+        set => SetProperty(ref _editTerminalType, value);
+    }
+
     public string EditDescription
     {
         get => _editDescription;
@@ -202,7 +223,13 @@ public class MainWindowViewModel : ViewModelBase
     public LinkType EditType
     {
         get => _editType;
-        set => SetProperty(ref _editType, value);
+        set
+        {
+            if (SetProperty(ref _editType, value))
+            {
+                System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+            }
+        }
     }
 
     public bool IsEditingItem
@@ -324,6 +351,19 @@ public class MainWindowViewModel : ViewModelBase
         if (linkTreeItem?.Link != null)
         {
             FileLogger.Log($"EditLink called for link: {linkTreeItem.Link.Name}, Type: {linkTreeItem.Link.Type}, ID: {linkTreeItem.Link.Id}");
+            // Log current LinkTypes known to the MainWindow (should include Terminal)
+            try
+            {
+                FileLogger.Log($"LinkTypes count: {LinkTypes?.Count}");
+                foreach (var lt in LinkTypes ?? Enumerable.Empty<LinkTypeItem>())
+                {
+                    FileLogger.Log($"LinkType entry: Type={lt.Type}, Display='{lt.DisplayName}'");
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.Log($"Error logging LinkTypes: {ex.Message}");
+            }
             // Pass parent item for correct selection in edit dialog
             _ = ShowLinkDialog(linkTreeItem.Link, null, linkTreeItem.Parent);
         }
@@ -581,6 +621,9 @@ public class MainWindowViewModel : ViewModelBase
             EditTags = ConvertTagsToString(_selectedLink.Link.LinkTags);
             EditNotes = _selectedLink.Link.Notes ?? string.Empty;
             EditType = _selectedLink.Link.Type;
+            // If terminal, load terminal-specific fields
+            EditTerminalType = _selectedLink.Link.TerminalType ?? string.Empty;
+            EditCommand = _selectedLink.Link.Command ?? string.Empty;
             IsEditingItem = true;
             
             // Populate available parents and set current parent
@@ -606,6 +649,8 @@ public class MainWindowViewModel : ViewModelBase
         EditNotes = string.Empty;
         EditType = LinkType.WebUrl;
     EditParentItem = null;
+        EditCommand = string.Empty;
+        EditTerminalType = string.Empty;
         IsEditingItem = false;
     }
 
@@ -785,6 +830,17 @@ public class MainWindowViewModel : ViewModelBase
             _originalLinkForEdit.Description = string.IsNullOrWhiteSpace(EditDescription) ? null : EditDescription.Trim();
             _originalLinkForEdit.Notes = EditType == LinkType.Notes ? (string.IsNullOrWhiteSpace(EditNotes) ? null : EditNotes.Trim()) : null;
             _originalLinkForEdit.Type = EditType;
+            if (EditType == LinkType.Terminal)
+            {
+                _originalLinkForEdit.Command = string.IsNullOrWhiteSpace(EditCommand) ? null : EditCommand.Trim();
+                _originalLinkForEdit.TerminalType = string.IsNullOrWhiteSpace(EditTerminalType) ? null : EditTerminalType.Trim();
+            }
+            else
+            {
+                // Clear terminal fields when not terminal
+                _originalLinkForEdit.Command = null;
+                _originalLinkForEdit.TerminalType = null;
+            }
             _originalLinkForEdit.ParentId = EditParentItem?.Link.Id == 0 ? null : EditParentItem?.Link.Id;
             _originalLinkForEdit.UpdatedAt = DateTime.UtcNow;
 
@@ -817,6 +873,10 @@ public class MainWindowViewModel : ViewModelBase
                 // Notes require both name and notes content
                 return !string.IsNullOrWhiteSpace(EditNotes);
                 
+            case LinkType.Terminal:
+                // Terminal requires a command
+                return !string.IsNullOrWhiteSpace(EditCommand);
+
             default:
                 // All other link types require a URL
                 return !string.IsNullOrWhiteSpace(EditUrl);

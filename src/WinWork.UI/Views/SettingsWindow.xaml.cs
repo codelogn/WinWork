@@ -5,6 +5,8 @@ using System.Windows.Media;
 using System.IO;
 using Microsoft.Win32;
 using WinWork.UI.ViewModels;
+using Microsoft.EntityFrameworkCore;
+using WinWork.Data;
 
 namespace WinWork.UI.Views
 {
@@ -13,6 +15,48 @@ namespace WinWork.UI.Views
 /// </summary>
 public partial class SettingsWindow : Window
 {
+    // Tracks whether the currently applied theme is Light
+    private bool _isLightTheme = false;
+
+    // Helper to return the correct primary foreground brush for current theme
+    private System.Windows.Media.Brush GetForegroundBrush()
+    {
+        return _isLightTheme ? System.Windows.Media.Brushes.Black : System.Windows.Media.Brushes.White;
+    }
+
+    // Helper to return the correct secondary (subtle) foreground brush for current theme
+    private System.Windows.Media.Brush GetSecondaryForegroundBrush()
+    {
+        if (_isLightTheme)
+            return new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(204, 0, 0, 0));
+        return new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(204, 255, 255, 255));
+    }
+
+    // Helper to return the appropriate control background for current theme
+    private System.Windows.Media.Brush GetBackgroundBrush()
+    {
+        if (_isLightTheme)
+            return new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 255, 255));
+        return new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(51, 255, 255, 255));
+    }
+
+    // Control background (used for TextBox/ComboBox etc.)
+    private System.Windows.Media.Brush GetControlBackgroundBrush()
+    {
+        // For light theme use an opaque light background, for dark use a subtle translucent dark overlay
+        return _isLightTheme
+            ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 255, 255))
+            : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(51, 0, 0, 0));
+    }
+
+    // Control border brush (used for TextBox/ComboBox borders)
+    private System.Windows.Media.Brush GetControlBorderBrush()
+    {
+        return _isLightTheme
+            ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 0, 0, 0))
+            : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 255, 255, 255));
+    }
+
     public SettingsWindow()
     {
         InitializeComponent();
@@ -21,6 +65,48 @@ public partial class SettingsWindow : Window
         if (SettingsTreeView.Items.Count > 0 && SettingsTreeView.Items[0] is TreeViewItem firstItem)
         {
             firstItem.IsSelected = true;
+        }
+
+        // Ensure this settings window reflects the current app theme.
+        var mainWindow = Application.Current?.MainWindow as MainWindow;
+        try
+        {
+            var settingsService = mainWindow?.ViewModel?.SettingsService;
+            if (settingsService != null)
+            {
+                var savedTheme = settingsService.GetThemeAsync().Result;
+                _isLightTheme = string.Equals(savedTheme, "Light", StringComparison.OrdinalIgnoreCase);
+            }
+            else if (mainWindow != null && mainWindow.Background is System.Windows.Media.SolidColorBrush mainBg)
+            {
+                _isLightTheme = !IsLikelyDarkColor(mainBg.Color);
+            }
+            else
+            {
+                _isLightTheme = false;
+            }
+
+            if (_isLightTheme)
+            {
+                ApplyLightTheme(mainWindow);
+                ApplyLightTheme(this);
+            }
+            else
+            {
+                ApplyDarkTheme(mainWindow);
+                ApplyDarkTheme(this);
+            }
+
+            UpdateElementForegrounds(mainWindow, GetForegroundBrush());
+            UpdateElementForegrounds(this, GetForegroundBrush());
+            UpdateExistingSettingsControls();
+        }
+        catch
+        {
+            // If anything goes wrong reading saved theme, fall back to dark theme
+            _isLightTheme = false;
+            ApplyDarkTheme(mainWindow);
+            UpdateElementForegrounds(this, GetForegroundBrush());
         }
     }
 
@@ -174,6 +260,134 @@ public partial class SettingsWindow : Window
         var glassmorphism = settingsService != null ? (await settingsService.GetSettingAsync<bool>("GlassmorphismEffects") ?? true) : true;
         
         AddThemeComboBox("Theme:", new[] { "Dark", "Light", "Auto" }, currentTheme);
+        // Terminal settings UI
+        var psPath = settingsService != null ? await settingsService.GetTerminalPowerShellPathAsync() : "powershell.exe";
+        var gitPath = settingsService != null ? await settingsService.GetTerminalGitBashPathAsync() : string.Empty;
+        var cmdPath = settingsService != null ? await settingsService.GetTerminalCmdPathAsync() : "cmd.exe";
+        var defaultTerminal = settingsService != null ? await settingsService.GetDefaultTerminalAsync() : "PowerShell";
+
+    AddSectionSubHeader("Terminal Settings");
+    AddFilePathSetting("PowerShell path:", psPath);
+    AddFilePathSetting("Git Bash path:", gitPath);
+    AddFilePathSetting("CMD path:", cmdPath);
+    AddComboBoxSetting("Default terminal:", new[] { "PowerShell", "Git Bash", "CMD" }, defaultTerminal);
+
+    // Local helpers to read the current UI values for the terminal settings
+    string FindTextBoxValue(string label)
+    {
+        foreach (var child in SettingsContentPanel.Children)
+        {
+            if (child is StackPanel sp && sp.Children.Count >= 2 && sp.Children[0] is TextBlock tb && tb.Text == label)
+            {
+                if (sp.Children[1] is TextBox tbx) return tbx.Text ?? string.Empty;
+            }
+        }
+        return string.Empty;
+    }
+
+    string FindComboBoxValue(string label)
+    {
+        foreach (var child in SettingsContentPanel.Children)
+        {
+            if (child is StackPanel sp && sp.Children.Count >= 2 && sp.Children[0] is TextBlock tb && tb.Text == label)
+            {
+                if (sp.Children[1] is ComboBox cb && cb.SelectedItem != null) return cb.SelectedItem.ToString() ?? string.Empty;
+            }
+        }
+        return string.Empty;
+    }
+
+    // Save button for terminal settings
+    AddButton("💾 Save Terminal Settings", async () =>
+    {
+        try
+        {
+            if (settingsService == null)
+            {
+                MessageBox.Show("Settings service unavailable. Cannot save.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            var newPs = FindTextBoxValue("PowerShell path:");
+            var newGit = FindTextBoxValue("Git Bash path:");
+            var newCmd = FindTextBoxValue("CMD path:");
+            var newDefault = FindComboBoxValue("Default terminal:");
+
+            await settingsService.SetTerminalPowerShellPathAsync(newPs);
+            await settingsService.SetTerminalGitBashPathAsync(newGit);
+            await settingsService.SetTerminalCmdPathAsync(newCmd);
+            if (!string.IsNullOrWhiteSpace(newDefault)) await settingsService.SetDefaultTerminalAsync(newDefault);
+
+            MessageBox.Show("Terminal settings saved.", "Saved", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Failed to save settings: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    });
+
+    // Test button to launch the configured/default terminal with a harmless test command
+    AddButton("🔬 Test Terminal", () =>
+    {
+        try
+        {
+            var selDefault = FindComboBoxValue("Default terminal:");
+            var ps = FindTextBoxValue("PowerShell path:");
+            var git = FindTextBoxValue("Git Bash path:");
+            var cmd = FindTextBoxValue("CMD path:");
+
+            string shellPath = selDefault switch
+            {
+                "PowerShell" => string.IsNullOrWhiteSpace(ps) ? "powershell.exe" : ps,
+                "Git Bash" => string.IsNullOrWhiteSpace(git) ? git : git,
+                "CMD" => string.IsNullOrWhiteSpace(cmd) ? "cmd.exe" : cmd,
+                _ => string.IsNullOrWhiteSpace(ps) ? "powershell.exe" : ps
+            };
+
+            if (string.IsNullOrWhiteSpace(shellPath))
+            {
+                MessageBox.Show("No terminal executable path configured for the selected terminal.", "Test Terminal", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            string args = string.Empty;
+            if (selDefault == "PowerShell")
+            {
+                args = "-NoExit -Command \"Write-Host 'WinWork terminal test'\"";
+            }
+            else if (selDefault == "CMD")
+            {
+                args = "/k echo WinWork terminal test";
+            }
+            else if (selDefault == "Git Bash")
+            {
+                // If the configured path points to git-bash.exe, launching it without args opens a terminal
+                if (shellPath.EndsWith("git-bash.exe", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    args = string.Empty;
+                }
+                else
+                {
+                    // Assume a bash.exe style shell
+                    args = "--login -i -c \"echo 'WinWork terminal test'; read -p 'Press Enter to close'\"";
+                }
+            }
+
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = shellPath,
+                UseShellExecute = true,
+                Arguments = args
+            };
+
+            System.Diagnostics.Process.Start(psi);
+            MessageBox.Show("Test terminal launched. Check the terminal window for the test output.", "Test Terminal", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (System.Exception ex)
+        {
+            MessageBox.Show($"Failed to launch test terminal: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    });
         AddCheckBox("Show tree view icons", showTreeIcons);
         AddCheckBox("Enable glassmorphism effects", glassmorphism);
         AddTransparencySlider("Window transparency (%):", currentTransparency);
@@ -208,7 +422,7 @@ public partial class SettingsWindow : Window
         AddTextSetting("Backup location:", Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\WinWork\\Backups");
     }
 
-    private void LoadDatabaseSettings()
+    private async void LoadDatabaseSettings()
     {
         AddSectionHeader("Database Settings");
         AddDescription("Configure database connection and maintenance options.");
@@ -225,42 +439,43 @@ public partial class SettingsWindow : Window
 
         AddSeparator();
         AddSectionSubHeader("Database Information");
+        // Add a refresh button so users can re-query DB info on demand
+        AddButton("🔄 Refresh Database Info", () => {
+            // Reload the Database settings section to refresh info
+            LoadDatabaseSettings();
+        });
+
         AddInfoSection("Current Status:", "Connected");
         AddInfoSection("Database Path:", currentPath);
         AddInfoSection("File Size:", GetDatabaseFileSize(currentPath));
         AddInfoSection("Last Modified:", GetDatabaseLastModified(currentPath));
 
-        // Query total records count and tables info
+        // Query total records count and tables info using a temporary DbContext against the configured DB file
         int recordsCount = 0;
         int tagsCount = 0;
         int linkTagsCount = 0;
+
         try
         {
-            var mainWindow = Application.Current.MainWindow as MainWindow;
-            var viewModel = mainWindow?.ViewModel;
-            var linkService = viewModel?.GetType().GetProperty("_linkService", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(viewModel) as WinWork.Core.Interfaces.ILinkService;
-            var tagService = viewModel?.GetType().GetProperty("_tagService", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(viewModel) as WinWork.Core.Services.ITagService;
-            if (linkService != null)
+            var optionsBuilder = new DbContextOptionsBuilder<WinWorkDbContext>();
+            optionsBuilder.UseSqlite($"Data Source={currentPath}");
+
+            using var ctx = new WinWorkDbContext(optionsBuilder.Options);
+            // Ensure the database file exists before querying
+            if (File.Exists(currentPath))
             {
-                var allLinksTask = linkService.GetAllLinksAsync();
-                allLinksTask.Wait();
-                recordsCount = allLinksTask.Result.Count();
-            }
-            if (tagService != null)
-            {
-                var allTagsTask = tagService.GetAllTagsAsync();
-                allTagsTask.Wait();
-                tagsCount = allTagsTask.Result.Count();
-            }
-            // For LinkTags, we need to count all link.LinkTags
-            if (linkService != null)
-            {
-                var allLinksTask = linkService.GetAllLinksAsync();
-                allLinksTask.Wait();
-                linkTagsCount = allLinksTask.Result.SelectMany(l => l.LinkTags ?? new List<WinWork.Models.LinkTag>()).Count();
+                // Use EF to count rows
+                recordsCount = await ctx.Links.CountAsync();
+                tagsCount = await ctx.Tags.CountAsync();
+                linkTagsCount = await ctx.LinkTags.CountAsync();
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            // If DB access fails, show 'Unable to read' in the UI but don't crash settings
+            System.Diagnostics.Debug.WriteLine($"Failed to read DB counts: {ex.Message}");
+        }
+
         AddInfoSection("Links Table Records:", recordsCount.ToString());
         AddInfoSection("Tags Table Records:", tagsCount.ToString());
         AddInfoSection("LinkTags Table Records:", linkTagsCount.ToString());
@@ -373,7 +588,7 @@ public partial class SettingsWindow : Window
             Text = title,
             FontSize = 20,
             FontWeight = FontWeights.Bold,
-            Foreground = System.Windows.Media.Brushes.White,
+            Foreground = GetForegroundBrush(),
             Margin = new Thickness(0, 0, 0, 16)
         };
         SettingsContentPanel.Children.Add(header);
@@ -385,7 +600,7 @@ public partial class SettingsWindow : Window
         {
             Text = description,
             FontSize = 14,
-            Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(204, 255, 255, 255)),
+            Foreground = GetSecondaryForegroundBrush(),
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 20)
         };
@@ -398,7 +613,7 @@ public partial class SettingsWindow : Window
         {
             Content = label,
             IsChecked = isChecked,
-            Foreground = System.Windows.Media.Brushes.White,
+            Foreground = GetForegroundBrush(),
             Margin = new Thickness(0, 0, 0, 12),
             FontSize = 14
         };
@@ -497,25 +712,31 @@ public partial class SettingsWindow : Window
             switch (theme.ToLower())
             {
                 case "dark":
+                    _isLightTheme = false;
                     ApplyDarkTheme(mainWindow);
                     ApplyDarkTheme(this);
-                    UpdateForegrounds(mainWindow, System.Windows.Media.Brushes.White);
-                    UpdateForegrounds(this, System.Windows.Media.Brushes.White);
+                    UpdateForegrounds(mainWindow, GetForegroundBrush());
+                    UpdateForegrounds(this, GetForegroundBrush());
                     break;
                 case "light":
+                    _isLightTheme = true;
                     ApplyLightTheme(mainWindow);
                     ApplyLightTheme(this);
-                    UpdateForegrounds(mainWindow, System.Windows.Media.Brushes.Black);
-                    UpdateForegrounds(this, System.Windows.Media.Brushes.Black);
+                    UpdateForegrounds(mainWindow, GetForegroundBrush());
+                    UpdateForegrounds(this, GetForegroundBrush());
                     // Force refresh the settings content to apply light theme
                     RefreshSettingsUI();
+                    // Update existing form fields immediately
+                    UpdateExistingSettingsControls();
                     break;
                 case "auto":
                     // For now, default to dark theme for auto mode
+                    _isLightTheme = false;
                     ApplyDarkTheme(mainWindow);
                     ApplyDarkTheme(this);
-                    UpdateForegrounds(mainWindow, System.Windows.Media.Brushes.White);
-                    UpdateForegrounds(this, System.Windows.Media.Brushes.White);
+                    UpdateForegrounds(mainWindow, GetForegroundBrush());
+                    UpdateForegrounds(this, GetForegroundBrush());
+                    UpdateExistingSettingsControls();
                     break;
             }
         }
@@ -543,6 +764,10 @@ public partial class SettingsWindow : Window
         {
             checkBox.Foreground = brush;
         }
+        else if (element is TextBox textBox)
+        {
+            textBox.Foreground = brush;
+        }
 
         // Recursively update children
         for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(element); i++)
@@ -561,6 +786,82 @@ public partial class SettingsWindow : Window
         }
     }
 
+    // Walk the currently displayed settings content and update common form fields
+    // so their Foreground/Background/BorderBrush match the current theme immediately.
+    private void UpdateExistingSettingsControls()
+    {
+        if (SettingsContentPanel == null) return;
+
+        void UpdateRecursive(System.Windows.DependencyObject parent)
+        {
+            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+
+                switch (child)
+                {
+                    case TextBlock tb:
+                        tb.Foreground = GetForegroundBrush();
+                        break;
+                    case TextBox tbox:
+                        tbox.Foreground = GetForegroundBrush();
+                        tbox.Background = GetControlBackgroundBrush();
+                        tbox.BorderBrush = GetControlBorderBrush();
+                        break;
+                    case ComboBox cb:
+                        cb.Foreground = GetForegroundBrush();
+                        cb.Background = GetControlBackgroundBrush();
+                        cb.BorderBrush = GetControlBorderBrush();
+                        break;
+                    case CheckBox chb:
+                        chb.Foreground = GetForegroundBrush();
+                        break;
+                    case Button btn:
+                        btn.Foreground = GetForegroundBrush();
+                        break;
+                    case Slider s:
+                        // Slider has no Foreground, but update nearby label if any
+                        break;
+                }
+
+                UpdateRecursive(child);
+            }
+        }
+
+        UpdateRecursive(SettingsContentPanel);
+
+        // Also update the left navigation TreeView and its items
+        try
+        {
+            if (SettingsTreeView != null)
+            {
+                SettingsTreeView.Foreground = GetForegroundBrush();
+                foreach (var item in SettingsTreeView.Items)
+                {
+                    if (item is TreeViewItem tvi)
+                    {
+                        UpdateTreeViewItemRecursive(tvi);
+                    }
+                }
+            }
+        }
+        catch { }
+    }
+
+    private void UpdateTreeViewItemRecursive(TreeViewItem tvi)
+    {
+        tvi.Foreground = GetForegroundBrush();
+        // Update header text blocks if present
+        if (tvi.Header is TextBlock tb)
+            tb.Foreground = GetForegroundBrush();
+
+        foreach (var child in tvi.Items)
+        {
+            if (child is TreeViewItem childTvi)
+                UpdateTreeViewItemRecursive(childTvi);
+        }
+    }
+
     private void ApplyDarkTheme(Window window)
     {
         // Apply dark theme colors
@@ -573,6 +874,56 @@ public partial class SettingsWindow : Window
         if (window.Content is Grid grid)
         {
             grid.Background = darkBackground;
+        }
+
+        // Restore borders/elements changed by light theme
+        UpdateBordersForDarkTheme(window);
+    }
+
+    private void UpdateBordersForDarkTheme(Window window)
+    {
+        if (window.Content is Border mainBorder)
+        {
+            // Restore main border for dark theme
+            mainBorder.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(230, 31, 31, 31));
+            mainBorder.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(100, 255, 255, 255));
+            UpdateElementsForDarkTheme(mainBorder);
+        }
+        else if (window.Content is Grid grid)
+        {
+            UpdateElementsForDarkTheme(grid);
+        }
+    }
+
+    private void UpdateElementsForDarkTheme(System.Windows.DependencyObject parent)
+    {
+        for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+            
+            if (child is Border border)
+            {
+                // Update borders back to dark theme colors
+                var currentBg = border.Background as System.Windows.Media.SolidColorBrush;
+                if (currentBg != null && !IsLikelyDarkColor(currentBg.Color))
+                {
+                    border.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(30, 0, 0, 0));
+                }
+
+                var currentBorderBrush = border.BorderBrush as System.Windows.Media.SolidColorBrush;
+                if (currentBorderBrush != null)
+                {
+                    border.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(51, 255, 255, 255));
+                }
+            }
+            else if (child is TextBlock textBlock)
+            {
+                // Update text colors for dark theme
+                textBlock.Foreground = GetForegroundBrush();
+            }
+            
+            // Recursively update children
+            UpdateElementsForDarkTheme(child);
         }
     }
 
@@ -638,7 +989,7 @@ public partial class SettingsWindow : Window
             else if (child is TextBlock textBlock)
             {
                 // Update text colors for light theme
-                textBlock.Foreground = System.Windows.Media.Brushes.Black;
+                textBlock.Foreground = GetForegroundBrush();
             }
             else if (child is TreeView treeView)
             {
@@ -683,7 +1034,7 @@ public partial class SettingsWindow : Window
         var labelBlock = new TextBlock
         {
             Text = label,
-            Foreground = System.Windows.Media.Brushes.White,
+            Foreground = GetForegroundBrush(),
             FontSize = 14,
             Margin = new Thickness(0, 0, 0, 4)
         };
@@ -692,8 +1043,8 @@ public partial class SettingsWindow : Window
         {
             Text = value,
             Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(51, 255, 255, 255)),
-            Foreground = System.Windows.Media.Brushes.White,
-            BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 255, 255, 255)),
+            Foreground = GetForegroundBrush(),
+            BorderBrush = _isLightTheme ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 0, 0, 0)) : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 255, 255, 255)),
             Padding = new Thickness(8),
             FontSize = 14
         };
@@ -703,6 +1054,81 @@ public partial class SettingsWindow : Window
     SettingsContentPanel.Children.Add(panel);
     }
 
+    private void AddFilePathSetting(string label, string value)
+    {
+        var panel = new StackPanel { Orientation = Orientation.Vertical, Margin = new Thickness(0, 0, 0, 16) };
+
+        var labelBlock = new TextBlock
+        {
+            Text = label,
+            Foreground = GetForegroundBrush(),
+            FontSize = 14,
+            Margin = new Thickness(0, 0, 0, 4)
+        };
+
+        var pathPanel = new StackPanel { Orientation = Orientation.Horizontal };
+
+        var textBox = new TextBox
+        {
+            Text = value,
+            Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(51, 255, 255, 255)),
+            Foreground = GetForegroundBrush(),
+            BorderBrush = _isLightTheme ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 0, 0, 0)) : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 255, 255, 255)),
+            Padding = new Thickness(8),
+            FontSize = 14,
+            Width = 420,
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+
+        var browseButton = new Button
+        {
+            Content = "📂 Browse",
+            Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 0, 120, 215)),
+            Foreground = GetForegroundBrush(),
+            BorderBrush = _isLightTheme ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 0, 0, 0)) : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 255, 255, 255)),
+            Padding = new Thickness(12, 6, 12, 6),
+            Margin = new Thickness(8, 0, 0, 0),
+            FontSize = 14
+        };
+
+        browseButton.Click += (s, e) => BrowseExecutable(textBox);
+
+        pathPanel.Children.Add(textBox);
+        pathPanel.Children.Add(browseButton);
+
+        panel.Children.Add(labelBlock);
+        panel.Children.Add(pathPanel);
+        SettingsContentPanel.Children.Add(panel);
+    }
+
+    private void BrowseExecutable(System.Windows.Controls.TextBox pathTextBox)
+    {
+        var openFileDialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Select executable",
+            Filter = "Executable files (*.exe)|*.exe|All files (*.*)|*.*",
+            DefaultExt = ".exe",
+            CheckFileExists = true
+        };
+
+        // Try to set initial directory to current textbox value's folder
+        try
+        {
+            var current = pathTextBox.Text;
+            if (!string.IsNullOrWhiteSpace(current) && System.IO.File.Exists(current))
+            {
+                openFileDialog.InitialDirectory = System.IO.Path.GetDirectoryName(current);
+                openFileDialog.FileName = System.IO.Path.GetFileName(current);
+            }
+        }
+        catch { }
+
+        if (openFileDialog.ShowDialog() == true)
+        {
+            pathTextBox.Text = openFileDialog.FileName;
+        }
+    }
+
     private void AddNumericSetting(string label, double value)
     {
         var panel = new StackPanel { Orientation = Orientation.Vertical, Margin = new Thickness(0, 0, 0, 16) };
@@ -710,7 +1136,7 @@ public partial class SettingsWindow : Window
         var labelBlock = new TextBlock
         {
             Text = label,
-            Foreground = System.Windows.Media.Brushes.White,
+            Foreground = GetForegroundBrush(),
             FontSize = 14,
             Margin = new Thickness(0, 0, 0, 4)
         };
@@ -719,8 +1145,8 @@ public partial class SettingsWindow : Window
         {
             Text = value.ToString(),
             Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(51, 255, 255, 255)),
-            Foreground = System.Windows.Media.Brushes.White,
-            BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 255, 255, 255)),
+            Foreground = GetForegroundBrush(),
+            BorderBrush = _isLightTheme ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 0, 0, 0)) : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 255, 255, 255)),
             Padding = new Thickness(8),
             FontSize = 14,
             Width = 100,
@@ -739,7 +1165,7 @@ public partial class SettingsWindow : Window
         var labelBlock = new TextBlock
         {
             Text = label,
-            Foreground = System.Windows.Media.Brushes.White,
+            Foreground = GetForegroundBrush(),
             FontSize = 14,
             Margin = new Thickness(0, 0, 0, 4)
         };
@@ -747,8 +1173,8 @@ public partial class SettingsWindow : Window
         var comboBox = new ComboBox
         {
             Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(51, 255, 255, 255)),
-            Foreground = System.Windows.Media.Brushes.White,
-            BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 255, 255, 255)),
+            Foreground = GetForegroundBrush(),
+            BorderBrush = _isLightTheme ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 0, 0, 0)) : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 255, 255, 255)),
             Padding = new Thickness(8),
             FontSize = 14,
             Width = 150,
@@ -772,8 +1198,8 @@ public partial class SettingsWindow : Window
         {
             Content = text,
             Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 0, 120, 215)),
-            Foreground = System.Windows.Media.Brushes.White,
-            BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 255, 255, 255)),
+            Foreground = GetForegroundBrush(),
+            BorderBrush = _isLightTheme ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 0, 0, 0)) : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 255, 255, 255)),
             Padding = new Thickness(16, 8, 16, 8),
             Margin = new Thickness(0, 0, 0, 12),
             FontSize = 14,
@@ -791,7 +1217,7 @@ public partial class SettingsWindow : Window
         var labelBlock = new TextBlock
         {
             Text = label,
-            Foreground = System.Windows.Media.Brushes.White,
+            Foreground = GetForegroundBrush(),
             FontSize = 14,
             Margin = new Thickness(0, 0, 0, 4)
         };
@@ -799,8 +1225,8 @@ public partial class SettingsWindow : Window
         var comboBox = new ComboBox
         {
             Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(51, 255, 255, 255)),
-            Foreground = System.Windows.Media.Brushes.White,
-            BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 255, 255, 255)),
+            Foreground = GetForegroundBrush(),
+            BorderBrush = _isLightTheme ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 0, 0, 0)) : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 255, 255, 255)),
             Padding = new Thickness(8),
             FontSize = 14,
             Width = 150,
@@ -834,7 +1260,7 @@ public partial class SettingsWindow : Window
         var labelBlock = new TextBlock
         {
             Text = $"{label} {value}%",
-            Foreground = System.Windows.Media.Brushes.White,
+            Foreground = GetForegroundBrush(),
             FontSize = 14,
             Margin = new Thickness(0, 0, 0, 4)
         };
@@ -924,12 +1350,12 @@ public partial class SettingsWindow : Window
         var textBlock = new TextBlock
         {
             Text = text,
-            Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(179, 255, 255, 255)),
+            Foreground = _isLightTheme ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(179, 0, 0, 0)) : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(179, 255, 255, 255)),
             TextWrapping = TextWrapping.Wrap,
             FontSize = 13,
             Margin = new Thickness(0, 0, 0, 16),
             Padding = new Thickness(12),
-            Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(25, 255, 255, 255))
+            Background = _isLightTheme ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(18, 0, 0, 0)) : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(25, 255, 255, 255))
         };
     SettingsContentPanel.Children.Add(textBlock);
     }
@@ -941,7 +1367,7 @@ public partial class SettingsWindow : Window
         var labelBlock = new TextBlock
         {
             Text = label,
-            Foreground = System.Windows.Media.Brushes.White,
+            Foreground = GetForegroundBrush(),
             FontSize = 14,
             FontWeight = FontWeights.SemiBold,
             Width = 120
@@ -950,7 +1376,7 @@ public partial class SettingsWindow : Window
         var valueBlock = new TextBlock
         {
             Text = value,
-            Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(204, 255, 255, 255)),
+            Foreground = GetSecondaryForegroundBrush(),
             FontSize = 14
         };
         
@@ -1157,7 +1583,7 @@ public partial class SettingsWindow : Window
         var separator = new System.Windows.Shapes.Rectangle
         {
             Height = 1,
-            Fill = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(51, 255, 255, 255)),
+            Fill = _isLightTheme ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(51, 0, 0, 0)) : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(51, 255, 255, 255)),
             Margin = new Thickness(0, 16, 0, 16),
             HorizontalAlignment = HorizontalAlignment.Stretch
         };
@@ -1171,7 +1597,7 @@ public partial class SettingsWindow : Window
             Text = title,
             FontSize = 16,
             FontWeight = FontWeights.SemiBold,
-            Foreground = System.Windows.Media.Brushes.White,
+            Foreground = GetForegroundBrush(),
             Margin = new Thickness(0, 0, 0, 12)
         };
     SettingsContentPanel.Children.Add(header);

@@ -60,7 +60,7 @@
                                               Margin="8,8,23,8"
                                               VerticalAlignment="Center"
                                               HorizontalAlignment="Left"
-                                              TextBlock.Foreground="White"/>
+                                              TextBlock.Foreground="{TemplateBinding Foreground}"/>
                             <Popup x:Name="Popup"
                                    Placement="Bottom"
                                    IsOpen="{TemplateBinding IsDropDownOpen}"
@@ -72,7 +72,7 @@
                                       MinWidth="{TemplateBinding ActualWidth}"
                                       MaxHeight="{TemplateBinding MaxDropDownHeight}">
                                     <Border x:Name="DropDownBorder"
-                                            Background="#E6000000"
+                        Background="{TemplateBinding Background}"
                                             BorderThickness="1"
                                             BorderBrush="#66FFFFFF"
                                             CornerRadius="4"/>
@@ -97,11 +97,11 @@
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="ComboBoxItem">
+                        <ControlTemplate TargetType="ComboBoxItem">
                         <Border Background="{TemplateBinding Background}"
                                 Padding="{TemplateBinding Padding}"
                                 BorderThickness="0">
-                            <ContentPresenter TextBlock.Foreground="White"/>
+                            <ContentPresenter TextBlock.Foreground="{TemplateBinding Foreground}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsHighlighted" Value="True">

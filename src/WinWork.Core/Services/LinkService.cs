@@ -75,8 +75,16 @@ public class LinkService : WinWork.Core.Interfaces.ILinkService
         if (string.IsNullOrWhiteSpace(link.Name))
             throw new ArgumentException("Link name is required", nameof(link));
 
-        if (link.Type != LinkType.Folder && link.Type != LinkType.Notes && string.IsNullOrWhiteSpace(link.Url))
+        // For terminal links, Command is required. For other non-folder/notes types, Url is required.
+        if (link.Type == LinkType.Terminal)
+        {
+            if (string.IsNullOrWhiteSpace(link.Command))
+                throw new ArgumentException("Command is required for Terminal links", nameof(link));
+        }
+        else if (link.Type != LinkType.Folder && link.Type != LinkType.Notes && string.IsNullOrWhiteSpace(link.Url))
+        {
             throw new ArgumentException("URL is required for link types (except folders and notes)", nameof(link));
+        }
 
         return await _linkRepository.CreateAsync(link);
     }
@@ -161,7 +169,13 @@ public class LinkService : WinWork.Core.Interfaces.ILinkService
         if (string.IsNullOrWhiteSpace(link.Name))
             return Task.FromResult(false);
 
-        if (link.Type != LinkType.Folder && link.Type != LinkType.Notes)
+        // Terminal links validate by Command (not Url). Other types (except Folder/Notes) require Url and must pass opener validation.
+        if (link.Type == LinkType.Terminal)
+        {
+            if (string.IsNullOrWhiteSpace(link.Command))
+                return Task.FromResult(false);
+        }
+        else if (link.Type != LinkType.Folder && link.Type != LinkType.Notes)
         {
             if (string.IsNullOrWhiteSpace(link.Url))
                 return Task.FromResult(false);

@@ -263,7 +263,7 @@ public partial class MainWindow : Window
         try
         {
             
-            var dialogViewModel = new LinkDialogViewModel();
+            var dialogViewModel = new LinkDialogViewModel(ViewModel.SettingsService as WinWork.Core.Services.ISettingsService);
             
             if (e.LinkToEdit != null)
             {

@@ -28,6 +28,8 @@ public class WinWorkDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
             entity.Property(e => e.Url).HasMaxLength(2048);
+            entity.Property(e => e.Command).HasMaxLength(2000);
+            entity.Property(e => e.TerminalType).HasMaxLength(100);
             entity.Property(e => e.Description).HasMaxLength(1000);
             entity.Property(e => e.Notes).HasMaxLength(10000);
             entity.Property(e => e.IconPath).HasMaxLength(500);
@@ -110,7 +112,12 @@ public class WinWorkDbContext : DbContext
             new AppSettings { Id = 3, Key = "MinimizeToTray", Value = "true", Description = "Minimize to system tray when closed", UpdatedAt = seedDateTime },
             new AppSettings { Id = 4, Key = "StartWithWindows", Value = "false", Description = "Start application with Windows", UpdatedAt = seedDateTime },
             new AppSettings { Id = 5, Key = "AutoBackup", Value = "true", Description = "Automatically backup data", UpdatedAt = seedDateTime },
-            new AppSettings { Id = 6, Key = "BackupInterval", Value = "7", Description = "Backup interval in days", UpdatedAt = seedDateTime }
+            new AppSettings { Id = 6, Key = "BackupInterval", Value = "7", Description = "Backup interval in days", UpdatedAt = seedDateTime },
+            // Terminal configuration defaults
+            new AppSettings { Id = 7, Key = "Terminal.PowerShellPath", Value = "powershell.exe", Description = "Path to PowerShell executable", UpdatedAt = seedDateTime },
+            new AppSettings { Id = 8, Key = "Terminal.GitBashPath", Value = "", Description = "Path to Git Bash executable (optional)", UpdatedAt = seedDateTime },
+            new AppSettings { Id = 9, Key = "Terminal.CmdPath", Value = "cmd.exe", Description = "Path to CMD executable", UpdatedAt = seedDateTime },
+            new AppSettings { Id = 10, Key = "Terminal.Default", Value = "PowerShell", Description = "Default terminal when opening Terminal items", UpdatedAt = seedDateTime }
         );
 
         // Sample root folders

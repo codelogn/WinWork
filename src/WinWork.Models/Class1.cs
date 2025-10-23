@@ -21,6 +21,17 @@ public class Link
     /// Type of link: Folder, WebUrl, FilePath, Application
     /// </summary>
     public LinkType Type { get; set; }
+
+    /// <summary>
+    /// Optional command(s) to execute for Terminal type items
+    /// </summary>
+    public string? Command { get; set; }
+
+    /// <summary>
+    /// The terminal profile/type for Terminal items (e.g. PowerShell, Git Bash, CMD)
+    /// Stored per-item so each Terminal link can choose its shell/profile.
+    /// </summary>
+    public string? TerminalType { get; set; }
     
     /// <summary>
     /// Optional description

@@ -1,3 +1,41 @@
+# WinWork — Current TODO
+
+This document tracks progress on the Settings theme fixes and related work. It is kept in sync with the agent-managed todo list.
+
+## Completed
+
+- Check compile diagnostics for `SettingsWindow.xaml.cs` — completed. Build verified and XAML partials generated.
+- Verify XAML ↔ code-behind wiring (`x:Class`, named elements) — completed.
+- Build the UI project (`dotnet build`) — completed; build succeeds (warnings only).
+- Implement minimal safe fixes where necessary — completed for the initial pass (added theme helpers and visual-tree update routines).
+- Run the app and verify primary theme behavior — completed; most form fields updated correctly after changes.
+- Update docs/TODO.md and add Copilot guidance file — completed (this file + `.github/COPILOT_INSTRUCTIONS.md`).
+
+## In progress
+
+- Make all form fields theme-aware — many controls updated, but some submenu items and the Theme combobox still need targeted fixes. (See pending items below.)
+
+## Pending / Next
+
+1. Fix TreeView / submenu items that remain white in Light theme
+   - Targets: Data & Storage submenu, Advanced submenu items.
+   - Approach: Reproduce in running app, identify the factory/template creating those elements, and update to use `GetForegroundBrush()` / `GetControlBackgroundBrush()` or adjust templates.
+
+2. Make Theme ComboBox visuals opaque in Light theme
+   - Ensure the Theme selection ComboBox and its dropdown use an opaque Background and appropriate Foreground/BorderBrush in Light mode.
+
+3. Ensure saved theme is applied reliably on reopen
+   - If the settings service initializes asynchronously, apply saved theme on `Window.Loaded` or after settings are available; re-apply and refresh content.
+
+4. Add a lightweight QA checklist or small UI tests for theme switching
+   - Manual steps or small automated checks to verify switching Light ↔ Dark updates all Settings controls and persists selection across restarts.
+
+## Notes
+
+- Editor/language-server sometimes shows stale errors (e.g., "InitializeComponent does not exist"). These were editor sync issues — full `dotnet build` is authoritative and succeeded.
+- XAML template binding pitfalls: prefer binding to `TextBlock.Foreground` for ContentPresenter text rather than `Foreground` on ContentPresenter, which may cause XAML compile errors.
+
+If you'd like, I can continue now and implement one of the pending items (pick 1: TreeView repair, 2: Theme ComboBox visuals, 3: apply theme on Loaded, or All).
 # WinWork Development TODO & Roadmap
 
 - [x] **Database Design & Models**

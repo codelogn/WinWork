@@ -645,8 +645,57 @@
                                         </ComboBox.Style>
                                     </ComboBox>
                                 </StackPanel>
+
+                                <!-- Terminal Fields (Visible only for Terminal type) -->
+                                <StackPanel Margin="0,0,0,16">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding EditType}" Value="Terminal">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <TextBlock Text="Terminal Shell" 
+                                               Foreground="White" 
+                                               FontWeight="Medium"
+                                               Margin="0,0,0,8"/>
+                                    <ComboBox ItemsSource="{Binding TerminalOptions}"
+                                              SelectedItem="{Binding EditTerminalType, Mode=TwoWay}"
+                                              Background="#33FFFFFF"
+                                              Foreground="White"
+                                              BorderBrush="#66FFFFFF"
+                                              BorderThickness="1"
+                                              Padding="12,8"
+                                              FontSize="14">
+                                        <ComboBox.Resources>
+                                            <Style TargetType="ComboBoxItem">
+                                                <Setter Property="Foreground" Value="White"/>
+                                                <Setter Property="Background" Value="Transparent"/>
+                                            </Style>
+                                        </ComboBox.Resources>
+                                    </ComboBox>
+
+                                    <TextBlock Text="Command *" 
+                                               Foreground="White" 
+                                               FontWeight="Medium"
+                                               Margin="0,12,0,8"/>
+                                    <TextBox Text="{Binding EditCommand, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="12,8"
+                                             Background="#33FFFFFF"
+                                             Foreground="White"
+                                             BorderBrush="#66FFFFFF"
+                                             BorderThickness="1"
+                                             FontSize="14"
+                                             Height="100"
+                                             TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             VerticalScrollBarVisibility="Auto"/>
+                                </StackPanel>
                                 
-                                <!-- URL/Path Field (Hidden for Folders and Notes) -->
+                                <!-- URL/Path Field (Hidden for Folders, Notes and Terminal) -->
                                 <StackPanel Margin="0,0,0,16">
                                     <StackPanel.Style>
                                         <Style TargetType="StackPanel">
@@ -656,6 +705,9 @@
                                                     <Setter Property="Visibility" Value="Collapsed"/>
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding EditType}" Value="Notes">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding EditType}" Value="Terminal">
                                                     <Setter Property="Visibility" Value="Collapsed"/>
                                                 </DataTrigger>
                                             </Style.Triggers>

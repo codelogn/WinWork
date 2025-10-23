@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using System.Windows;
 using WinWork.Models;
 using WinWork.UI.Utils;
 
@@ -17,13 +18,16 @@ public class LinkDialogViewModel : ViewModelBase
     private string _url = string.Empty;
     private string _description = string.Empty;
     private string _notes = string.Empty;
+    private string _command = string.Empty;
     private string _tagsString = string.Empty;
     private LinkType _selectedLinkType = LinkType.WebUrl;
-    private LinkTypeItem? _selectedLinkTypeItem;
+    // SelectedLinkTypeItem removed: selection is driven by SelectedLinkType enum
     private bool _isEditMode;
     private Link? _originalLink;
     private LinkTreeItemViewModel? _parentItem;
     private LinkTreeItemViewModel? _selectedParent;
+    private string _terminalShell = string.Empty;
+    private string _terminalType = string.Empty;
 
     public ObservableCollection<LinkTypeItem> LinkTypes { get; }
     public ObservableCollection<LinkTreeItemViewModel> AvailableParents { get; }
@@ -100,6 +104,58 @@ public class LinkDialogViewModel : ViewModelBase
         }
     }
 
+    public string Command
+    {
+        get => _command;
+        set
+        {
+            if (SetProperty(ref _command, value))
+            {
+                System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+            }
+        }
+    }
+
+    public string TerminalShell
+    {
+        get => _terminalShell;
+        set => SetProperty(ref _terminalShell, value);
+    }
+
+    public string TerminalType
+    {
+        get => _terminalType;
+        set => SetProperty(ref _terminalType, value);
+    }
+
+    // Normalize a potentially malformed terminal type string stored in DB
+    private string NormalizeTerminalType(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return string.Empty;
+        var s = raw.Trim();
+
+        // e.g. "System.Windows.Controls.ComboBoxItem: Git Bash" -> take text after colon
+        var idx = s.IndexOf(':');
+        if (idx >= 0 && idx < s.Length - 1)
+        {
+            var after = s.Substring(idx + 1).Trim();
+            if (!string.IsNullOrEmpty(after)) s = after;
+        }
+
+        // Strip quotes
+        s = s.Trim('"', '\'');
+
+        // Canonicalize common values
+        if (s.Equals("powershell", StringComparison.OrdinalIgnoreCase) || s.Equals("power shell", StringComparison.OrdinalIgnoreCase)) return "PowerShell";
+        if (s.IndexOf("git", StringComparison.OrdinalIgnoreCase) >= 0 && s.IndexOf("bash", StringComparison.OrdinalIgnoreCase) >= 0) return "Git Bash";
+        if (s.Equals("cmd", StringComparison.OrdinalIgnoreCase) || s.Equals("command", StringComparison.OrdinalIgnoreCase)) return "CMD";
+
+        var match = TerminalOptions.FirstOrDefault(t => string.Equals(t, s, StringComparison.OrdinalIgnoreCase));
+        if (match != null) return match;
+
+        return s;
+    }
+
     public string TagsString
     {
         get => _tagsString;
@@ -116,51 +172,48 @@ public class LinkDialogViewModel : ViewModelBase
             {
                 Console.WriteLine($"DEBUG: SelectedLinkType changed to {value}");
                 
-                // Update the selected item to match the new type (avoid circular reference)
-                var matchingItem = LinkTypes.FirstOrDefault(x => x.Type == value);
-                if (matchingItem != _selectedLinkTypeItem)
-                {
-                    _selectedLinkTypeItem = matchingItem;
-                    OnPropertyChanged(nameof(SelectedLinkTypeItem));
-                }
+                // Keep LinkTypes in sync for any UI display; selection logic is driven by SelectedLinkType
+                // No SelectedLinkTypeItem field to update here
                 
                 UpdateUrlPlaceholder();
                 OnPropertyChanged(nameof(IsFolderType));
                 OnPropertyChanged(nameof(IsNotesType));
+                OnPropertyChanged(nameof(IsTerminalType));
+                // Notify visibility properties so UI shows/hides panels immediately when type changes
+                OnPropertyChanged(nameof(TerminalPanelVisibility));
+                OnPropertyChanged(nameof(UrlPanelVisibility));
                 OnPropertyChanged(nameof(RequiresUrl));
                 OnPropertyChanged(nameof(DialogTitle));
                 Console.WriteLine($"DEBUG: IsNotesType is now {IsNotesType}");
+                // If user switched to Terminal while in the Add form, ensure a default terminal type is selected
+                if (IsTerminalType && string.IsNullOrWhiteSpace(TerminalType))
+                {
+                    try
+                    {
+                        if (_uiSettingsService != null)
+                        {
+                            var def = _uiSettingsService.GetDefaultTerminalAsync().GetAwaiter().GetResult();
+                            if (!string.IsNullOrWhiteSpace(def)) TerminalType = def;
+                        }
+                    }
+                    catch
+                    {
+                        // ignore
+                    }
+                    if (string.IsNullOrWhiteSpace(TerminalType))
+                        TerminalType = "PowerShell";
+                    OnPropertyChanged(nameof(TerminalType));
+                }
                 System.Windows.Input.CommandManager.InvalidateRequerySuggested();
             }
         }
     }
 
-    public LinkTypeItem? SelectedLinkTypeItem
-    {
-        get => _selectedLinkTypeItem;
-        set
-        {
-            Console.WriteLine($"DEBUG: SelectedLinkTypeItem setter called with value: {value?.DisplayName ?? "null"}");
-            if (SetProperty(ref _selectedLinkTypeItem, value))
-            {
-                if (value != null && value.Type != _selectedLinkType)
-                {
-                    Console.WriteLine($"DEBUG: Setting SelectedLinkType to {value.Type} from SelectedLinkTypeItem");
-                    _selectedLinkType = value.Type; // Set directly to avoid circular reference
-                    
-                    // Manually trigger the property change notifications
-                    OnPropertyChanged(nameof(SelectedLinkType));
-                    UpdateUrlPlaceholder();
-                    OnPropertyChanged(nameof(IsFolderType));
-                    OnPropertyChanged(nameof(IsNotesType));
-                    OnPropertyChanged(nameof(RequiresUrl));
-                    OnPropertyChanged(nameof(DialogTitle));
-                    Console.WriteLine($"DEBUG: IsNotesType is now {IsNotesType}");
-                    System.Windows.Input.CommandManager.InvalidateRequerySuggested();
-                }
-            }
-        }
-    }
+    public bool IsTerminalType => SelectedLinkType == LinkType.Terminal;
+    public Visibility TerminalPanelVisibility => IsTerminalType ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility UrlPanelVisibility => (RequiresUrl && !IsTerminalType) ? Visibility.Visible : Visibility.Collapsed;
+
+    // SelectedLinkTypeItem removed. The UI ComboBox should bind SelectedValue to SelectedLinkType (enum).
 
     public string UrlPlaceholder { get; private set; } = "https://example.com";
 
@@ -210,16 +263,15 @@ public class LinkDialogViewModel : ViewModelBase
     public event EventHandler? DialogCancelled;
     public event EventHandler<LinkDeleteEventArgs>? LinkDeleted;
 
-    public LinkDialogViewModel()
+    private readonly WinWork.Core.Services.ISettingsService? _uiSettingsService;
+
+    public ObservableCollection<string> TerminalOptions { get; } = new ObservableCollection<string>();
+
+    public LinkDialogViewModel(WinWork.Core.Services.ISettingsService? settingsService = null)
     {
-        LinkTypes = new ObservableCollection<LinkTypeItem>
-        {
-            new(LinkType.Folder, "📁 Folder", "Organize items into groups"),
-            new(LinkType.WebUrl, "🌐 Web URL", "Website or web page"),
-            new(LinkType.FilePath, "📄 File", "Local file or document"),
-            new(LinkType.Application, "💻 Application", "Executable program"),
-            new(LinkType.Notes, "📝 Notes", "Text notes and memos")
-        };
+        _uiSettingsService = settingsService;
+        // Initialize link types from a single provider so Add/Edit always use the same options
+        LinkTypes = new ObservableCollection<LinkTypeItem>(LinkTypeProvider.DefaultLinkTypes);
 
         AvailableParents = new ObservableCollection<LinkTreeItemViewModel>();
 
@@ -237,17 +289,61 @@ public class LinkDialogViewModel : ViewModelBase
         BrowseApplicationCommand = new RelayCommand(BrowseApplication);
 
         UpdateUrlPlaceholder();
-        
-        // Initialize default selection for ComboBox
-        SelectedLinkTypeItem = LinkTypes.FirstOrDefault(x => x.Type == _selectedLinkType);
+
+        // Terminal options (static list of types; paths come from app settings when launching)
+        TerminalOptions.Add("PowerShell");
+        TerminalOptions.Add("Git Bash");
+        TerminalOptions.Add("CMD");
+
+    // Note: do not force SelectedLinkTypeItem here; SetEditMode will assign it when editing
+
+        // If settings provided, set TerminalType default
+        try
+        {
+            if (_uiSettingsService != null)
+            {
+                var def = _uiSettingsService.GetDefaultTerminalAsync().GetAwaiter().GetResult();
+                if (!string.IsNullOrWhiteSpace(def))
+                {
+                    TerminalType = def;
+                }
+            }
+        }
+        catch
+        {
+            // ignore settings errors; fall back to PowerShell
+            if (string.IsNullOrWhiteSpace(TerminalType)) TerminalType = "PowerShell";
+        }
     }
 
     public void SetInitialType(LinkType linkType)
     {
         SelectedLinkType = linkType;
+        OnPropertyChanged(nameof(IsTerminalType));
         if (linkType == LinkType.Folder)
         {
             Name = "New Folder";
+        }
+        // If starting a new Terminal, ensure terminal fields have sensible defaults
+        if (linkType == LinkType.Terminal)
+        {
+            // Use configured default if available, otherwise fall back to PowerShell
+            if (string.IsNullOrWhiteSpace(TerminalType))
+            {
+                try
+                {
+                    if (_uiSettingsService != null)
+                    {
+                        var def = _uiSettingsService.GetDefaultTerminalAsync().GetAwaiter().GetResult();
+                        if (!string.IsNullOrWhiteSpace(def)) TerminalType = def;
+                    }
+                }
+                catch
+                {
+                    // ignore
+                }
+                if (string.IsNullOrWhiteSpace(TerminalType)) TerminalType = "PowerShell";
+            }
         }
     }
 
@@ -268,22 +364,53 @@ public class LinkDialogViewModel : ViewModelBase
         var linkNotesMessage = $"DEBUG: Link Notes = '{link.Notes ?? "null"}'";
         FileLogger.Log(linkNotesMessage);
         
+        // First set edit state and selected type so UI bindings react immediately
         _originalLink = link;
         IsEditMode = true;
-        
-        Name = link.Name;
-        Url = link.Url ?? string.Empty;
-        Description = link.Description ?? string.Empty;
-        Notes = link.Notes ?? string.Empty;
-        
+
+        // Set the SelectedLinkType early to drive UI visibility and ComboBox selection
         var settingTypeMessage = $"DEBUG: Setting SelectedLinkType to {link.Type}";
         FileLogger.Log(settingTypeMessage);
         SelectedLinkType = link.Type;
-        
-        // Set the selected item for ComboBox binding
-        SelectedLinkTypeItem = LinkTypes.FirstOrDefault(x => x.Type == link.Type);
-        var selectedItemMessage = $"DEBUG: SelectedLinkTypeItem set to: {SelectedLinkTypeItem?.DisplayName}";
-        FileLogger.Log(selectedItemMessage);
+
+        // Now populate fields that depend on type
+        Name = link.Name;
+        Url = link.Url ?? string.Empty;
+        // For Terminal items, TerminalType is stored per-item (do not reuse Url)
+        TerminalType = NormalizeTerminalType(link.TerminalType ?? link.Url ?? string.Empty);
+        Description = link.Description ?? string.Empty;
+        Notes = link.Notes ?? string.Empty;
+        Command = link.Command ?? string.Empty;
+
+        // Ensure visibility properties and terminal selection bind correctly
+        OnPropertyChanged(nameof(IsTerminalType));
+        OnPropertyChanged(nameof(TerminalPanelVisibility));
+        OnPropertyChanged(nameof(UrlPanelVisibility));
+
+    // Determine the display name for the selected LinkType for logging
+    var matchingItem = LinkTypes.FirstOrDefault(x => x.Type == link.Type);
+
+        // If terminal, try to select the corresponding TerminalOptions entry
+        if (link.Type == LinkType.Terminal && !string.IsNullOrWhiteSpace(TerminalType))
+        {
+            var canonical = NormalizeTerminalType(TerminalType);
+            if (!string.IsNullOrWhiteSpace(canonical))
+            {
+                // If TerminalOptions contains it, set TerminalType to the canonical value
+                var opt = TerminalOptions.FirstOrDefault(t => string.Equals(t, canonical, StringComparison.OrdinalIgnoreCase));
+                if (opt != null)
+                {
+                    TerminalType = opt;
+                }
+                else
+                {
+                    TerminalType = canonical;
+                }
+                OnPropertyChanged(nameof(TerminalType));
+            }
+        }
+    var selectedItemMessage = $"DEBUG: SelectedLinkType display = {matchingItem?.DisplayName ?? "(none)"}";
+    FileLogger.Log(selectedItemMessage);
         
         var finalTypeMessage = $"DEBUG: SelectedLinkType is now {SelectedLinkType}";
         FileLogger.Log(finalTypeMessage);
@@ -435,7 +562,11 @@ public class LinkDialogViewModel : ViewModelBase
                 return hasNotes;
                 
             default:
-                // All other link types require a URL
+                // All other link types require a URL, except Terminal which requires a command
+                if (_selectedLinkType == LinkType.Terminal)
+                {
+                    return !string.IsNullOrWhiteSpace(_command);
+                }
                 bool hasUrl = !string.IsNullOrWhiteSpace(_url);
                 return hasUrl;
         }
@@ -456,6 +587,25 @@ public class LinkDialogViewModel : ViewModelBase
         link.Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim();
         link.Notes = string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim();
         link.Type = _selectedLinkType;
+        if (_selectedLinkType == LinkType.Terminal)
+        {
+            // Store chosen terminal type/profile in TerminalType and store commands in Command
+            link.TerminalType = string.IsNullOrWhiteSpace(_terminalType) ? null : _terminalType.Trim();
+            // For backward compatibility, don't overwrite Url unless TerminalType is empty
+            if (string.IsNullOrWhiteSpace(link.TerminalType))
+            {
+                link.Url = string.IsNullOrWhiteSpace(_terminalShell) ? null : _terminalShell.Trim();
+            }
+            link.Command = string.IsNullOrWhiteSpace(_command) ? null : _command.Trim();
+        }
+        else
+        {
+            // Ensure non-terminal types don't accidentally keep Command
+            if (_originalLink == null || _originalLink.Type != LinkType.Terminal)
+            {
+                link.Command = null;
+            }
+        }
         
         // Set parent ID based on selected parent (including for edits)
         if (SelectedParent != null && SelectedParent.Link.Id > 0)
