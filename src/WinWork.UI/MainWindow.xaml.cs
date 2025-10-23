@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Reflection;
 using WinWork.UI.ViewModels;
 using WinWork.UI.Controls;
 using WinWork.UI.Views;
@@ -40,6 +41,9 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        // Defer appending version until content is rendered (ViewModel Title binding is applied)
+        this.ContentRendered += (s, e) => AppendVersionToTitle();
+        this.DataContextChanged += MainWindow_DataContextChanged;
     }
 
     public MainWindow(MainWindowViewModel viewModel) : this()
@@ -86,6 +90,55 @@ public partial class MainWindow : Window
 
     #endregion
 
+    /// <summary>
+    /// Append version information to the window title. Uses AssemblyInformationalVersion when available,
+    /// otherwise falls back to AssemblyName.Version.
+    /// </summary>
+    private void AppendVersionToTitle()
+    {
+        try
+        {
+            var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
+            string? infoVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+            string version = !string.IsNullOrWhiteSpace(infoVersion)
+                ? infoVersion!
+                : assembly.GetName().Version?.ToString() ?? "0.0.0";
+
+            // Make sure we don't duplicate the version if it's already present
+            var baseTitle = this.Title ?? string.Empty;
+            if (!baseTitle.Contains(version, StringComparison.OrdinalIgnoreCase))
+            {
+                // Prepend a 'v' if the version looks like a numeric version
+                var displayVersion = version.StartsWith("v", StringComparison.OrdinalIgnoreCase) ? version : $"v{version}";
+                this.Title = string.IsNullOrWhiteSpace(baseTitle) ? $"WinWork - {displayVersion}" : $"{baseTitle} - {displayVersion}";
+            }
+        }
+        catch
+        {
+            // Don't let version display failures block the app
+        }
+    }
+
+    private void MainWindow_DataContextChanged(object? sender, DependencyPropertyChangedEventArgs e)
+    {
+        // If the new DataContext is the view model, subscribe to Title changes so we can re-append version
+        if (e.NewValue is MainWindowViewModel vm)
+        {
+            vm.PropertyChanged += Vm_PropertyChanged;
+            // Ensure version is appended after view model may have set Title
+            AppendVersionToTitle();
+        }
+    }
+
+    private void Vm_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MainWindowViewModel.Title))
+        {
+            // Re-append version whenever ViewModel.Title changes
+            AppendVersionToTitle();
+        }
+    }
+
     #region Action Handlers
 
     private void Export_Click(object sender, RoutedEventArgs e)
@@ -109,6 +162,26 @@ public partial class MainWindow : Window
         var settingsWindow = new Views.SettingsWindow();
         settingsWindow.Owner = this;
         settingsWindow.ShowDialog();
+    }
+
+    private void Hotclicks_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (DataContext is MainWindowViewModel mainVm)
+            {
+                var linkService = mainVm.LinkService;
+                var opener = mainVm.LinkOpenerService;
+
+                var vm = new HotclicksViewModel(linkService, opener);
+                var win = new Views.HotclicksWindow(vm) { Owner = this };
+                win.ShowDialog();
+            }
+        }
+        catch (System.Exception ex)
+        {
+            MessageBox.Show($"Failed to open Hotclicks: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
     #endregion
 

@@ -88,6 +88,11 @@ public class Link
     /// </summary>
     public bool IsSelected { get; set; }
     
+    /// <summary>
+    /// Whether this item should appear in Hotclicks (quick access)
+    /// </summary>
+    public bool IsHotclick { get; set; }
+    
     // Navigation properties
     public virtual Link? Parent { get; set; }
     public virtual ICollection<Link> Children { get; set; } = new List<Link>();

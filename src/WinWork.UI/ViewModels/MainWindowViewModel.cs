@@ -55,11 +55,17 @@ public class MainWindowViewModel : ViewModelBase
 {
     private readonly WinWork.Core.Interfaces.ILinkService _linkService;
     private readonly ITagService _tagService;
-    public ISettingsService SettingsService => _settingsService;
     private readonly ISettingsService _settingsService;
     private readonly ILinkOpenerService _linkOpenerService;
     private readonly IImportExportService _importExportService;
-    
+
+    // Expose services to allow other UI windows to reuse them
+    public WinWork.Core.Interfaces.ILinkService LinkService => _linkService;
+    public ITagService TagService => _tagService;
+    public ISettingsService SettingsService => _settingsService;
+    public ILinkOpenerService LinkOpenerService => _linkOpenerService;
+
+    // UI state backing fields
     private string _title = "WinWork";
     private bool _isLoading;
     private string _searchText = string.Empty;
@@ -77,6 +83,7 @@ public class MainWindowViewModel : ViewModelBase
     private LinkType _editType = LinkType.WebUrl;
     private string _editCommand = string.Empty;
     private string _editTerminalType = string.Empty;
+    private bool _editIsHotclick = false;
     private bool _isEditingItem = false;
     private Link? _originalLinkForEdit;
     private LinkTreeItemViewModel? _editParentItem;
@@ -99,7 +106,7 @@ public class MainWindowViewModel : ViewModelBase
     public ICommand ImportDataCommand { get; }
 
     public MainWindowViewModel(
-    WinWork.Core.Interfaces.ILinkService linkService,
+        WinWork.Core.Interfaces.ILinkService linkService,
         ITagService tagService,
         ISettingsService settingsService,
         ILinkOpenerService linkOpenerService,
@@ -257,6 +264,12 @@ public class MainWindowViewModel : ViewModelBase
                 System.Windows.Input.CommandManager.InvalidateRequerySuggested();
             }
         }
+    }
+
+    public bool EditIsHotclick
+    {
+        get => _editIsHotclick;
+        set => SetProperty(ref _editIsHotclick, value);
     }
 
     public bool IsEditingItem
@@ -648,6 +661,7 @@ public class MainWindowViewModel : ViewModelBase
             EditTags = ConvertTagsToString(_selectedLink.Link.LinkTags);
             EditNotes = _selectedLink.Link.Notes ?? string.Empty;
             EditType = _selectedLink.Link.Type;
+            EditIsHotclick = _selectedLink.Link.IsHotclick;
             // If terminal, load terminal-specific fields
             EditTerminalType = _selectedLink.Link.TerminalType ?? string.Empty;
             EditCommand = _selectedLink.Link.Command ?? string.Empty;
@@ -675,7 +689,8 @@ public class MainWindowViewModel : ViewModelBase
         EditTags = string.Empty;
         EditNotes = string.Empty;
         EditType = LinkType.WebUrl;
-    EditParentItem = null;
+        EditIsHotclick = false;
+        EditParentItem = null;
         EditCommand = string.Empty;
         EditTerminalType = string.Empty;
         IsEditingItem = false;
@@ -857,6 +872,7 @@ public class MainWindowViewModel : ViewModelBase
             _originalLinkForEdit.Description = string.IsNullOrWhiteSpace(EditDescription) ? null : EditDescription.Trim();
             _originalLinkForEdit.Notes = EditType == LinkType.Notes ? (string.IsNullOrWhiteSpace(EditNotes) ? null : EditNotes.Trim()) : null;
             _originalLinkForEdit.Type = EditType;
+            _originalLinkForEdit.IsHotclick = EditIsHotclick;
             if (EditType == LinkType.Terminal)
             {
                 _originalLinkForEdit.Command = string.IsNullOrWhiteSpace(EditCommand) ? null : EditCommand.Trim();

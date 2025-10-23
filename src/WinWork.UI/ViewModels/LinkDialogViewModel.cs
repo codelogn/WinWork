@@ -28,6 +28,7 @@ public class LinkDialogViewModel : ViewModelBase
     private LinkTreeItemViewModel? _selectedParent;
     private string _terminalShell = string.Empty;
     private string _terminalType = string.Empty;
+    private bool _isHotclick = false;
 
     public ObservableCollection<LinkTypeItem> LinkTypes { get; }
     public ObservableCollection<LinkTreeItemViewModel> AvailableParents { get; }
@@ -259,6 +260,12 @@ public class LinkDialogViewModel : ViewModelBase
         set => SetProperty(ref _selectedParent, value);
     }
 
+    public bool IsHotclick
+    {
+        get => _isHotclick;
+        set => SetProperty(ref _isHotclick, value);
+    }
+
     // Events
     public event EventHandler<LinkSaveEventArgs>? LinkSaved;
     public event EventHandler? DialogCancelled;
@@ -393,6 +400,7 @@ public class LinkDialogViewModel : ViewModelBase
         Description = link.Description ?? string.Empty;
         Notes = link.Notes ?? string.Empty;
         Command = link.Command ?? string.Empty;
+        IsHotclick = link.IsHotclick;
 
         // Ensure visibility properties and terminal selection bind correctly
         OnPropertyChanged(nameof(IsTerminalType));
@@ -599,6 +607,7 @@ public class LinkDialogViewModel : ViewModelBase
         link.Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim();
         link.Notes = string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim();
         link.Type = _selectedLinkType;
+        link.IsHotclick = _isHotclick;
         if (_selectedLinkType == LinkType.Terminal)
         {
             // Store chosen terminal type/profile in TerminalType and store commands in Command

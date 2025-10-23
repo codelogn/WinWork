@@ -620,6 +620,58 @@
                                    TextWrapping="Wrap"/>
                     </StackPanel>
 
+                    <!-- Hotclick -->
+                    <StackPanel Margin="0,0,0,16">
+                        <CheckBox IsChecked="{Binding IsHotclick}"
+                                  Content="🔥 Hotclick (Show in Hotclicks window)"
+                                  Foreground="White"
+                                  FontWeight="Medium"
+                                  FontSize="14">
+                            <CheckBox.Style>
+                                <Style TargetType="CheckBox">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="CheckBox">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Border x:Name="CheckBoxBorder"
+                                                            Width="20" Height="20"
+                                                            Background="#33FFFFFF"
+                                                            BorderBrush="#66FFFFFF"
+                                                            BorderThickness="1"
+                                                            CornerRadius="3"
+                                                            Margin="0,0,8,0">
+                                                        <Path x:Name="CheckMark"
+                                                              Data="M 2 6 L 6 10 L 14 2"
+                                                              Stroke="White"
+                                                              StrokeThickness="2"
+                                                              Visibility="Collapsed"
+                                                              VerticalAlignment="Center"
+                                                              HorizontalAlignment="Center"/>
+                                                    </Border>
+                                                    <ContentPresenter VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsChecked" Value="True">
+                                                        <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                                                        <Setter TargetName="CheckBoxBorder" Property="Background" Value="#664CAF50"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="CheckBoxBorder" Property="Background" Value="#4DFFFFFF"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </CheckBox.Style>
+                        </CheckBox>
+                        <TextBlock Text="When checked, this item will appear in the Hotclicks quick access window" 
+                                   Foreground="#99FFFFFF" 
+                                   FontSize="11"
+                                   Margin="24,4,0,0"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+
                 </StackPanel>
             </ScrollViewer>
             
