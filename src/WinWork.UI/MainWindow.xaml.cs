@@ -995,10 +995,11 @@ public partial class MainWindow : Window
             // Debug output for TreeViewItem loading
             var dataContext = item.DataContext as LinkTreeItemViewModel;
             
-            // Force expansion for folders with children
-            if (dataContext?.Children?.Count > 0)
+            // Respect saved expansion state from the view-model (do not force expand all folders)
+            if (dataContext != null)
             {
-                item.IsExpanded = true;
+                // Set the TreeViewItem's expanded state to the value loaded from the database
+                item.IsExpanded = dataContext.IsExpanded;
             }
             
             // Create context menu programmatically to avoid XAML connection ID issues

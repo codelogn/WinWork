@@ -34,14 +34,14 @@ When you first launch WinWork, you'll see:
 - **Clean Modern Interface** with tree view (left) and edit panel (right)
 - **Sample Folders**: "📁 Bookmarks" and "📁 Development Tools" with example links
 - **Resizable Panels**: Adjust layout to your preference
-- **Toolbar**: [+] Add Link, [🏷️] Manage Tags buttons
+ - **Toolbar**: [+] Add Item, [🏷️] Manage Tags buttons
 - **Search Bar**: Real-time filtering as you type
 
 ### **Main Interface Elements (Current v1.2.0)**
 - **🌳 Tree View (Left)**: Hierarchical display of your links and folders
 - **✏️ Edit Panel (Right)**: Dynamic form that appears when you select items
 - **🔍 Search Bar (Top)**: Real-time search across all your links
-- **🛠️ Toolbar**: Essential actions - Add Link [+] and Manage Tags [🏷️]
+ - **🛠️ Toolbar**: Essential actions - Add Item [+] and Manage Tags [🏷️]
 - **📱 Responsive Design**: Resizable dialogs and panels
 
 ### **Key Improvements in v1.2.0**
@@ -53,7 +53,7 @@ When you first launch WinWork, you'll see:
 
 ## ➕ Adding Links and Folders
 
-### **Adding a New Link (Enhanced in v1.2.0)**
+### **Adding a New Item (Enhanced in v1.2.0)**
 1. **Click the [+] button** in the toolbar OR **right-click** in tree view
 2. **Link Dialog opens** (now 650x800 and resizable!)
 3. **Fill in the details:**
@@ -228,7 +228,7 @@ powershell.exe -Command "Get-Process"
 - **📊 SQLite Database**: Persistent data storage with Entity Framework Core
 - **🌳 Tree View Interface**: Hierarchical display of links and folders
 - **🔍 Real-time Search**: Instant filtering across all content
-- **➕ Add/Edit Links**: Create and modify links with comprehensive form
+ - **➕ Add/Edit Items**: Create and modify items with comprehensive form
 - **🏷️ Tag Management**: Create, assign, and manage colored tags
 - **📂 Folder Organization**: Nested folder structure for organization
 - **🔧 Browse Buttons**: Easy file/folder/application selection
@@ -276,8 +276,8 @@ powershell.exe -Command "Get-Process"
 - **Escape in dialog**: Cancel and close dialog
 - **Click Save/Cancel**: Complete or abort edit operations
 
-### **Planned Keyboard Shortcuts (Future)**
-- **Ctrl+N**: Add new link
+- **Planned Keyboard Shortcuts (Future)**
+- **Ctrl+N**: Add new item
 - **Ctrl+F**: Focus search box
 - **F2**: Rename selected item
 - **Delete**: Delete selected item

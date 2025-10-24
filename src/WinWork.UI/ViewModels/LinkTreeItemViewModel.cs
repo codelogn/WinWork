@@ -12,7 +12,20 @@ namespace WinWork.UI.ViewModels;
 /// </summary>
 public class LinkTreeItemViewModel : INotifyPropertyChanged
 {
-    public LinkTreeItemViewModel? Parent { get; set; }
+    private LinkTreeItemViewModel? _parent;
+    public LinkTreeItemViewModel? Parent
+    {
+        get => _parent;
+        set
+        {
+            if (SetProperty(ref _parent, value))
+            {
+                // When parent changes, notify that indentation/display may have changed
+                OnPropertyChanged(nameof(IndentedName));
+                OnPropertyChanged(nameof(Depth));
+            }
+        }
+    }
     private bool _isExpanded;
     private bool _isSelected;
 
@@ -32,15 +45,42 @@ public class LinkTreeItemViewModel : INotifyPropertyChanged
         get => _isExpanded;
         set 
         { 
+            Console.WriteLine($"IsExpanded setter called for '{Link.Name}': {_isExpanded} -> {value}");
             if (SetProperty(ref _isExpanded, value))
             {
+                Console.WriteLine($"IsExpanded actually changed for '{Link.Name}': now {value}");
                 // Update the underlying Link model when expansion state changes
                 Link.IsExpanded = value;
                 // Request save via event (will be handled by MainWindowViewModel)
                 ExpansionStateChanged?.Invoke(this, value);
+                Console.WriteLine($"Tree expansion state saved: {Link.Name} = {value}");
             }
         }
     }
+
+    /// <summary>
+    /// Depth in the tree (0 = root). Calculated from Parent chain.
+    /// </summary>
+    public int Depth
+    {
+        get
+        {
+            int d = 0;
+            var p = Parent;
+            while (p != null)
+            {
+                d++;
+                p = p.Parent;
+            }
+            return d;
+        }
+    }
+
+    /// <summary>
+    /// Name with indentation for flat lists (e.g., parent selection combo).
+    /// Uses preserved non-breaking spaces for visual indentation.
+    /// </summary>
+    public string IndentedName => new string('\u00A0', Depth * 4) + Name;
 
     public bool IsSelected
     {
@@ -64,6 +104,7 @@ public class LinkTreeItemViewModel : INotifyPropertyChanged
 
         // Load expansion state from the Link model
         _isExpanded = link.IsExpanded;
+        Console.WriteLine($"LinkTreeItemViewModel created: '{link.Name}' - IsExpanded from DB: {link.IsExpanded}");
 
         // Initialize commands
         AddLinkCommand = new RelayCommand(() => OnAddLink());

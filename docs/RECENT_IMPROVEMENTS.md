@@ -220,7 +220,7 @@ This document tracks all improvements, bug fixes, and feature additions to WinWo
    - Delete tags → Should show success message
 
 2. **Test Tree View Refresh**:
-   - Add new links → Should appear immediately in tree
+  - Add new items → Should appear immediately in tree
    - Use refresh button → Should reload data with confirmation
    - Verify all saved items appear correctly
 

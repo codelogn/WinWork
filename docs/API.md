@@ -235,7 +235,7 @@ Main window view model with link tree and operations.
 - `IsLoading` - Loading state indicator
 
 #### Commands
-- `AddLinkCommand` - Add new link
+ - `AddLinkCommand` - Add new item
 - `EditLinkCommand` - Edit selected link
 - `DeleteLinkCommand` - Delete selected link
 - `RefreshCommand` - Reload links
