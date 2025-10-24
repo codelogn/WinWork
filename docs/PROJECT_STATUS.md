@@ -1,5 +1,9 @@
 
-## Latest Features & Changes (v1.2.0)
+# Latest Features & Changes (v1.2.1)
+- **Single-file, self-contained .exe**: Portable, no .NET install required
+- **Custom application icon**: Multi-size ICO, embedded and shown in Explorer, taskbar, and window
+- **No console window**: Pure GUI app, no terminal flashes
+- **PowerShell automation**: Build, publish, and icon generation scripts
 - Context menu improvements (Open/Edit/Add/Delete)
 - "Open" menu added to right-click context menu
 - Parent selection logic improved for Add New
@@ -8,6 +12,11 @@
 - Search now includes Notes field
 - Added loading spinner during async search operations
 - Export now includes timestamp metadata
+## 🚀 Deployment & Branding
+
+- **Self-contained, single-file .exe**: Just copy and run. No .NET install needed.
+- **Custom icon**: Your logo appears in Explorer, taskbar, and window. If not, try renaming the EXE or clearing the Windows icon cache.
+- **PowerShell automation**: Use `run_and_publish.ps1` to build, publish, and brand the app automatically.
 # Project Status Report - WinWork
 
 **Date:** October 15, 2025  

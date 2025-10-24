@@ -1,5 +1,9 @@
 
-## Latest Features & Changes (v1.2.0)
+# Latest Features & Changes (v1.2.1)
+- **Single-file, self-contained .exe**: Portable, no .NET install required
+- **Custom application icon**: Multi-size ICO, embedded and shown in Explorer, taskbar, and window
+- **No console window**: Pure GUI app, no terminal flashes
+- **PowerShell automation**: Build, publish, and icon generation scripts
 - Unified add/edit dialog for all item types (Links, Folders, Notes)
 - Notes type (freeform text, no URL required)
 - Tagging system with color-coded tags
@@ -11,7 +15,16 @@
 - Loading spinner for async operations
 - "Parent Folder" renamed to "Parent Item" (can be any type)
 - Export includes timestamp
-# WinWork - How to Use Guide (v1.2.0)
+# WinWork - How to Use Guide (v1.2.1)
+## 🚀 Deployment & Branding
+
+- **Self-contained, single-file .exe**: Just copy and run. No .NET install needed.
+- **Custom icon**: Your logo appears in Explorer, taskbar, and window. If not, try renaming the EXE or clearing the Windows icon cache.
+- **PowerShell automation**: Use `run_and_publish.ps1` to build, publish, and brand the app automatically.
+## 🛠️ Troubleshooting
+
+- **Icon not showing?** Rename the EXE or clear the Windows icon cache.
+- **No console window**: The app is pure GUI, no terminal flashes.
 
 ## 📑 Table of Contents
 - [🚀 Getting Started](#-getting-started)

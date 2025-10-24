@@ -1,3 +1,18 @@
+# Version 1.2.1 - October 24, 2025
+
+### **Self-contained Single-File Executable & Branding**
+- **Portable .exe**: Now published as a single-file, self-contained executable (~180MB) with .NET 9 runtime included. No installation required on target machines.
+- **No console window**: OutputType=WinExe, no terminal flashes or console windows.
+- **Custom application icon**: Multi-size ICO (16, 32, 48, 256), embedded in the .exe, visible in Windows Explorer, taskbar, and window title bar.
+- **PowerShell automation**: Added `run_and_publish.ps1` for clean, build, publish, and icon generation. Added `generate-multisize-ico.ps1` for ICO creation.
+- **Troubleshooting**: Added guidance for Windows icon cache issues and EXE renaming for icon refresh.
+
+### **UI/UX and Technical Improvements**
+- **Programmatic icon setting**: All main windows set their icon at runtime for compatibility with single-file deployment.
+- **Modern UI**: Maintained glassmorphism, resizable dialogs, color tags, and drag & drop.
+- **System tray/taskbar icon**: Icon now appears in all Windows UI locations.
+
+---
 # WinWork - Recent Improvements & Changelog
 
 ## Overview

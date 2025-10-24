@@ -1,3 +1,15 @@
+---
+
+## 🚀 Deployment & Branding
+
+- **Self-contained, single-file .exe**: Just copy and run. No .NET install needed.
+- **Custom icon**: Your logo appears in Explorer, taskbar, and window. If not, try renaming the EXE or clearing the Windows icon cache.
+- **PowerShell automation**: Use `run_and_publish.ps1` to build, publish, and brand the app automatically.
+
+## 🛠️ Troubleshooting
+
+- **Icon not showing?** Rename the EXE or clear the Windows icon cache.
+- **No console window**: The app is pure GUI, no terminal flashes.
 
 ---
 

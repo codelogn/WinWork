@@ -33,17 +33,26 @@ dotnet publish src/WinWork.UI --configuration Release --runtime win-x64 --self-c
 dotnet publish src/WinWork.UI --configuration Release --runtime win-x64 --self-contained true --output ./publish
 ```
 
+
 ### Single-File Executable (recommended for easy distribution)
 ```
 dotnet publish src/WinWork.UI --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true --output ./publish
 ```
 
+Or use the automated PowerShell script (recommended):
+```
+powershell -ExecutionPolicy Bypass -File run_and_publish.ps1
+```
+
 ---
 
-## 4. Packaging
 
-- The output will be in the `./publish` folder.
+## 4. Packaging & Branding
+
+- The output will be in the `./publish` folder (or `C:\bin\WinWork` if using the script).
 - Distribute the single `.exe` file (or the entire folder for self-contained).
+- **Custom icon**: The executable includes a multi-size ICO for full Windows integration (Explorer, taskbar, window).
+- If the icon does not appear, try renaming the EXE or clearing the Windows icon cache.
 - Include `linker.db` if you want to ship sample data (optional).
 - You may compress the folder as a `.zip` for easy download.
 
@@ -57,7 +66,12 @@ dotnet publish src/WinWork.UI --configuration Release --runtime win-x64 --self-c
 
 ---
 
+
 ## 6. Installation Instructions (for users)
+
+1. Download and extract the `.zip` (if provided) or copy the `.exe` to any folder.
+2. Double-click the `.exe` to launch. No installation or .NET runtime required.
+3. If the icon does not appear, try renaming the EXE or clearing the Windows icon cache.
 
 - Download and extract the release `.zip`.
 - Double-click `WinWork.UI.exe` to run.
