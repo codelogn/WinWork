@@ -41,6 +41,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        SetWindowIcon();
         // Defer appending version until content is rendered (ViewModel Title binding is applied)
         this.ContentRendered += (s, e) => AppendVersionToTitle();
         this.DataContextChanged += MainWindow_DataContextChanged;
@@ -51,6 +52,35 @@ public partial class MainWindow : Window
         DataContext = viewModel;
         // Subscribe to dialog requests
         viewModel.LinkDialogRequested += OnLinkDialogRequested;
+    }
+
+    private void SetWindowIcon()
+    {
+        try
+        {
+            // Load icon from embedded resource or application icon
+            var iconUri = new Uri("pack://application:,,,/winwork-logo.ico");
+            this.Icon = System.Windows.Media.Imaging.BitmapFrame.Create(iconUri);
+        }
+        catch
+        {
+            // Fallback: try to get the application icon
+            try
+            {
+                var iconHandle = System.Drawing.Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location);
+                if (iconHandle != null)
+                {
+                    this.Icon = System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(
+                        iconHandle.Handle,
+                        System.Windows.Int32Rect.Empty,
+                        System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions());
+                }
+            }
+            catch
+            {
+                // If all fails, leave default icon
+            }
+        }
     }
 
     #region Window Controls

@@ -60,6 +60,7 @@ public partial class SettingsWindow : Window
     public SettingsWindow()
     {
         InitializeComponent();
+        SetWindowIcon();
         
         // Select the first item by default
         if (SettingsTreeView.Items.Count > 0 && SettingsTreeView.Items[0] is TreeViewItem firstItem)
@@ -107,6 +108,35 @@ public partial class SettingsWindow : Window
             _isLightTheme = false;
             ApplyDarkTheme(mainWindow);
             UpdateElementForegrounds(this, GetForegroundBrush());
+        }
+    }
+
+    private void SetWindowIcon()
+    {
+        try
+        {
+            // Load icon from embedded resource
+            var iconUri = new Uri("pack://application:,,,/winwork-logo.ico");
+            this.Icon = System.Windows.Media.Imaging.BitmapFrame.Create(iconUri);
+        }
+        catch
+        {
+            // Fallback: try to get the application icon
+            try
+            {
+                var iconHandle = System.Drawing.Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location);
+                if (iconHandle != null)
+                {
+                    this.Icon = System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(
+                        iconHandle.Handle,
+                        System.Windows.Int32Rect.Empty,
+                        System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions());
+                }
+            }
+            catch
+            {
+                // If all fails, leave default icon
+            }
         }
     }
 
