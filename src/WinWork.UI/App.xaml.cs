@@ -18,18 +18,12 @@ public partial class App : Application
 {
     private IHost? _host;
 
-    [DllImport("kernel32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    static extern bool AllocConsole();
+    // Removed AllocConsole import for production GUI-only build
 
     protected override async void OnStartup(StartupEventArgs e)
     {
         try
         {
-            // Allocate a console window for debugging
-            AllocConsole();
-            Console.WriteLine("WinWork Console Debug Output");
-            Console.WriteLine("==============================");
             // Create and configure host
             _host = CreateHost();
             
@@ -258,18 +252,18 @@ public partial class App : Application
         {
             // Check if we already have data - if so, don't create seed data
             var existingCount = await dbContext.Links.CountAsync();
-            Console.WriteLine($"EnsureSeedDataAsync: Found {existingCount} existing links");
+            // Debug: Found {existingCount} existing links
             
             if (existingCount > 0)
             {
-                Console.WriteLine("EnsureSeedDataAsync: Database already has data. Skipping seed data creation.");
+                // Debug: Database already has data. Skipping seed data creation.
                 return;
             }
             
-            Console.WriteLine("EnsureSeedDataAsync: Creating seed data...");
+            // Debug: "EnsureSeedDataAsync: Creating seed data..."
 
             // Create hierarchical seed data using Entity Framework with explicit relationships
-            Console.WriteLine("Creating hierarchical seed data using Entity Framework approach...");
+            // Debug: "Creating hierarchical seed data using Entity Framework approach..."
             
             // Create root folders first
             var bookmarksFolder = new WinWork.Models.Link
@@ -296,7 +290,7 @@ public partial class App : Application
             dbContext.Links.AddRange(bookmarksFolder, devToolsFolder);
             await dbContext.SaveChangesAsync();
             
-            Console.WriteLine($"Created folders - Bookmarks ID: {bookmarksFolder.Id}, DevTools ID: {devToolsFolder.Id}");
+            // Debug: $"Created folders - Bookmarks ID: {bookmarksFolder.Id}, DevTools ID: {devToolsFolder.Id}"
             
             // Now create child links with proper ParentId
             var googleLink = new WinWork.Models.Link
@@ -351,7 +345,7 @@ public partial class App : Application
             dbContext.Links.AddRange(googleLink, githubLink, vstudioLink, stackOverflowLink);
             await dbContext.SaveChangesAsync();
             
-            Console.WriteLine("Hierarchical seed data created with Entity Framework!");
+            // Debug: "Hierarchical seed data created with Entity Framework!"
             
             // Final verification using the folder objects
             var totalCount = await dbContext.Links.CountAsync();
@@ -360,12 +354,12 @@ public partial class App : Application
             var totalRootLinks = await dbContext.Links.CountAsync(l => l.ParentId == null);
             var totalChildLinks = await dbContext.Links.CountAsync(l => l.ParentId != null);
             
-            Console.WriteLine($"FINAL VERIFICATION:");
-            Console.WriteLine($"Total links: {totalCount}");
+            // Debug: $"FINAL VERIFICATION:"
+            // Debug: $"Total links: {totalCount}"
             Console.WriteLine($"Bookmarks folder (ID: {bookmarksFolder.Id}) has {bookmarkChildrenCount} children");
             Console.WriteLine($"DevTools folder (ID: {devToolsFolder.Id}) has {devToolChildrenCount} children");
-            Console.WriteLine($"Total root links: {totalRootLinks}, Total child links: {totalChildLinks}");
-            Console.WriteLine($"Google ParentId: {googleLink.ParentId}, GitHub ParentId: {githubLink.ParentId}");
+            // Debug: $"Total root links: {totalRootLinks}, Total child links: {totalChildLinks}"
+            // Debug: $"Google ParentId: {googleLink.ParentId}, GitHub ParentId: {githubLink.ParentId}"
         }
         catch (Exception ex)
         {

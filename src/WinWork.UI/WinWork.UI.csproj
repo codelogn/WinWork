@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\WinWork.Core\WinWork.Core.csproj" />
+    <ProjectReference Include="..\WinWork.Models\WinWork.Models.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,6 +22,11 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <!-- Ensure no console window appears -->
+    <UseWindowsForms>false</UseWindowsForms>
+    <!-- Ensure full self-contained deployment -->
+    <SelfContained>true</SelfContained>
+    <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
