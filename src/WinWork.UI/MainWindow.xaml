@@ -279,7 +279,7 @@
                                     </TreeView.Resources>
                                     <TreeView.ItemContainerStyle>
                                         <Style TargetType="TreeViewItem">
-                                            <Setter Property="IsExpanded" Value="True"/>
+                                            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
                                             <Setter Property="Foreground" Value="White"/>
                                             <Setter Property="FontSize" Value="12"/>
                                             <Setter Property="Margin" Value="0,2,0,2"/>

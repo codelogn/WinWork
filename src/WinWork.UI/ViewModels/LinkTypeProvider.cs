@@ -11,6 +11,7 @@ public static class LinkTypeProvider
         new(LinkType.Folder, "📁 Folder", "Organize items into groups"),
         new(LinkType.WebUrl, "🌐 Web URL", "Website or web page"),
         new(LinkType.FilePath, "📄 File", "Local file or document"),
+        new(LinkType.FolderPath, "📂 Folder Path", "Open folder in Explorer"),
         new(LinkType.Application, "💻 Application", "Executable program"),
         new(LinkType.Notes, "📝 Notes", "Text notes and memos"),
         new(LinkType.Terminal, "🖥️ Terminal", "Open a terminal and execute commands")

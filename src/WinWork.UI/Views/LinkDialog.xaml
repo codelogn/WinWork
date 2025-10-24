@@ -541,7 +541,7 @@
                                         ToolTip="Browse Folder"
                                         Visibility="{Binding SelectedLinkType, Converter={StaticResource LinkTypeToVisibilityConverter}, ConverterParameter=FolderPath}"/>
                                 
-                                <Button Content="📄" 
+                                <Button Content="�"
                                         Command="{Binding BrowseFileCommand}"
                                         Style="{StaticResource ModernButtonStyle}"
                                         Width="40" Height="40"

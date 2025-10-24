@@ -335,23 +335,46 @@ public partial class MainWindow : Window
 
         try
         {
+            Console.WriteLine($"DEBUG: OnLinkDialogRequested called - LinkToEdit: {e.LinkToEdit?.Name ?? "null"}, InitialType: {e.InitialType}, ParentItem: {e.ParentItem?.Name ?? "null"}");
+            FileLogger.Log($"OnLinkDialogRequested called - LinkToEdit: {e.LinkToEdit?.Name ?? "null"}, InitialType: {e.InitialType}, ParentItem: {e.ParentItem?.Name ?? "null"}");
             
             var dialogViewModel = new LinkDialogViewModel(ViewModel.SettingsService as WinWork.Core.Services.ISettingsService);
             
             if (e.LinkToEdit != null)
             {
+                Console.WriteLine($"DEBUG: Edit mode - setting edit mode for: {e.LinkToEdit.Name}");
+                FileLogger.Log($"Edit mode - setting edit mode for: {e.LinkToEdit.Name}");
                 dialogViewModel.SetEditMode(e.LinkToEdit);
                 var allItems = GetAllItems(viewModel.RootLinks);
                 dialogViewModel.SetAvailableParents(allItems);
             }
             else
             {
-                if (e.InitialType.HasValue)
-                    dialogViewModel.SetInitialType(e.InitialType.Value);
-                if (e.ParentItem != null)
-                    dialogViewModel.SetParentContext(e.ParentItem);
+                Console.WriteLine($"DEBUG: Add mode - InitialType: {e.InitialType}, ParentItem: {e.ParentItem?.Name ?? "null"}");
+                FileLogger.Log($"Add mode - InitialType: {e.InitialType}, ParentItem: {e.ParentItem?.Name ?? "null"}");
+                
+                // Set available parents FIRST
                 var allItems = GetAllItems(viewModel.RootLinks);
                 dialogViewModel.SetAvailableParents(allItems);
+                
+                if (e.InitialType.HasValue)
+                {
+                    Console.WriteLine($"DEBUG: Setting initial type to: {e.InitialType.Value}");
+                    FileLogger.Log($"Setting initial type to: {e.InitialType.Value}");
+                    dialogViewModel.SetInitialType(e.InitialType.Value);
+                }
+                
+                if (e.ParentItem != null)
+                {
+                    Console.WriteLine($"DEBUG: Setting parent context to: {e.ParentItem.Name} (ID: {e.ParentItem.Link.Id})");
+                    FileLogger.Log($"Setting parent context to: {e.ParentItem.Name} (ID: {e.ParentItem.Link.Id})");
+                    dialogViewModel.SetParentContext(e.ParentItem);
+                }
+                else
+                {
+                    Console.WriteLine($"DEBUG: ParentItem is null, not setting parent context");
+                    FileLogger.Log($"ParentItem is null, not setting parent context");
+                }
             }
 
             var dialog = new LinkDialog(dialogViewModel)
@@ -844,18 +867,36 @@ public partial class MainWindow : Window
     {
         var senderMessage = $"DEBUG: GetLinkItemFromMenuItem called with sender: {sender?.GetType().Name ?? "null"}";
         FileLogger.Log(senderMessage);
+        Console.WriteLine(senderMessage);
         
         if (sender is MenuItem menuItem)
         {
             var menuItemMessage = $"DEBUG: MenuItem found, parent: {menuItem.Parent?.GetType().Name ?? "null"}";
             FileLogger.Log(menuItemMessage);
+            Console.WriteLine(menuItemMessage);
             
             // First check if the MenuItem has a DataContext (new approach)
             if (menuItem.DataContext is LinkTreeItemViewModel menuDataContext)
             {
-                var menuContextMessage = $"DEBUG: Found MenuItem DataContext: {menuDataContext.Name}";
+                var menuContextMessage = $"DEBUG: SUCCESS - Found MenuItem DataContext: {menuDataContext.Name} (ID: {menuDataContext.Link.Id})";
                 FileLogger.Log(menuContextMessage);
+                Console.WriteLine(menuContextMessage);
                 return menuDataContext;
+            }
+            
+            // Second check: try Tag property as backup
+            if (menuItem.Tag is LinkTreeItemViewModel menuTagContext)
+            {
+                var menuTagMessage = $"DEBUG: SUCCESS - Found MenuItem Tag: {menuTagContext.Name} (ID: {menuTagContext.Link.Id})";
+                FileLogger.Log(menuTagMessage);
+                Console.WriteLine(menuTagMessage);
+                return menuTagContext;
+            }
+            else
+            {
+                var noDataMessage = $"DEBUG: MenuItem.DataContext/Tag not LinkTreeItemViewModel: DataContext={menuItem.DataContext?.GetType().Name ?? "null"}, Tag={menuItem.Tag?.GetType().Name ?? "null"}";
+                FileLogger.Log(noDataMessage);
+                Console.WriteLine(noDataMessage);
             }
             
             // Fallback to the old approach via PlacementTarget
@@ -865,14 +906,28 @@ public partial class MainWindow : Window
                 var result = treeViewItem.DataContext as LinkTreeItemViewModel;
                 var resultMessage = $"DEBUG: Found TreeViewItem with DataContext: {result?.Name ?? "null"}";
                 FileLogger.Log(resultMessage);
+                Console.WriteLine(resultMessage);
                 return result;
             }
             else
             {
                 var placementMessage = $"DEBUG: PlacementTarget is not TreeViewItem: {contextMenu?.PlacementTarget?.GetType().Name ?? "null"}";
                 FileLogger.Log(placementMessage);
+                Console.WriteLine(placementMessage);
+                // Fallback: if we couldn't resolve from the ContextMenu, use the ViewModel's currently selected link
+                if (DataContext is MainWindowViewModel vm && vm.SelectedLink != null)
+                {
+                    var fallbackMessage = $"DEBUG: FALLBACK - Using ViewModel.SelectedLink: {vm.SelectedLink.Name} (ID: {vm.SelectedLink.Link.Id})";
+                    FileLogger.Log(fallbackMessage);
+                    Console.WriteLine(fallbackMessage);
+                    return vm.SelectedLink;
+                }
             }
         }
+        
+        var nullMessage = "DEBUG: Returning null - could not resolve parent item";
+        FileLogger.Log(nullMessage);
+        Console.WriteLine(nullMessage);
         return null;
     }
 
@@ -1050,7 +1105,8 @@ public partial class MainWindow : Window
             Foreground = System.Windows.Media.Brushes.White,
             Padding = new Thickness(8, 4, 8, 4),
             Margin = new Thickness(1),
-            DataContext = dataContext
+            DataContext = dataContext,
+            Tag = dataContext  // Double-set using Tag as backup
         };
         addMenuItem.Click += AddItem_Click;
         contextMenu.Items.Add(addMenuItem);

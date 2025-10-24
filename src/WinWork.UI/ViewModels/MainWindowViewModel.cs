@@ -360,7 +360,11 @@ public class MainWindowViewModel : ViewModelBase
         }
         
         var treeItem = new LinkTreeItemViewModel(link, childViewModels);
-        // Assign parent for all children
+        
+        // Hook up expansion state change event
+        treeItem.ExpansionStateChanged += OnTreeItemExpansionChanged;
+        
+        // Assign parent for all children (events are already hooked up from recursive calls)
         foreach (var childVM in treeItem.Children)
         {
             childVM.Parent = treeItem;
@@ -1549,6 +1553,23 @@ public class MainWindowViewModel : ViewModelBase
         } while (existingNames.Contains(uniqueName));
 
         return uniqueName;
+    }
+
+    private async void OnTreeItemExpansionChanged(object? sender, bool isExpanded)
+    {
+        if (sender is LinkTreeItemViewModel treeItem)
+        {
+            try
+            {
+                // Update the Link in the database
+                await _linkService.UpdateLinkAsync(treeItem.Link);
+                Console.WriteLine($"Tree expansion state saved: {treeItem.Name} = {isExpanded}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving tree expansion state: {ex.Message}");
+            }
+        }
     }
 
     // Events

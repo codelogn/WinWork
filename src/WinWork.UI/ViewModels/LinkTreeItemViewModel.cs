@@ -30,7 +30,16 @@ public class LinkTreeItemViewModel : INotifyPropertyChanged
     public bool IsExpanded
     {
         get => _isExpanded;
-        set => SetProperty(ref _isExpanded, value);
+        set 
+        { 
+            if (SetProperty(ref _isExpanded, value))
+            {
+                // Update the underlying Link model when expansion state changes
+                Link.IsExpanded = value;
+                // Request save via event (will be handled by MainWindowViewModel)
+                ExpansionStateChanged?.Invoke(this, value);
+            }
+        }
     }
 
     public bool IsSelected
@@ -52,6 +61,9 @@ public class LinkTreeItemViewModel : INotifyPropertyChanged
         Link = link;
         Children = new ObservableCollection<LinkTreeItemViewModel>(children ?? Enumerable.Empty<LinkTreeItemViewModel>());
         Tags = new ObservableCollection<TagViewModel>();
+
+        // Load expansion state from the Link model
+        _isExpanded = link.IsExpanded;
 
         // Initialize commands
         AddLinkCommand = new RelayCommand(() => OnAddLink());
@@ -84,10 +96,12 @@ public class LinkTreeItemViewModel : INotifyPropertyChanged
         LinkType.WebUrl => "🌐",
         LinkType.FilePath => "📄",
         LinkType.Folder => "📁",
-        LinkType.FolderPath => "📁",
+        LinkType.FolderPath => "📂",
         LinkType.Application => "⚙️",
         LinkType.WindowsStoreApp => "📱",
         LinkType.SystemLocation => "🖥️",
+        LinkType.Notes => "📝",
+        LinkType.Terminal => "🖥️",
         _ => "🔗"
     };
 
@@ -95,12 +109,14 @@ public class LinkTreeItemViewModel : INotifyPropertyChanged
     {
         LinkType.WebUrl => Color.FromRgb(0x4A, 0x90, 0xE2),      // Blue
         LinkType.FilePath => Color.FromRgb(0x7E, 0xD3, 0x21),     // Green
-        LinkType.Folder => Color.FromRgb(0xFF, 0xB3, 0x00),   // Orange
-        LinkType.FolderPath => Color.FromRgb(0xFF, 0xB3, 0x00),   // Orange
+        LinkType.Folder => Color.FromRgb(0xFF, 0xB3, 0x00),      // Orange
+        LinkType.FolderPath => Color.FromRgb(0xFF, 0xB3, 0x00),  // Orange
         LinkType.Application => Color.FromRgb(0x9C, 0x27, 0xB0), // Purple
         LinkType.WindowsStoreApp => Color.FromRgb(0x9C, 0x27, 0xB0), // Purple
         LinkType.SystemLocation => Color.FromRgb(0x60, 0x7D, 0x8B),   // Blue Grey
-        _ => Color.FromRgb(0x75, 0x75, 0x75)                  // Grey
+        LinkType.Notes => Color.FromRgb(0xFF, 0x57, 0x22),       // Deep Orange
+        LinkType.Terminal => Color.FromRgb(0x26, 0x32, 0x38),    // Dark Grey
+        _ => Color.FromRgb(0x75, 0x75, 0x75)                     // Grey
     });
 
     // Command handlers (to be implemented by the main view model)
@@ -110,6 +126,7 @@ public class LinkTreeItemViewModel : INotifyPropertyChanged
     public event EventHandler? DeleteRequested;
     public event EventHandler? CopyUrlRequested;
     public event EventHandler? OpenInBrowserRequested;
+    public event EventHandler<bool>? ExpansionStateChanged;
 
     private void OnAddLink() => AddLinkRequested?.Invoke(this, EventArgs.Empty);
     private void OnAddFolder() => AddFolderRequested?.Invoke(this, EventArgs.Empty);

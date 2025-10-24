@@ -2,6 +2,8 @@
 
 This file provides concise guidance for GitHub Copilot or automated assistants that operate on this repository.
 
+- Always update docs folder with latests features and changes.
+
 Core rules
 - Keep changes minimal and safe: prefer small, incremental edits. Avoid wide-reaching refactors without approval.
 - Always run `dotnet build` after changes to C# / XAML files and ensure the build succeeds before committing.

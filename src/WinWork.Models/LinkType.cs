@@ -43,8 +43,8 @@ public enum LinkType
     /// <summary>
     /// Text notes/memo
     /// </summary>
-    Notes = 7
-    ,
+    Notes = 7,
+    
     /// <summary>
     /// Terminal - execute arbitrary commands in a terminal (PowerShell, Git Bash, CMD)
     /// </summary>
