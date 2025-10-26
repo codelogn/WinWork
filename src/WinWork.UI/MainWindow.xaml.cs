@@ -111,6 +111,11 @@ public partial class MainWindow : Window
         WindowState = WindowState == WindowState.Maximized 
             ? WindowState.Normal 
             : WindowState.Maximized;
+
+        if (sender is Button button)
+        {
+            button.Tag = WindowState == WindowState.Maximized ? "🗗" : "🗖";
+        }
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)

@@ -95,7 +95,8 @@
                                 Click="MinimizeButton_Click"/>
                         
                         <Button Name="MaximizeButton"
-                                Content="🗖"
+                                Content="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"
+                                Tag="🗖"
                                 Style="{StaticResource WindowControlButtonStyle}"
                                 Click="MaximizeButton_Click"/>
                         

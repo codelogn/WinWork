@@ -30,14 +30,39 @@ public partial class App : Application
             // Start the host
             await _host.StartAsync();
 
-            // Initialize database synchronously before showing UI
+            // Initialize database before showing UI
             using (var scope = _host.Services.CreateScope())
             {
-                var dbContext = scope.ServiceProvider.GetRequiredService<WinWorkDbContext>();
-                await DatabaseConfiguration.InitializeDatabaseAsync(dbContext);
-                
-                // Ensure we have seed data for testing
-                await EnsureSeedDataAsync(dbContext);
+                try
+                {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<WinWorkDbContext>();
+                    
+                    // Get database path for error reporting
+                    var dbPath = DatabaseConfiguration.GetDefaultDatabasePath();
+                    
+                    try
+                    {
+                        await DatabaseConfiguration.InitializeDatabaseAsync(dbContext);
+                    }
+                    catch (Exception dbEx)
+                    {
+                        ShowErrorDialog(
+                            "Database Initialization Error",
+                            $"Failed to initialize database at {dbPath}. The application will now exit.",
+                            $"Error details:\n{dbEx.Message}\n\nStack trace:\n{dbEx.StackTrace}");
+                        Shutdown(1);
+                        return;
+                    }
+                }
+                catch (Exception scopeEx)
+                {
+                    ShowErrorDialog(
+                        "Service Configuration Error",
+                        "Failed to configure application services. The application will now exit.",
+                        $"Error details:\n{scopeEx.Message}\n\nStack trace:\n{scopeEx.StackTrace}");
+                    Shutdown(1);
+                    return;
+                }
             }
 
             // Show main window after database is ready
