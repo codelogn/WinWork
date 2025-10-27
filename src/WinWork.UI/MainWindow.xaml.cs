@@ -90,11 +90,9 @@ public partial class MainWindow : Window
         if (e.ClickCount == 2)
         {
             // Double-click to maximize/restore
-            WindowState = WindowState == WindowState.Maximized 
-                ? WindowState.Normal 
-                : WindowState.Maximized;
+            ToggleMaximize();
         }
-        else
+        else if (e.ChangedButton == MouseButton.Left)
         {
             // Single click to drag
             DragMove();
@@ -108,13 +106,19 @@ public partial class MainWindow : Window
 
     private void MaximizeButton_Click(object sender, RoutedEventArgs e)
     {
+        ToggleMaximize();
+    }
+
+    private void ToggleMaximize()
+    {
         WindowState = WindowState == WindowState.Maximized 
             ? WindowState.Normal 
             : WindowState.Maximized;
-
-        if (sender is Button button)
+            
+        var maximizeButton = this.FindName("MaximizeButton") as Button;
+        if (maximizeButton != null)
         {
-            button.Tag = WindowState == WindowState.Maximized ? "🗗" : "🗖";
+            maximizeButton.Tag = WindowState == WindowState.Maximized ? "🗗" : "🗖";
         }
     }
 

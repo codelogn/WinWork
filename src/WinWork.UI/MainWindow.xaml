@@ -17,6 +17,16 @@
         WindowStyle="None"
         Background="Transparent">
     
+    <WindowChrome.WindowChrome>
+        <WindowChrome 
+            ResizeBorderThickness="6"
+            CaptionHeight="0"
+            GlassFrameThickness="0"
+            CornerRadius="0"
+            UseAeroCaptionButtons="False"
+            NonClientFrameEdges="None"/>
+    </WindowChrome.WindowChrome>
+    
     <Window.Resources>
         <!-- Context Menu Style -->
         <Style x:Key="DarkContextMenuStyle" TargetType="ContextMenu">
