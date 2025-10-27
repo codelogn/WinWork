@@ -13,6 +13,7 @@ namespace WinWork.Core.Interfaces
     Task<Link> CreateLinkAsync(Link link);
     Task<Link> UpdateLinkAsync(Link link);
     Task<bool> MoveLinkAsync(int linkId, int? newParentId, int newSortOrder);
+    Task<int> GetMaxSortOrderAsync(int? parentId);
     Task<List<(string Name, LinkType Type)>> DeleteLinkRecursiveAsync(int id);
     Task<bool> ValidateLinkAsync(Link link);
     Task OpenLinkAsync(int linkId);

@@ -438,26 +438,35 @@ public class MainWindowViewModel : ViewModelBase
     /// <summary>
     /// Moves a link to a new parent (for drag & drop functionality)
     /// </summary>
-    public async Task<bool> MoveLinkAsync(int linkId, int? newParentId)
+    public async Task<bool> MoveLinkAsync(int linkId, int? newParentId, int? newSortOrder = null)
     {
         try
         {
             IsLoading = true;
-            
-            // Get the link to move
-            var link = await _linkService.GetLinkAsync(linkId);
-            if (link == null) return false;
-            
-            // Update the parent ID
-            link.ParentId = newParentId;
-            
-            // Update in database
-            await _linkService.UpdateLinkAsync(link);
-            
+
+            int sortOrderToUse;
+            if (newSortOrder.HasValue)
+            {
+                sortOrderToUse = newSortOrder.Value;
+            }
+            else
+            {
+                // Determine new sort order: append to end of target parent
+                var maxOrder = await _linkService.GetMaxSortOrderAsync(newParentId);
+                sortOrderToUse = maxOrder + 1;
+            }
+
+            var success = await _linkService.MoveLinkAsync(linkId, newParentId, sortOrderToUse);
+            if (!success)
+            {
+                DisplayErrorMessage($"Failed to move link (data layer move failed)");
+                return false;
+            }
+
             // Refresh the tree to reflect changes
             await LoadLinksAsync();
-            
-            DisplaySuccessMessage($"Moved '{link.Name}' successfully");
+
+            DisplaySuccessMessage($"Moved item successfully");
             return true;
         }
         catch (Exception ex)

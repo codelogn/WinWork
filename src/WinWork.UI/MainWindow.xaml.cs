@@ -327,26 +327,37 @@ public partial class MainWindow : Window
         
         try
         {
-            // Determine new parent ID based on drop target
+            // Determine new parent ID and desired sort order based on drop target
             int? newParentId = null;
-            
+            int? desiredSortOrder = null;
+
             if (targetItem != null)
             {
-                // If dropping on a folder, make it the parent
                 if (targetItem.Link.Type == LinkType.Folder)
                 {
+                    // Dropping onto a folder -> make it the parent and append to end
                     newParentId = targetItem.Link.Id;
+                    var maxOrder = await viewModel.LinkService.GetMaxSortOrderAsync(newParentId);
+                    desiredSortOrder = maxOrder + 1;
                 }
-                // If dropping on a link, use the link's parent (make them siblings)
                 else
                 {
+                    // Dropping on a link -> make them siblings and insert after the target
                     newParentId = targetItem.Link.ParentId;
+                    // Use target's SortOrder + 1 as insertion index
+                    desiredSortOrder = targetItem.Link.SortOrder + 1;
                 }
             }
-            // If targetItem is null, drop at root level
-            
-            // Update the database
-            await viewModel.MoveLinkAsync(draggedItem.Link.Id, newParentId);
+            else
+            {
+                // Dropped to empty area -> append to root
+                newParentId = null;
+                var maxOrder = await viewModel.LinkService.GetMaxSortOrderAsync(newParentId);
+                desiredSortOrder = maxOrder + 1;
+            }
+
+            // Update the database with computed sort order
+            await viewModel.MoveLinkAsync(draggedItem.Link.Id, newParentId, desiredSortOrder);
             
             FileLogger.Log($"Drag & Drop: Moved '{draggedItem.Name}' to new parent ID: {newParentId}");
         }

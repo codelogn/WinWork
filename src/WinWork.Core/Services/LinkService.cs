@@ -145,6 +145,11 @@ public class LinkService : WinWork.Core.Interfaces.ILinkService
         return await _linkRepository.MoveAsync(linkId, newParentId, newSortOrder);
     }
 
+    public async Task<int> GetMaxSortOrderAsync(int? parentId)
+    {
+        return await _linkRepository.GetMaxSortOrderAsync(parentId);
+    }
+
     public async Task OpenLinkAsync(int linkId)
     {
         var link = await _linkRepository.GetByIdAsync(linkId);
