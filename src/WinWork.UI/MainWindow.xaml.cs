@@ -42,6 +42,23 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         SetWindowIcon();
+        // Apply saved background color if available
+        try
+        {
+            var vm = this.DataContext as MainWindowViewModel;
+            var settings = vm?.SettingsService;
+            if (settings != null)
+            {
+                var bgColor = settings.GetSettingAsync("BackgroundColor").GetAwaiter().GetResult();
+                if (!string.IsNullOrWhiteSpace(bgColor))
+                {
+                    var conv = new System.Windows.Media.BrushConverter();
+                    var brush = conv.ConvertFromString(bgColor ?? "") as System.Windows.Media.Brush;
+                    if (brush != null) this.Background = brush;
+                }
+            }
+        }
+        catch { }
         // Defer appending version until content is rendered (ViewModel Title binding is applied)
         this.ContentRendered += (s, e) => AppendVersionToTitle();
         this.DataContextChanged += MainWindow_DataContextChanged;
@@ -421,11 +438,64 @@ public partial class MainWindow : Window
                 Owner = this
             };
 
-            // Subscribe to the save and delete events
-            LinkSaveEventArgs? saveArgs = null;
-            LinkDeleteEventArgs? deleteArgs = null;
-            dialogViewModel.LinkSaved += (s, e) => saveArgs = e;
-            dialogViewModel.LinkDeleted += (s, e) => deleteArgs = e;
+            // Subscribe to the save and delete events and handle them immediately.
+            // This ensures validation errors are surfaced to the user and the dialog
+            // remains open for correction. The dialog will only be closed when the
+            // save/delete operation completes successfully.
+            dialogViewModel.LinkSaved += async (s, e) =>
+            {
+                try
+                {
+                    // Clear any previous validation message
+                    dialogViewModel.ValidationMessage = string.Empty;
+
+                    // Attempt to save immediately using the MainWindowViewModel services
+                    await viewModel.HandleLinkSaved(e.Link, e.TagsString, e.IsEditMode);
+
+                    // On success, close the dialog from the UI thread
+                    dialog.Dispatcher.Invoke(() =>
+                    {
+                        dialog.DialogResult = true;
+                        dialog.Close();
+                    });
+                }
+                catch (ArgumentException argEx)
+                {
+                    // Validation error - set inline validation message and keep dialog open for correction
+                    dialog.Dispatcher.Invoke(() =>
+                    {
+                        dialogViewModel.ValidationMessage = argEx.Message;
+                    });
+                }
+                catch (Exception ex)
+                {
+                    // Unexpected error - show message box and keep dialog open
+                    dialog.Dispatcher.Invoke(() =>
+                    {
+                        MessageBox.Show($"Failed to save item: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    });
+                }
+            };
+
+            dialogViewModel.LinkDeleted += async (s, e) =>
+            {
+                try
+                {
+                    await viewModel.DeleteLinkAsync(e.Link.Id);
+                    dialog.Dispatcher.Invoke(() =>
+                    {
+                        dialog.DialogResult = true;
+                        dialog.Close();
+                    });
+                }
+                catch (Exception ex)
+                {
+                    dialog.Dispatcher.Invoke(() =>
+                    {
+                        MessageBox.Show($"Failed to delete item: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    });
+                }
+            };
             dialogViewModel.TestRequested += async (s, e) =>
             {
                 try
@@ -447,20 +517,8 @@ public partial class MainWindow : Window
                 }
             };
 
-            if (dialog.ShowDialog() == true)
-            {
-                if (saveArgs != null)
-                {
-                    // Handle successful save
-                    await viewModel.HandleLinkSaved(saveArgs.Link, saveArgs.TagsString, saveArgs.IsEditMode);
-                }
-                else if (deleteArgs != null)
-                {
-                    // Handle successful delete
-                    await viewModel.DeleteLinkAsync(deleteArgs.Link.Id);
-                    await viewModel.LoadLinksAsync();
-                }
-            }
+            // ShowDialog will block until dialog is closed by the handlers above
+            dialog.ShowDialog();
         }
         catch (Exception ex)
         {
@@ -812,13 +870,11 @@ public partial class MainWindow : Window
     private void AddNew_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is not MainWindowViewModel viewModel) return;
-
-        // Get the context item the same way Edit and Delete do
-        var linkItem = GetLinkItemFromMenuItem(sender);
-        Console.WriteLine($"AddNew_Click: Retrieved linkItem = {linkItem?.Name ?? "null"} (ID: {linkItem?.Link?.Id ?? 0})");
-        
-        // Use the context item as the parent for the new link
-        _ = viewModel.AddLinkAsync(linkItem);
+        // If there is a selected item in the tree view, use it as the parent when opening the add dialog
+        var tree = this.FindName("LinksTreeView") as System.Windows.Controls.TreeView;
+        var selected = tree?.SelectedItem as WinWork.UI.ViewModels.LinkTreeItemViewModel;
+        Console.WriteLine($"AddNew_Click: Using selected tree item as parent = {selected?.Name ?? "null"} (ID: {selected?.Link?.Id ?? 0})");
+        _ = viewModel.AddLinkAsync(selected);
     }
 
     private LinkTreeItemViewModel? GetParentItem(LinkTreeItemViewModel item)

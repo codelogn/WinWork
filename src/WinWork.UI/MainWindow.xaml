@@ -141,7 +141,7 @@
                                    FontSize="16" 
                                    FontWeight="Medium"
                                    VerticalAlignment="Center"/>
-                        <TextBlock Text="� Manage your notes, apps, terminals, links, shortcuts" 
+                        <TextBlock Text="➤ Manage your notes, apps, terminals, links, shortcuts" 
                                    Foreground="#AAFFFFFF" 
                                    FontSize="12" 
                                    VerticalAlignment="Center"
@@ -532,18 +532,42 @@
                         Margin="4,8,8,8">
                     
                     <Grid>
-                        <!-- Edit Form when item selected -->
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Fixed header row (visible when editing) -->
+                        <Grid Grid.Row="0" Margin="12,12,12,0" Visibility="{Binding IsEditingItem, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0" Text="Edit Item" 
+                                       Foreground="White" 
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Center"/>
+
+                            <!-- Top-right Save button for quicker access -->
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button Content="Save" 
+                                        Command="{Binding SaveEditCommand}"
+                                        Style="{StaticResource ModernButtonStyle}"
+                                        Width="90" Height="36"
+                                        VerticalAlignment="Center"
+                                        Margin="0,0,0,0"
+                                        Background="#059862"
+                                        BorderBrush="#0A7A4F"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Scrollable edit content -->
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" 
                                       Padding="16"
                                       Visibility="{Binding IsEditingItem, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <StackPanel>
-                                
-                                <!-- Header -->
-                                <TextBlock Text="Edit Item" 
-                                           Foreground="White" 
-                                           FontSize="18"
-                                           FontWeight="Bold"
-                                           Margin="0,0,0,20"/>
                                 
                                 <!-- Name Field -->
                                 <StackPanel Margin="0,0,0,16">

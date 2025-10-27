@@ -29,6 +29,7 @@ public class LinkDialogViewModel : ViewModelBase
     private string _terminalShell = string.Empty;
     private string _terminalType = string.Empty;
     private bool _isHotclick = false;
+    private string _validationMessage = string.Empty;
 
     public ObservableCollection<LinkTypeItem> LinkTypes { get; }
     public ObservableCollection<LinkTreeItemViewModel> AvailableParents { get; }
@@ -264,6 +265,12 @@ public class LinkDialogViewModel : ViewModelBase
     {
         get => _isHotclick;
         set => SetProperty(ref _isHotclick, value);
+    }
+
+    public string ValidationMessage
+    {
+        get => _validationMessage;
+        set => SetProperty(ref _validationMessage, value);
     }
 
     // Events

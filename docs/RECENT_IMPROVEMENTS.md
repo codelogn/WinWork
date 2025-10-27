@@ -11,6 +11,10 @@
 - **Programmatic icon setting**: All main windows set their icon at runtime for compatibility with single-file deployment.
 - **Modern UI**: Maintained glassmorphism, resizable dialogs, color tags, and drag & drop.
 - **System tray/taskbar icon**: Icon now appears in all Windows UI locations.
+ - **New: Edit and Add workflow improvements**: Added a Save button to the edit-item dialog (top-right) and updated the top "Add New" toolbar button to open the Add dialog with the currently-selected left-tree item preselected as the parent. These changes streamline item editing and creation.
+ - **New: Background color picker**: Added a color picker in Settings → Interface that lets users pick the app background color; selection applies immediately and persists across restarts.
+
+- **New: Inline validation in Add/Edit dialog**: Validation messages for save failures (for example, invalid application path or missing required fields) are now displayed inline at the top of the Add/Edit dialog so users can correct inputs without the dialog closing unexpectedly. The host performs validation and populates the inline message when needed.
 
 ---
 # WinWork - Recent Improvements & Changelog

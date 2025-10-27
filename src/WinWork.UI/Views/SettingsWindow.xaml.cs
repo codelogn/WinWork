@@ -69,7 +69,7 @@ public partial class SettingsWindow : Window
         }
 
         // Ensure this settings window reflects the current app theme.
-        var mainWindow = Application.Current?.MainWindow as MainWindow;
+    var mainWindow = System.Windows.Application.Current?.MainWindow as MainWindow;
         try
         {
             var settingsService = mainWindow?.ViewModel?.SettingsService;
@@ -411,7 +411,7 @@ public partial class SettingsWindow : Window
         {
             if (settingsService == null)
             {
-                MessageBox.Show("Settings service unavailable. Cannot save.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show("Settings service unavailable. Cannot save.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -426,11 +426,11 @@ public partial class SettingsWindow : Window
             if (!string.IsNullOrWhiteSpace(newCmd)) await settingsService.SetTerminalCmdPathAsync(newCmd);
             if (!string.IsNullOrWhiteSpace(newDefault)) await settingsService.SetDefaultTerminalAsync(newDefault);
 
-            MessageBox.Show("Terminal settings saved.", "Saved", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show("Terminal settings saved.", "Saved", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Failed to save settings: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            System.Windows.MessageBox.Show($"Failed to save settings: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     });
 
@@ -454,7 +454,7 @@ public partial class SettingsWindow : Window
 
             if (string.IsNullOrWhiteSpace(shellPath))
             {
-                MessageBox.Show("No terminal executable path configured for the selected terminal.", "Test Terminal", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show("No terminal executable path configured for the selected terminal.", "Test Terminal", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -489,17 +489,68 @@ public partial class SettingsWindow : Window
             };
 
             System.Diagnostics.Process.Start(psi);
-            MessageBox.Show("Test terminal launched. Check the terminal window for the test output.", "Test Terminal", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show("Test terminal launched. Check the terminal window for the test output.", "Test Terminal", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (System.Exception ex)
         {
-            MessageBox.Show($"Failed to launch test terminal: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            System.Windows.MessageBox.Show($"Failed to launch test terminal: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     });
         AddCheckBox("Show tree view icons", showTreeIcons);
         AddCheckBox("Enable glassmorphism effects", glassmorphism);
         AddTransparencySlider("Window transparency (%):", currentTransparency);
         AddCheckBox("Auto-save changes", autoSave);
+    
+        // Background color picker: allow user to set app background color
+        AddSectionSubHeader("Appearance");
+        string currentBg = settingsService != null ? (await settingsService.GetSettingAsync("BackgroundColor") ?? "") : "";
+        AddTextSetting("Application background color (CSS/Hex):", currentBg);
+        AddButton("Pick background color", async () =>
+        {
+            try
+            {
+                // Use standard Win32 color dialog via Forms
+                var cd = new System.Windows.Forms.ColorDialog();
+                if (!string.IsNullOrWhiteSpace(currentBg))
+                {
+                    try
+                    {
+                        var sc = System.Windows.Media.ColorConverter.ConvertFromString(currentBg) as System.Windows.Media.Color?;
+                        if (sc.HasValue)
+                        {
+                            var c = sc.Value;
+                            cd.Color = System.Drawing.Color.FromArgb(c.A, c.R, c.G, c.B);
+                        }
+                    }
+                    catch { }
+                }
+
+                var res = cd.ShowDialog();
+                if (res == System.Windows.Forms.DialogResult.OK)
+                {
+                    var sel = cd.Color;
+                    var hex = $"#{sel.A:X2}{sel.R:X2}{sel.G:X2}{sel.B:X2}";
+                    if (settingsService != null)
+                    {
+                        await settingsService.SetSettingAsync("BackgroundColor", hex);
+                    }
+
+                    // Apply immediately to main window
+                    var mainWindow = Application.Current.MainWindow as MainWindow;
+                    if (mainWindow != null)
+                    {
+                        var brush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(sel.A, sel.R, sel.G, sel.B));
+                        mainWindow.Background = brush;
+                    }
+
+                    System.Windows.MessageBox.Show($"Background color saved: {hex}", "Saved", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Failed to pick color: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        });
     }
 
     private void LoadStartupSettings()

@@ -47,20 +47,39 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     
-                    <TextBlock Grid.Column="0"
-                               Text="{Binding DialogTitle}"
-                               Foreground="White"
-                               FontSize="14"
-                               FontWeight="Medium"
-                               VerticalAlignment="Center"
-                               Margin="16,0,0,0"/>
+              <StackPanel Grid.Column="0" Orientation="Vertical">
+               <TextBlock
+                   Text="{Binding DialogTitle}"
+                   Foreground="White"
+                   FontSize="14"
+                   FontWeight="Medium"
+                   VerticalAlignment="Center"
+                   Margin="16,0,0,0"/>
+
+               <!-- Inline validation message (visible when non-empty) -->
+               <TextBlock Text="{Binding ValidationMessage}"
+                    Foreground="#FFD32F2F"
+                    FontSize="12"
+                    Margin="16,4,0,0"
+                    TextWrapping="Wrap"
+                    Visibility="{Binding ValidationMessage, Converter={StaticResource StringToVisibilityConverter}}"/>
+              </StackPanel>
                     
-                    <Button Grid.Column="1"
-                            Content="✕"
-                            Style="{StaticResource ModernButtonStyle}"
-                            Width="30" Height="30"
-                            Margin="8"
-                            Click="CloseButton_Click"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+            <!-- Save button (top-right) -->
+            <Button Content="💾 Save"
+                Command="{Binding SaveCommand}"
+                Style="{StaticResource ModernButtonStyle}"
+                Width="92" Height="30"
+                Margin="8,8,4,8"
+                ToolTip="Save (Ctrl+S)"/>
+
+            <Button Content="✕"
+                Style="{StaticResource ModernButtonStyle}"
+                Width="30" Height="30"
+                Margin="4,8,8,8"
+                Click="CloseButton_Click"/>
+            </StackPanel>
                 </Grid>
             </Border>
             
@@ -541,7 +560,7 @@
                                         ToolTip="Browse Folder"
                                         Visibility="{Binding SelectedLinkType, Converter={StaticResource LinkTypeToVisibilityConverter}, ConverterParameter=FolderPath}"/>
                                 
-                                <Button Content="�"
+                <Button Content="📄"
                                         Command="{Binding BrowseFileCommand}"
                                         Style="{StaticResource ModernButtonStyle}"
                                         Width="40" Height="40"

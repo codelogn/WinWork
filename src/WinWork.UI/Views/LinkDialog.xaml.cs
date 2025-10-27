@@ -18,11 +18,13 @@ public partial class LinkDialog : Window
         InitializeComponent();
         DataContext = viewModel;
 
-        // Subscribe to events
-        viewModel.LinkSaved += OnLinkSaved;
-        viewModel.DialogCancelled += OnDialogCancelled;
-        viewModel.LinkDeleted += OnLinkDeleted;
-        viewModel.PropertyChanged += ViewModel_PropertyChanged;
+    // Subscribe to events
+    // Note: do NOT subscribe to LinkSaved here. The host (MainWindow) will perform the save
+    // operation and close the dialog on success. This prevents the dialog from closing
+    // prematurely when validation fails during the save process.
+    viewModel.DialogCancelled += OnDialogCancelled;
+    viewModel.LinkDeleted += OnLinkDeleted;
+    viewModel.PropertyChanged += ViewModel_PropertyChanged;
 
         // Log initial visibility and VM state for diagnostics
         // Defer a visibility/log refresh until after the window has fully loaded and layout pass completed.
@@ -86,11 +88,8 @@ public partial class LinkDialog : Window
         Close();
     }
 
-    private void OnLinkSaved(object? sender, LinkSaveEventArgs e)
-    {
-        DialogResult = true;
-        Close();
-    }
+    // Intentionally do not close the dialog on LinkSaved here. MainWindow will handle saving
+    // and will close the dialog only when the save completes successfully.
 
     private void OnDialogCancelled(object? sender, EventArgs e)
     {
@@ -107,8 +106,9 @@ public partial class LinkDialog : Window
     protected override void OnClosed(EventArgs e)
     {
         // Unsubscribe from events to prevent memory leaks
-        ViewModel.LinkSaved -= OnLinkSaved;
+        // LinkSaved was not subscribed here by design
         ViewModel.DialogCancelled -= OnDialogCancelled;
+        ViewModel.LinkDeleted -= OnLinkDeleted;
         
         base.OnClosed(e);
     }
