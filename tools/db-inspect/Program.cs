@@ -34,18 +34,20 @@ using (var cmd = conn.CreateCommand())
     Console.WriteLine($"\nLinks.Command column present: {hasCommand}\n");
 }
 
-// Query AppSettings for terminal keys
-var keys = new[] { "Terminal.PowerShellPath", "Terminal.GitBashPath", "Terminal.CmdPath", "Terminal.Default" };
+// Query AppSettings for terminal keys and appearance settings
+var keys = new[] { "Terminal.PowerShellPath", "Terminal.GitBashPath", "Terminal.CmdPath", "Terminal.Default", "BackgroundColor", "WindowTransparency" };
 using (var cmd = conn.CreateCommand())
 {
-    cmd.CommandText = "SELECT \"Key\", \"Value\" FROM \"AppSettings\" WHERE \"Key\" IN ($k1,$k2,$k3,$k4);";
+    cmd.CommandText = "SELECT \"Key\", \"Value\" FROM \"AppSettings\" WHERE \"Key\" IN ($k1,$k2,$k3,$k4,$k5,$k6);";
     cmd.Parameters.AddWithValue("$k1", keys[0]);
     cmd.Parameters.AddWithValue("$k2", keys[1]);
     cmd.Parameters.AddWithValue("$k3", keys[2]);
     cmd.Parameters.AddWithValue("$k4", keys[3]);
+    cmd.Parameters.AddWithValue("$k5", keys[4]);
+    cmd.Parameters.AddWithValue("$k6", keys[5]);
 
     using var reader = cmd.ExecuteReader();
-    Console.WriteLine("Terminal AppSettings:");
+    Console.WriteLine("AppSettings (selected keys):");
     var found = 0;
     while (reader.Read())
     {
@@ -82,6 +84,23 @@ using (var cmd = conn.CreateCommand())
         Console.WriteLine($" - Id={id}, Name='{name}', Url='{url}', TerminalType='{termType}', Command='{cmdText}'");
     }
     if (!any) Console.WriteLine(" - (none found)");
+}
+// Also list all AppSettings entries for detailed inspection
+using (var cmdAll = conn.CreateCommand())
+{
+    cmdAll.CommandText = "SELECT \"Key\", \"Value\", \"UpdatedAt\" FROM \"AppSettings\" ORDER BY \"Key\";";
+    using var readerAll = cmdAll.ExecuteReader();
+    Console.WriteLine("\nAll AppSettings:");
+    var anyAll = false;
+    while (readerAll.Read())
+    {
+        anyAll = true;
+        var k = readerAll.IsDBNull(0) ? "" : readerAll.GetString(0);
+        var v = readerAll.IsDBNull(1) ? "" : readerAll.GetString(1);
+        var u = readerAll.IsDBNull(2) ? "" : readerAll.GetString(2);
+        Console.WriteLine($" - {k} = '{v}' (UpdatedAt: {u})");
+    }
+    if (!anyAll) Console.WriteLine(" - (none)");
 }
 
 conn.Close();

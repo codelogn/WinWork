@@ -7,6 +7,9 @@ using Microsoft.Win32;
 using WinWork.UI.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using WinWork.Data;
+using System.ComponentModel;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace WinWork.UI.Views
 {
@@ -15,6 +18,10 @@ namespace WinWork.UI.Views
 /// </summary>
 public partial class SettingsWindow : Window
 {
+    // CancellationTokenSource used to debounce transparency saves
+    private CancellationTokenSource? _transparencyCts;
+    // Holds the last pending transparency save task so we can await it on close
+    private Task? _pendingTransparencySave;
     // Tracks whether the currently applied theme is Light
     private bool _isLightTheme = false;
 
@@ -61,6 +68,8 @@ public partial class SettingsWindow : Window
     {
         InitializeComponent();
         SetWindowIcon();
+        // Ensure we can await pending saves when window closes
+        this.Closing += SettingsWindow_Closing;
         
         // Select the first item by default
         if (SettingsTreeView.Items.Count > 0 && SettingsTreeView.Items[0] is TreeViewItem firstItem)
@@ -89,16 +98,16 @@ public partial class SettingsWindow : Window
 
             if (_isLightTheme)
             {
-                ApplyLightTheme(mainWindow);
+                // Apply theme only to the settings window to avoid mutating the main window's visual tree
                 ApplyLightTheme(this);
             }
             else
             {
-                ApplyDarkTheme(mainWindow);
+                // Apply theme only to the settings window to avoid mutating the main window's visual tree
                 ApplyDarkTheme(this);
             }
 
-            UpdateElementForegrounds(mainWindow, GetForegroundBrush());
+            // Update foregrounds for settings window only
             UpdateElementForegrounds(this, GetForegroundBrush());
             UpdateExistingSettingsControls();
         }
@@ -106,8 +115,50 @@ public partial class SettingsWindow : Window
         {
             // If anything goes wrong reading saved theme, fall back to dark theme
             _isLightTheme = false;
-            ApplyDarkTheme(mainWindow);
+            // Apply fallback theme only to settings window
+            ApplyDarkTheme(this);
             UpdateElementForegrounds(this, GetForegroundBrush());
+        }
+    }
+
+    private async void SettingsWindow_Closing(object? sender, CancelEventArgs e)
+    {
+        try
+        {
+            // Don't cancel the debounce token here — cancelling will abort the pending save and
+            // can cause the user's transparency choice to never be persisted.
+            // Instead, wait briefly for any pending save to finish and, if it doesn't, perform
+            // a best-effort synchronous save using the current main window opacity.
+            if (_pendingTransparencySave != null)
+            {
+                // Wait up to 2s for the pending save to finish to avoid blocking UI too long
+                var timeout = Task.Delay(2000);
+                var finished = await Task.WhenAny(_pendingTransparencySave, timeout);
+                if (finished != _pendingTransparencySave)
+                {
+                    // Timed out; attempt a best-effort save using the current main window opacity
+                    try
+                    {
+                        var mainWindow = Application.Current.MainWindow as MainWindow;
+                        var settingsService = mainWindow?.ViewModel?.SettingsService;
+                        if (settingsService != null && mainWindow != null)
+                        {
+                            var opacityPercent = (int)Math.Round(mainWindow.Opacity * 100.0);
+                            // Ensure value is within allowed range
+                            if (opacityPercent < 10) opacityPercent = 10;
+                            if (opacityPercent > 100) opacityPercent = 100;
+                            await settingsService.SetBackgroundOpacityAsync(opacityPercent);
+                        }
+                    }
+                    catch { }
+                }
+            }
+        }
+        catch { }
+        finally
+        {
+            try { _transparencyCts?.Dispose(); } catch { }
+            _transparencyCts = null;
         }
     }
 
@@ -284,7 +335,29 @@ public partial class SettingsWindow : Window
         
         // Load actual values from settings service
         string currentTheme = settingsService != null ? await settingsService.GetThemeAsync() : "Dark";
-        var currentTransparency = settingsService != null ? (await settingsService.GetSettingAsync<double>("WindowTransparency") ?? 90.0) : 90.0;
+        // Background opacity is stored via SettingsService as an integer (BackgroundOpacity).
+        // For backward compatibility, read any existing 'WindowTransparency' key and migrate it to BackgroundOpacity.
+        double currentTransparency;
+        if (settingsService != null)
+        {
+            var oldVal = await settingsService.GetSettingAsync<double>("WindowTransparency");
+            if (oldVal.HasValue)
+            {
+                // Migrate to BackgroundOpacity (int)
+                var migrated = (int)Math.Round(oldVal.Value);
+                await settingsService.SetBackgroundOpacityAsync(migrated);
+                currentTransparency = oldVal.Value;
+            }
+            else
+            {
+                var bgOp = await settingsService.GetBackgroundOpacityAsync();
+                currentTransparency = bgOp;
+            }
+        }
+        else
+        {
+            currentTransparency = 90.0;
+        }
         var autoSave = settingsService != null ? (await settingsService.GetSettingAsync<bool>("AutoSave") ?? true) : true;
         var showTreeIcons = settingsService != null ? (await settingsService.GetSettingAsync<bool>("ShowTreeViewIcons") ?? true) : true;
         var glassmorphism = settingsService != null ? (await settingsService.GetSettingAsync<bool>("GlassmorphismEffects") ?? true) : true;
@@ -532,7 +605,8 @@ public partial class SettingsWindow : Window
                     var hex = $"#{sel.A:X2}{sel.R:X2}{sel.G:X2}{sel.B:X2}";
                     if (settingsService != null)
                     {
-                        await settingsService.SetSettingAsync("BackgroundColor", hex);
+                        // Use typed API which performs validation and default handling
+                        await settingsService.SetBackgroundColorAsync(hex);
                     }
 
                     // Apply immediately to main window
@@ -847,14 +921,13 @@ public partial class SettingsWindow : Window
         {
             // Apply transparency to main window
             mainWindow.Opacity = transparency / 100.0;
-            
-            // Save the setting
-            Task.Run(async () =>
+            // Save the setting as BackgroundOpacity (int)
+            _pendingTransparencySave = Task.Run(async () =>
             {
                 var settingsService = mainWindow?.ViewModel?.SettingsService;
                 if (settingsService != null)
                 {
-                    await settingsService.SetSettingAsync("WindowTransparency", transparency);
+                    await settingsService.SetBackgroundOpacityAsync((int)Math.Round(transparency));
                 }
             });
         }
@@ -1443,7 +1516,94 @@ public partial class SettingsWindow : Window
         slider.ValueChanged += (s, e) => 
         {
             labelBlock.Text = $"{label.Replace(" (%)", "")} ({slider.Value:F0}%)";
-            HandleTransparencyChanged(slider.Value);
+
+            // Apply the transparency immediately so the user sees the effect while dragging
+            try
+            {
+                var mw = Application.Current.MainWindow as MainWindow;
+                if (mw != null)
+                {
+                    mw.Opacity = slider.Value / 100.0;
+                }
+            }
+            catch { }
+
+            // Debounce rapid changes to avoid excessive DB writes. Wait 400ms after last change then save.
+            var mainWindow = Application.Current.MainWindow as MainWindow;
+            var settingsService = mainWindow?.ViewModel?.SettingsService as WinWork.Core.Services.ISettingsService;
+
+            // Cancel previous pending save
+            try { _transparencyCts?.Cancel(); } catch { }
+            _transparencyCts?.Dispose();
+            _transparencyCts = new CancellationTokenSource();
+            var token = _transparencyCts.Token;
+
+            _pendingTransparencySave = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(400, token);
+                    if (token.IsCancellationRequested) return;
+                    if (settingsService != null)
+                    {
+                        // Use typed API to persist integer opacity
+                        await settingsService.SetBackgroundOpacityAsync((int)Math.Round(slider.Value));
+                    }
+                }
+                catch (OperationCanceledException) { }
+                catch { }
+            }, token);
+        };
+
+        // When the user releases the mouse (finishes dragging) or presses Enter, save immediately
+        slider.PreviewMouseLeftButtonUp += async (s, e) =>
+        {
+            try
+            {
+                // Cancel the debounce so we don't have duplicate saves
+                try { _transparencyCts?.Cancel(); } catch { }
+                // Await any pending save if it is running
+                if (_pendingTransparencySave != null)
+                {
+                    try { await _pendingTransparencySave; } catch { }
+                }
+
+                var mainWindow = Application.Current.MainWindow as MainWindow;
+                var settingsService2 = mainWindow?.ViewModel?.SettingsService;
+                if (settingsService2 != null)
+                {
+                    var valueToSave = (int)Math.Round(slider.Value);
+                    if (valueToSave < 10) valueToSave = 10;
+                    if (valueToSave > 100) valueToSave = 100;
+                    await settingsService2.SetBackgroundOpacityAsync(valueToSave);
+                }
+            }
+            catch { }
+        };
+
+        slider.PreviewKeyUp += async (s, e) =>
+        {
+            try
+            {
+                if (e.Key == System.Windows.Input.Key.Enter)
+                {
+                    try { _transparencyCts?.Cancel(); } catch { }
+                    if (_pendingTransparencySave != null)
+                    {
+                        try { await _pendingTransparencySave; } catch { }
+                    }
+                    var mainWindow = Application.Current.MainWindow as MainWindow;
+                    var settingsService2 = mainWindow?.ViewModel?.SettingsService;
+                    if (settingsService2 != null)
+                    {
+                        var valueToSave = (int)Math.Round(slider.Value);
+                        if (valueToSave < 10) valueToSave = 10;
+                        if (valueToSave > 100) valueToSave = 100;
+                        await settingsService2.SetBackgroundOpacityAsync(valueToSave);
+                    }
+                }
+            }
+            catch { }
         };
         
         panel.Children.Add(labelBlock);

@@ -56,6 +56,17 @@ public partial class MainWindow : Window
                     var brush = conv.ConvertFromString(bgColor ?? "") as System.Windows.Media.Brush;
                     if (brush != null) this.Background = brush;
                 }
+
+                // Apply saved background opacity (stored as BackgroundOpacity)
+                try
+                {
+                    var opacityVal = settings.GetBackgroundOpacityAsync().GetAwaiter().GetResult();
+                    if (opacityVal >= 10 && opacityVal <= 100)
+                    {
+                        this.Opacity = opacityVal / 100.0;
+                    }
+                }
+                catch { }
             }
         }
         catch { }
@@ -183,7 +194,43 @@ public partial class MainWindow : Window
             vm.PropertyChanged += Vm_PropertyChanged;
             // Ensure version is appended after view model may have set Title
             AppendVersionToTitle();
+            // Apply saved appearance (background color & opacity) now that DataContext/SettingsService is available
+            ApplySavedAppearance(vm);
         }
+    }
+
+    // Apply saved background color and opacity when SettingsService is available on the view model
+    private void ApplySavedAppearance(MainWindowViewModel? vm)
+    {
+        try
+        {
+            var settings = vm?.SettingsService;
+            if (settings != null)
+            {
+                try
+                {
+                    var bgColor = settings.GetBackgroundColorAsync().GetAwaiter().GetResult();
+                    if (!string.IsNullOrWhiteSpace(bgColor))
+                    {
+                        var conv = new System.Windows.Media.BrushConverter();
+                        var brush = conv.ConvertFromString(bgColor ?? "") as System.Windows.Media.Brush;
+                        if (brush != null) this.Background = brush;
+                    }
+                }
+                catch { }
+
+                try
+                {
+                    var opacityVal = settings.GetBackgroundOpacityAsync().GetAwaiter().GetResult();
+                    if (opacityVal >= 10 && opacityVal <= 100)
+                    {
+                        this.Opacity = opacityVal / 100.0;
+                    }
+                }
+                catch { }
+            }
+        }
+        catch { }
     }
 
     private void Vm_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
