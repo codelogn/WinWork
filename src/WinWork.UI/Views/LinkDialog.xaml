@@ -491,7 +491,9 @@
                             </ComboBox.Style>
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Name}" Foreground="White"/>
+                                    <TextBlock Text="{Binding Name}" 
+                                               Foreground="White"
+                                               FontFamily="Consolas"/>
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
@@ -571,7 +573,7 @@
                             
                             <StackPanel Grid.Column="1" 
                                         Orientation="Horizontal">
-                                <Button Content="📁" 
+                                <Button Content="..." 
                                         Command="{Binding BrowseFolderCommand}"
                                         Style="{StaticResource ModernButtonStyle}"
                                         Width="40" Height="40"

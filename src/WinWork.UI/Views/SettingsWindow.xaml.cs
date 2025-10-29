@@ -467,15 +467,32 @@ public partial class SettingsWindow : Window
         AddCheckBox("Start with Windows", startWithWindows);
     }
 
-    private void LoadApplicationSettings()
+    private async void LoadApplicationSettings()
     {
         AddSectionHeader("Application Settings");
         AddDescription("Configure application behavior and preferences.");
         
-        AddTextSetting("Application Name:", "WinWork");
-        AddCheckBox("Auto-save changes", true);
-        AddCheckBox("Confirm before deleting items", true);
-        AddNumericSetting("Auto-backup interval (minutes):", 30);
+        var mainWindow = Application.Current.MainWindow as MainWindow;
+        var settingsService = mainWindow?.ViewModel?.SettingsService;
+        
+        // Load actual values from settings service
+        string appName = "WinWork";
+        bool autoSave = true;
+        bool confirmDelete = true;
+        int backupInterval = 30;
+        
+        if (settingsService != null)
+        {
+            appName = await settingsService.GetSettingAsync("ApplicationName") ?? "WinWork";
+            autoSave = await settingsService.GetSettingAsync<bool>("AutoSave") ?? true;
+            confirmDelete = await settingsService.GetSettingAsync<bool>("ConfirmBeforeDelete") ?? true;
+            backupInterval = await settingsService.GetSettingAsync<int>("AutoBackupInterval") ?? 30;
+        }
+        
+        AddTextSetting("Application Name:", appName);
+        AddCheckBox("Auto-save changes", autoSave);
+        AddCheckBox("Confirm before deleting items", confirmDelete);
+        AddNumericSetting("Auto-backup interval (minutes):", backupInterval);
     }
 
     private async void LoadInterfaceSettings()
@@ -893,15 +910,24 @@ public partial class SettingsWindow : Window
         return null;
     }
 
-    private void LoadStartupSettings()
+    private async void LoadStartupSettings()
     {
         AddSectionHeader("Startup Settings");
         AddDescription("Configure how WinWork behaves when starting up.");
         
-        AddCheckBox("Start with Windows", false);
-        AddCheckBox("Restore last window position", true);
-        AddCheckBox("Load last opened database", true);
-        AddTextSetting("Default database path:", "");
+        var mainWindow = Application.Current.MainWindow as MainWindow;
+        var settingsService = mainWindow?.ViewModel?.SettingsService;
+        
+        // Load actual values from settings service
+        bool startWithWindows = settingsService != null ? await settingsService.GetStartWithWindowsAsync() : false;
+        bool restoreWindowPosition = settingsService != null ? (await settingsService.GetSettingAsync<bool>("RestoreWindowPosition") ?? true) : true;
+        bool loadLastDatabase = settingsService != null ? (await settingsService.GetSettingAsync<bool>("LoadLastDatabase") ?? true) : true;
+        string defaultDbPath = settingsService != null ? (await settingsService.GetSettingAsync("DefaultDatabasePath") ?? "") : "";
+        
+        AddCheckBox("Start with Windows", startWithWindows);
+        AddCheckBox("Restore last window position", restoreWindowPosition);
+        AddCheckBox("Load last opened database", loadLastDatabase);
+        AddTextSetting("Default database path:", defaultDbPath);
     }
 
     private void LoadDataSettings()
@@ -1160,6 +1186,15 @@ public partial class SettingsWindow : Window
                 await settingsService.SetSettingAsync("GlassmorphismEffects", value);
                 ApplyGlassmorphismEffects(value);
                 break;
+            case "Confirm before deleting items":
+                await settingsService.SetSettingAsync("ConfirmBeforeDelete", value);
+                break;
+            case "Restore last window position":
+                await settingsService.SetSettingAsync("RestoreWindowPosition", value);
+                break;
+            case "Load last opened database":
+                await settingsService.SetSettingAsync("LoadLastDatabase", value);
+                break;
         }
     }
 
@@ -1177,6 +1212,39 @@ public partial class SettingsWindow : Window
         catch (Exception ex)
         {
             MessageBox.Show($"Failed to change theme: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async Task HandleTextSettingChanged(string label, string value)
+    {
+        var mainWindow = Application.Current.MainWindow as MainWindow;
+        var settingsService = mainWindow?.ViewModel?.SettingsService;
+        if (settingsService == null) return;
+
+        var settingKey = label.Replace(":", "").Trim();
+        switch (settingKey)
+        {
+            case "Application Name":
+                await settingsService.SetSettingAsync("ApplicationName", value);
+                break;
+            case "Default database path":
+                await settingsService.SetSettingAsync("DefaultDatabasePath", value);
+                break;
+        }
+    }
+
+    private async Task HandleNumericSettingChanged(string label, double value)
+    {
+        var mainWindow = Application.Current.MainWindow as MainWindow;
+        var settingsService = mainWindow?.ViewModel?.SettingsService;
+        if (settingsService == null) return;
+
+        var settingKey = label.Replace(":", "").Trim().Replace("(", "").Replace(")", "").Replace(" ", "");
+        switch (settingKey)
+        {
+            case "Auto-backupintervalminutes":
+                await settingsService.SetSettingAsync("AutoBackupInterval", (int)value);
+                break;
         }
     }
 
@@ -1549,8 +1617,13 @@ public partial class SettingsWindow : Window
             Foreground = GetForegroundBrush(),
             BorderBrush = _isLightTheme ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 0, 0, 0)) : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 255, 255, 255)),
             Padding = new Thickness(8),
-            FontSize = 14
+            FontSize = 14,
+            Width = 200,
+            HorizontalAlignment = HorizontalAlignment.Left
         };
+        
+        // Add event handler for text changes
+        textBox.TextChanged += async (sender, e) => await HandleTextSettingChanged(label, textBox.Text);
         
         panel.Children.Add(labelBlock);
         panel.Children.Add(textBox);
@@ -1654,6 +1727,15 @@ public partial class SettingsWindow : Window
             FontSize = 14,
             Width = 100,
             HorizontalAlignment = HorizontalAlignment.Left
+        };
+        
+        // Add event handler for numeric value changes
+        textBox.TextChanged += async (sender, e) =>
+        {
+            if (double.TryParse(textBox.Text, out double numericValue))
+            {
+                await HandleNumericSettingChanged(label, numericValue);
+            }
         };
         
         panel.Children.Add(labelBlock);

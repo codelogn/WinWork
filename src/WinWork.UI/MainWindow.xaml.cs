@@ -586,7 +586,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Error opening link dialog: {ex.Message}", "Error", 
+            MessageBox.Show($"Error opening item dialog: {ex.Message}", "Error", 
                 MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }

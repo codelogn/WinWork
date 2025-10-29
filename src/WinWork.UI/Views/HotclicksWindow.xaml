@@ -124,7 +124,7 @@
                              BorderThickness="1"
                              FontSize="14"
                              Height="36"/>
-                    <TextBlock Text="🔍" 
+                    <TextBlock Text="Search:" 
                                Foreground="#99FFFFFF"
                                FontSize="14"
                                VerticalAlignment="Center"

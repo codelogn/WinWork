@@ -486,6 +486,67 @@ public class LinkDialogViewModel : ViewModelBase
         Console.WriteLine($"SetParentContext: Final SelectedParent = {SelectedParent?.Name ?? "null"}, Dialog title updated to: {DialogTitle}");
     }
 
+    private void AddItemsToAvailableParentsWithHierarchy(LinkTreeItemViewModel item, IEnumerable<LinkTreeItemViewModel>? allItems, int level)
+    {
+        // Don't add the item being edited as a potential parent of itself
+        if (_originalLink != null && item.Link.Id == _originalLink.Id)
+        {
+            Console.WriteLine($"DEBUG: Excluding item being edited: {item.Link.Name} (ID: {item.Link.Id})");
+            return;
+        }
+            
+        // Don't add descendants of the item being edited (prevent circular references)
+        if (_originalLink != null && allItems != null && IsDescendantOf(item, _originalLink.Id, allItems))
+        {
+            Console.WriteLine($"DEBUG: Excluding descendant of edited item: {item.Link.Name} (ID: {item.Link.Id})");
+            return;
+        }
+
+        var indentation = new string(' ', level * 3); // 3 spaces per level
+        var prefix = level > 0 ? $"{indentation}├─ " : "";
+
+        var displayItem = new LinkTreeItemViewModel(new Link
+        {
+            Id = item.Link.Id,
+            Name = $"{prefix}{item.Link.Name}",
+            Type = item.Link.Type,
+            Url = item.Link.Url,
+            Description = item.Link.Description,
+            ParentId = item.Link.ParentId,
+            SortOrder = item.Link.SortOrder,
+            CreatedAt = item.Link.CreatedAt,
+            UpdatedAt = item.Link.UpdatedAt
+        });
+        AvailableParents.Add(displayItem);
+
+        // Find and add children
+        var children = allItems?.Where(child => child?.Link?.ParentId == item.Link.Id) ?? Enumerable.Empty<LinkTreeItemViewModel>();
+        foreach (var child in children)
+        {
+            if (child != null)
+            {
+                AddItemsToAvailableParentsWithHierarchy(child, allItems, level + 1);
+            }
+        }
+    }
+
+    private bool IsDescendantOf(LinkTreeItemViewModel item, int ancestorId, IEnumerable<LinkTreeItemViewModel> allItems)
+    {
+        // Check if 'item' is a descendant of 'ancestorId'
+        var current = item;
+        while (current != null && current.Link.ParentId != null)
+        {
+            if (current.Link.ParentId == ancestorId)
+            {
+                Console.WriteLine($"DEBUG: {item.Link.Name} (ID: {item.Link.Id}) IS a descendant of {ancestorId}");
+                return true;
+            }
+            // Find the parent in allItems
+            current = allItems?.FirstOrDefault(i => i?.Link?.Id == current.Link.ParentId);
+        }
+        return false;
+    }
+
     public void SetAvailableParents(IEnumerable<LinkTreeItemViewModel> allItems)
     {
         try
@@ -501,15 +562,16 @@ public class LinkDialogViewModel : ViewModelBase
             });
             AvailableParents.Add(rootOption);
             
-            // Add all items except the one being edited (to prevent circular references)
-            var itemsToAdd = allItems?.Where(f => f?.Link != null && 
-                                                  f.Link.Id != _originalLink?.Id) ?? Enumerable.Empty<LinkTreeItemViewModel>();
+            // Add items hierarchically with proper indentation
+            var rootItems = allItems?.Where(f => f?.Link != null && 
+                                                 f.Link.ParentId == null &&
+                                                 f.Link.Id != _originalLink?.Id) ?? Enumerable.Empty<LinkTreeItemViewModel>();
             
-            foreach (var item in itemsToAdd)
+            foreach (var rootItem in rootItems)
             {
-                if (item != null)
+                if (rootItem != null)
                 {
-                    AvailableParents.Add(item);
+                    AddItemsToAvailableParentsWithHierarchy(rootItem, allItems, 0);
                 }
             }
             

@@ -190,7 +190,7 @@
                              BorderBrush="#33FFFFFF" 
                              BorderThickness="1" 
                              x:Name="TreeViewContextMenu">
-                    <MenuItem Header="Add Link" 
+                    <MenuItem Header="Add Item" 
                               Foreground="White" 
                               Click="AddLink_Click"/>
                     <MenuItem Header="Add Folder" 

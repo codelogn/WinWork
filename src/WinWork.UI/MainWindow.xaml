@@ -142,7 +142,7 @@
                                    FontSize="16" 
                                    FontWeight="Medium"
                                    VerticalAlignment="Center"/>
-                        <TextBlock Text="➤ Manage your notes, apps, terminals, links, shortcuts" 
+                        <TextBlock Text="→ Manage your notes, apps, terminals, items, shortcuts" 
                                    Foreground="#AAFFFFFF" 
                                    FontSize="12" 
                                    VerticalAlignment="Center"
@@ -211,7 +211,7 @@
                                                          AlignmentY="Center" 
                                                          Stretch="None">
                                                 <VisualBrush.Visual>
-                                                    <Label Content="🔍 Search links..." 
+                                                    <Label Content="Search items..." 
                                                            Foreground="#AAFFFFFF" 
                                                            FontSize="14"/>
                                                 </VisualBrush.Visual>
@@ -510,7 +510,7 @@
                                            FontSize="16" 
                                            HorizontalAlignment="Center"
                                            Margin="0,10,0,5"/>
-                                <TextBlock Text="Click '+' to add a link or '📁' to add a folder" 
+                                <TextBlock Text="Click '+' to add an item or folder icon to add a folder" 
                                            Foreground="#66FFFFFF" 
                                            FontSize="12" 
                                            HorizontalAlignment="Center"/>
@@ -1128,7 +1128,7 @@
                                        FontSize="16" 
                                        HorizontalAlignment="Center"
                                        Margin="0,10,0,5"/>
-                            <TextBlock Text="Click on any link or folder in the tree to view and edit its details" 
+                            <TextBlock Text="Click on any item or folder in the tree to view and edit its details" 
                                        Foreground="#66FFFFFF" 
                                        FontSize="12" 
                                        HorizontalAlignment="Center"
