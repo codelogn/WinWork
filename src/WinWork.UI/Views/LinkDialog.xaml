@@ -6,20 +6,21 @@
     xmlns:vm="clr-namespace:WinWork.UI.ViewModels"
     xmlns:models="clr-namespace:WinWork.Models;assembly=WinWork.Models"
     mc:Ignorable="d"
-        Title="{Binding DialogTitle}"
+        Title="Add New"
         Height="650" Width="800"
         MinHeight="500" MinWidth="600"
         WindowStartupLocation="CenterOwner"
-        WindowStyle="SingleBorderWindow"
-        Background="#2B2D30"
+        AllowsTransparency="True"
+        WindowStyle="None"
+        Background="Transparent"
         ResizeMode="CanResize"
         ShowInTaskbar="False">
 
-    <Border Background="#19FFFFFF" 
-            CornerRadius="8" 
+    <Border x:Name="MainBorder"
+            Background="#E6000000" 
+            CornerRadius="12" 
             BorderBrush="#33FFFFFF" 
-            BorderThickness="1"
-            Margin="8">
+            BorderThickness="1">
         
         <Border.Effect>
             <DropShadowEffect BlurRadius="20" 
@@ -49,7 +50,7 @@
                     
               <StackPanel Grid.Column="0" Orientation="Vertical">
                <TextBlock
-                   Text="{Binding DialogTitle}"
+                   Text="Add New"
                    Foreground="White"
                    FontSize="14"
                    FontWeight="Medium"
@@ -69,13 +70,31 @@
             <!-- Save button (top-right) -->
             <Button Content="💾 Save"
                 Command="{Binding SaveCommand}"
-                Style="{StaticResource ModernButtonStyle}"
                 Width="92" Height="30"
                 Margin="8,8,4,8"
-                ToolTip="Save (Ctrl+S)"/>
+                ToolTip="Save (Ctrl+S)">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+                        <Setter Property="Background" Value="#FF0078D4"/>
+                        <Setter Property="FontWeight" Value="Medium"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#FF106EBE"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#FF005A9E"/>
+                            </Trigger>
+                            <DataTrigger Binding="{Binding Path=CanSave, Mode=OneWay}" Value="False">
+                                <Setter Property="Background" Value="#66666666"/>
+                                <Setter Property="Foreground" Value="#AAFFFFFF"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
 
             <Button Content="✕"
-                Style="{StaticResource ModernButtonStyle}"
+                Style="{StaticResource WindowControlButtonStyle}"
                 Width="30" Height="30"
                 Margin="4,8,8,8"
                 Click="CloseButton_Click"/>
@@ -722,15 +741,23 @@
                             Background="#33D32F2F"
                             Visibility="{Binding DeleteButtonVisibility}"/>
                     
-                    <Button Content="{Binding IsEditMode, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Update|Save'}"
+                    <Button Content="{Binding IsEditMode, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Update|💾 Save'}"
                             Command="{Binding SaveCommand}"
                             Padding="20,8">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
-                                <Setter Property="Background" Value="#334CAF50"/>
+                                <Setter Property="Background" Value="#FF0078D4"/>
+                                <Setter Property="FontWeight" Value="Medium"/>
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Path=CanSave, Mode=OneWay}" Value="True">
-                                        <Setter Property="Background" Value="#FF4CAF50"/>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#FF106EBE"/>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter Property="Background" Value="#FF005A9E"/>
+                                    </Trigger>
+                                    <DataTrigger Binding="{Binding Path=CanSave, Mode=OneWay}" Value="False">
+                                        <Setter Property="Background" Value="#66666666"/>
+                                        <Setter Property="Foreground" Value="#AAFFFFFF"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>

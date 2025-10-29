@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Input;
 using WinWork.UI.ViewModels;
 using WinWork.UI.Utils;
+using WinWork.Core.Interfaces;
 using System.Windows.Threading;
 
 namespace WinWork.UI.Views;
@@ -17,6 +18,9 @@ public partial class LinkDialog : Window
     {
         InitializeComponent();
         DataContext = viewModel;
+
+        // Apply consistent styling and transparency to match other windows
+        ApplyConsistentStyling();
 
     // Subscribe to events
     // Note: do NOT subscribe to LinkSaved here. The host (MainWindow) will perform the save
@@ -42,6 +46,47 @@ public partial class LinkDialog : Window
                 LogVisibilityAndState();
             }), DispatcherPriority.Loaded);
         };
+        
+        // Apply consistent styling using WindowStylingHelper
+        ApplyConsistentStyling();
+    }
+
+    private async void ApplyConsistentStyling()
+    {
+        try
+        {
+            // Get settings service from the main window if available
+            var mainWindow = Application.Current.MainWindow as MainWindow;
+            var settingsService = mainWindow?.ViewModel?.SettingsService;
+
+            // Apply modern chrome effects
+            WindowStylingHelper.ApplyModernChrome(this);
+
+            // Apply consistent background and opacity
+            WindowStylingHelper.ApplyConsistentStyling(this, settingsService);
+        }
+        catch { }
+    }
+
+    private void TitleBar_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (e.ClickCount == 2)
+        {
+            // Double-click to maximize/restore
+            WindowState = WindowState == WindowState.Maximized 
+                ? WindowState.Normal 
+                : WindowState.Maximized;
+        }
+        else
+        {
+            // Single click to drag
+            DragMove();
+        }
+    }
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        Close();
     }
 
     private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -57,8 +102,13 @@ public partial class LinkDialog : Window
         try
         {
             var vm = DataContext as LinkDialogViewModel;
-            var msg1 = $"LinkDialog: TerminalPanel.Visibility={TerminalPanel.Visibility}";
-            var msg2 = $"LinkDialog: UrlPanel.Visibility={UrlPanel.Visibility}";
+            
+            // Use FindName to safely get the panels
+            var terminalPanel = FindName("TerminalPanel") as FrameworkElement;
+            var urlPanel = FindName("UrlPanel") as FrameworkElement;
+            
+            var msg1 = $"LinkDialog: TerminalPanel.Visibility={terminalPanel?.Visibility ?? Visibility.Collapsed}";
+            var msg2 = $"LinkDialog: UrlPanel.Visibility={urlPanel?.Visibility ?? Visibility.Collapsed}";
             System.Diagnostics.Debug.WriteLine(msg1);
             System.Diagnostics.Debug.WriteLine(msg2);
             // Also write to the persistent debug log for later inspection
@@ -72,20 +122,6 @@ public partial class LinkDialog : Window
             }
         }
         catch { }
-    }
-
-    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (e.ClickCount == 1)
-        {
-            DragMove();
-        }
-    }
-
-    private void CloseButton_Click(object sender, RoutedEventArgs e)
-    {
-        DialogResult = false;
-        Close();
     }
 
     // Intentionally do not close the dialog on LinkSaved here. MainWindow will handle saving
