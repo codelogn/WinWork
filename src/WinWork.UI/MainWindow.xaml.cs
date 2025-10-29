@@ -284,7 +284,7 @@ public partial class MainWindow : Window
 
                 var vm = new HotclicksViewModel(linkService, opener);
                 var win = new Views.HotclicksWindow(vm) { Owner = this };
-                win.ShowDialog();
+                win.Show();
             }
         }
         catch (System.Exception ex)

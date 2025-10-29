@@ -6,10 +6,12 @@
         xmlns:vm="clr-namespace:WinWork.UI.ViewModels"
         xmlns:system="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        Title="Hotclicks" Height="600" Width="900" WindowStartupLocation="CenterOwner"
+        Title="Hotclicks" Height="600" Width="900" WindowStartupLocation="CenterScreen"
         AllowsTransparency="True"
         WindowStyle="None"
-        Background="Transparent">
+        Background="Transparent"
+        ShowInTaskbar="True"
+        ResizeMode="CanResize">
 
     <Border x:Name="MainBorder"
             Background="#E6000000" 
@@ -46,7 +48,7 @@
                     
                     <!-- Title -->
                     <TextBlock Grid.Column="0"
-                               Text="🔥 Hotclicks"
+                               Text="Hotclicks"
                                Foreground="White"
                                FontSize="14"
                                FontWeight="Medium"
@@ -56,6 +58,40 @@
                     <!-- Window Controls -->
                     <StackPanel Grid.Column="1" 
                                 Orientation="Horizontal">
+                        
+                        <!-- Minimize Button -->
+                        <Button x:Name="MinimizeButton"
+                                Content="−"
+                                Click="MinimizeButton_Click"
+                                Background="Transparent"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Width="40" Height="40"
+                                FontSize="16"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#66FFFFFF"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        
+                        <!-- Close Button -->
                         <Button x:Name="CloseButton"
                                 Content="✕"
                                 Click="CloseButton_Click"
@@ -102,14 +138,14 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     
-                    <TextBlock Grid.Column="0" Text="🔥 Hotclick Items" 
+                    <TextBlock Grid.Column="0" Text="Hotclick Items" 
                                Foreground="White" FontSize="20" FontWeight="Bold" 
                                VerticalAlignment="Center"/>
                     
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <Button Content="🔄 Refresh" Command="{Binding RefreshCommand}" 
+                        <Button Content="Refresh" Command="{Binding RefreshCommand}" 
                                 Style="{StaticResource ModernButtonStyle}" Margin="0,0,8,0"/>
-                        <Button Content="📖 Open All" Command="{Binding OpenAllCommand}" 
+                        <Button Content="Open All" Command="{Binding OpenAllCommand}" 
                                 Style="{StaticResource ModernButtonStyle}"/>
                     </StackPanel>
                 </Grid>
