@@ -54,7 +54,8 @@
     
     <!-- DataContext will be set in code-behind -->
     
-    <Border Background="#E6000000" 
+    <Border x:Name="MainBorder"
+            Background="#E6000000" 
             CornerRadius="12" 
             BorderBrush="#33FFFFFF" 
             BorderThickness="1">

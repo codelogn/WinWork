@@ -289,15 +289,75 @@ public class LinkOpenerService : ILinkOpenerService
                 return false;
                 
             var extension = Path.GetExtension(fileName)?.ToLower();
-            
-            // Common executable extensions
-            var validExtensions = new[] { ".exe", ".bat", ".cmd", ".com", ".msi" };
-            return validExtensions.Contains(extension);
+
+            // If the file exists on disk, accept it regardless of extension. This allows
+            // shortcuts (.lnk), various launchers, scripts, or any custom launcher files.
+            try
+            {
+                if (Path.IsPathRooted(fileName))
+                {
+                    if (File.Exists(fileName)) return true;
+                    // If it doesn't exist as provided but has an extension, we still reject.
+                    if (!string.IsNullOrWhiteSpace(extension)) return false;
+                }
+
+                // If an extension is present and the file wasn't found as a rooted path above,
+                // still accept common executable-like extensions even if the file may be relative
+                // (the final resolution will be attempted when launching).
+                var validExtensions = new[] { ".exe", ".bat", ".cmd", ".com", ".msi", ".lnk", ".appref-ms" };
+                if (!string.IsNullOrWhiteSpace(extension))
+                {
+                    return validExtensions.Contains(extension);
+                }
+
+                // No extension provided - try to resolve the executable by searching PATH with PATHEXT
+                // If we find a candidate in PATH, accept it.
+                var resolved = ResolveExecutableInPath(fileName);
+                if (resolved != null) return true;
+
+                // Last resort: if it's a relative path pointing to an existing file, accept it
+                try
+                {
+                    var relativeFull = Path.GetFullPath(fileName);
+                    if (File.Exists(relativeFull)) return true;
+                }
+                catch { }
+
+                return false;
+            }
+            catch { return false; }
         }
         catch
         {
             return false;
         }
+    }
+
+    private string? ResolveExecutableInPath(string fileNameWithoutExt)
+    {
+        try
+        {
+            var pathEnv = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+            var pathextEnv = Environment.GetEnvironmentVariable("PATHEXT") ?? ".EXE;.BAT;.CMD;.COM";
+            var paths = pathEnv.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
+            var exts = pathextEnv.Split(';', StringSplitOptions.RemoveEmptyEntries).Select(e => e.Trim().ToLower()).ToArray();
+
+            foreach (var dir in paths)
+            {
+                try
+                {
+                    foreach (var ext in exts)
+                    {
+                        var candidate = Path.Combine(dir, fileNameWithoutExt + ext);
+                        if (File.Exists(candidate)) return candidate;
+                    }
+                }
+                catch { }
+            }
+
+            return null;
+        }
+        catch { return null; }
     }
 
     private (string fileName, string arguments) ParseApplicationPath(string appPath)

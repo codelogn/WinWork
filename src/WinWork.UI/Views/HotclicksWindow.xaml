@@ -6,12 +6,95 @@
         xmlns:vm="clr-namespace:WinWork.UI.ViewModels"
         xmlns:system="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        Title="Hotclicks" Height="600" Width="900" WindowStartupLocation="CenterOwner">
+        Title="Hotclicks" Height="600" Width="900" WindowStartupLocation="CenterOwner"
+        AllowsTransparency="True"
+        WindowStyle="None"
+        Background="Transparent">
 
-    <Border Background="#111" Padding="12">
-        <DockPanel>
-            <!-- Header with title, search, and buttons -->
-            <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+    <Border x:Name="MainBorder"
+            Background="#E6000000" 
+            CornerRadius="12" 
+            BorderBrush="#33FFFFFF" 
+            BorderThickness="1"
+            Padding="12">
+        
+        <!-- Window Chrome Effect -->
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="20" 
+                              ShadowDepth="0" 
+                              Color="Black" 
+                              Opacity="0.3"/>
+        </Border.Effect>
+        
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="40"/> <!-- Title Bar -->
+                <RowDefinition Height="*"/>  <!-- Content -->
+            </Grid.RowDefinitions>
+            
+            <!-- Custom Title Bar -->
+            <Border Grid.Row="0" 
+                    Background="#33FFFFFF" 
+                    CornerRadius="12,12,0,0"
+                    MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Title -->
+                    <TextBlock Grid.Column="0"
+                               Text="🔥 Hotclicks"
+                               Foreground="White"
+                               FontSize="14"
+                               FontWeight="Medium"
+                               VerticalAlignment="Center"
+                               Margin="16,0,0,0"/>
+                    
+                    <!-- Window Controls -->
+                    <StackPanel Grid.Column="1" 
+                                Orientation="Horizontal">
+                        <Button x:Name="CloseButton"
+                                Content="✕"
+                                Click="CloseButton_Click"
+                                Background="Transparent"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Width="40" Height="40"
+                                FontSize="14"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}" 
+                                                        CornerRadius="0,12,0,0">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#E81123"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            
+            <!-- Content Area -->
+            <DockPanel Grid.Row="1" Margin="12">
+                <!-- Header with search and buttons -->
+                <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12">
                 <!-- Title and Buttons Row -->
                 <Grid Margin="0,0,0,12">
                     <Grid.ColumnDefinitions>
@@ -188,7 +271,8 @@
                         </ScrollViewer>
                     </DockPanel>
                 </Border>
-            </Grid>
-        </DockPanel>
+                </Grid>
+            </DockPanel>
+        </Grid>
     </Border>
 </Window>

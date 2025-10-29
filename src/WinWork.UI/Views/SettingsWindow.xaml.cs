@@ -10,6 +10,7 @@ using WinWork.Data;
 using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
+using WinWork.UI.Utils;
 
 namespace WinWork.UI.Views
 {
@@ -71,8 +72,22 @@ public partial class SettingsWindow : Window
         // Ensure we can await pending saves when window closes
         this.Closing += SettingsWindow_Closing;
         
+        // Apply consistent styling after initialization but add a timer for backup
+        ApplyConsistentStyling();
+        
+        // Add a delayed backup to ensure background is applied
+        System.Windows.Threading.DispatcherTimer timer = new System.Windows.Threading.DispatcherTimer();
+        timer.Interval = TimeSpan.FromMilliseconds(100);
+        timer.Tick += (s, e) =>
+        {
+            timer.Stop();
+            EnsureBackgroundApplied();
+        };
+        timer.Start();
+        
         // Select the first item by default
-        if (SettingsTreeView.Items.Count > 0 && SettingsTreeView.Items[0] is TreeViewItem firstItem)
+        var treeView = GetSettingsTreeView();
+        if (treeView?.Items.Count > 0 && treeView.Items[0] is TreeViewItem firstItem)
         {
             firstItem.IsSelected = true;
         }
@@ -160,6 +175,144 @@ public partial class SettingsWindow : Window
             try { _transparencyCts?.Dispose(); } catch { }
             _transparencyCts = null;
         }
+    }
+
+
+
+    // Moved out of SettingsWindow_Closing: applies consistent styling to this window
+    private async void ApplyConsistentStyling()
+    {
+        try
+        {
+            // Get settings service from the main window if available
+            var mainWindow = Application.Current.MainWindow as MainWindow;
+            var settingsService = mainWindow?.ViewModel?.SettingsService;
+
+            // Apply modern chrome effects
+            WindowStylingHelper.ApplyModernChrome(this);
+
+            // Apply consistent background and opacity
+            WindowStylingHelper.ApplyConsistentStyling(this, settingsService);
+            
+            // Also apply background directly as a fallback
+            EnsureBackgroundApplied();
+        }
+        catch { }
+    }
+
+    private void EnsureBackgroundApplied()
+    {
+        try
+        {
+            var mainWindow = Application.Current.MainWindow as MainWindow;
+            var settingsService = mainWindow?.ViewModel?.SettingsService;
+            
+            if (settingsService != null)
+            {
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        var bgColor = await settingsService.GetBackgroundColorAsync();
+                        if (!string.IsNullOrWhiteSpace(bgColor))
+                        {
+                            Dispatcher.Invoke(() =>
+                            {
+                                try
+                                {
+                                    var conv = new System.Windows.Media.BrushConverter();
+                                    var brush = conv.ConvertFromString(bgColor) as System.Windows.Media.Brush;
+                                    if (brush != null)
+                                    {
+                                        // Try multiple approaches to apply the background
+                                        ApplyBackgroundToSettingsWindow(brush);
+                                    }
+                                }
+                                catch { }
+                            });
+                        }
+                    }
+                    catch { }
+                });
+            }
+        }
+        catch { }
+    }
+
+    private void ApplyBackgroundToSettingsWindow(System.Windows.Media.Brush brush)
+    {
+        try
+        {
+            // Method 1: Find MainBorder by traversing visual tree
+            var mainBorder = FindChildByName<System.Windows.Controls.Border>(this, "MainBorder");
+            if (mainBorder != null)
+            {
+                mainBorder.Background = brush;
+                return;
+            }
+
+            // Method 2: Apply to window content if it's a Border
+            if (this.Content is System.Windows.Controls.Border contentBorder)
+            {
+                contentBorder.Background = brush;
+                return;
+            }
+
+            // Method 3: Find any Border in the content
+            if (this.Content is System.Windows.FrameworkElement content)
+            {
+                var anyBorder = FindFirstBorder(content);
+                if (anyBorder != null)
+                {
+                    anyBorder.Background = brush;
+                }
+            }
+        }
+        catch { }
+    }
+
+    // Helper methods to find XAML elements dynamically (to avoid dependency on code-generated element names)
+    private System.Windows.Controls.TreeView? GetSettingsTreeView()
+    {
+        try
+        {
+            return FindChildByName<System.Windows.Controls.TreeView>(this, "SettingsTreeView");
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private System.Windows.Controls.StackPanel? GetSettingsContentPanel()
+    {
+        try
+        {
+            return FindChildByName<System.Windows.Controls.StackPanel>(this, "SettingsContentPanel");
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private System.Windows.Controls.Border? FindFirstBorder(System.Windows.DependencyObject parent)
+    {
+        try
+        {
+            if (parent is System.Windows.Controls.Border border)
+                return border;
+
+            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+                var result = FindFirstBorder(child);
+                if (result != null)
+                    return result;
+            }
+        }
+        catch { }
+        return null;
     }
 
     private void SetWindowIcon()
@@ -614,7 +767,14 @@ public partial class SettingsWindow : Window
                     if (mainWindow != null)
                     {
                         var brush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(sel.A, sel.R, sel.G, sel.B));
-                        mainWindow.Background = brush;
+                        // Apply to the main border of the main window
+                        ApplyBackgroundToMainWindow(mainWindow, brush);
+                        
+                        // Also apply to this settings window's main border
+                        ApplyBackgroundToSettingsWindow(brush);
+                        
+                        // Apply to any other open windows
+                        RefreshAllWindowBackgrounds(brush);
                     }
 
                     System.Windows.MessageBox.Show($"Background color saved: {hex}", "Saved", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -625,6 +785,112 @@ public partial class SettingsWindow : Window
                 System.Windows.MessageBox.Show($"Failed to pick color: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         });
+    }
+
+    /// <summary>
+    /// Apply background color to the main window's MainBorder
+    /// </summary>
+    private void ApplyBackgroundToMainWindow(MainWindow mainWindow, System.Windows.Media.Brush brush)
+    {
+        try
+        {
+            // Use reflection to access the MainBorder field since it might not be publicly exposed
+            var mainBorderField = typeof(MainWindow).GetField("MainBorder", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            
+            if (mainBorderField != null)
+            {
+                var mainBorder = mainBorderField.GetValue(mainWindow) as System.Windows.Controls.Border;
+                if (mainBorder != null)
+                {
+                    mainBorder.Background = brush;
+                    return;
+                }
+            }
+
+            // Try property if field didn't work
+            var mainBorderProperty = typeof(MainWindow).GetProperty("MainBorder", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (mainBorderProperty != null)
+            {
+                var mainBorder = mainBorderProperty.GetValue(mainWindow) as System.Windows.Controls.Border;
+                if (mainBorder != null)
+                {
+                    mainBorder.Background = brush;
+                    return;
+                }
+            }
+
+            // Fallback: traverse visual tree
+            {
+                // Fallback: Find the main border by traversing the visual tree
+                if (mainWindow.Content is System.Windows.Controls.Border border)
+                {
+                    border.Background = brush;
+                }
+                else if (mainWindow.Content is System.Windows.FrameworkElement element)
+                {
+                    var mainBorder = FindChildByName<System.Windows.Controls.Border>(element, "MainBorder");
+                    if (mainBorder != null)
+                    {
+                        mainBorder.Background = brush;
+                    }
+                }
+            }
+        }
+        catch { }
+    }
+
+    /// <summary>
+    /// Refresh background colors for all open windows
+    /// </summary>
+    private void RefreshAllWindowBackgrounds(System.Windows.Media.Brush brush)
+    {
+        try
+        {
+            foreach (Window window in Application.Current.Windows)
+            {
+                if (window is HotclicksWindow hotclicksWindow)
+                {
+                    // Apply to hotclicks window main border
+                    if (hotclicksWindow.Content is System.Windows.FrameworkElement element)
+                    {
+                        var mainBorder = FindChildByName<System.Windows.Controls.Border>(element, "MainBorder");
+                        if (mainBorder != null)
+                        {
+                            mainBorder.Background = brush;
+                        }
+                    }
+                }
+                // Note: We don't need to update the settings window here since it's updated directly above
+            }
+        }
+        catch { }
+    }
+
+    /// <summary>
+    /// Helper method to find a child control by name in the visual tree
+    /// </summary>
+    private T? FindChildByName<T>(System.Windows.DependencyObject parent, string name) where T : System.Windows.FrameworkElement
+    {
+        try
+        {
+            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+                
+                if (child is T element && element.Name == name)
+                {
+                    return element;
+                }
+
+                var result = FindChildByName<T>(child, name);
+                if (result != null)
+                {
+                    return result;
+                }
+            }
+        }
+        catch { }
+        return null;
     }
 
     private void LoadStartupSettings()

@@ -54,7 +54,10 @@ public partial class MainWindow : Window
                 {
                     var conv = new System.Windows.Media.BrushConverter();
                     var brush = conv.ConvertFromString(bgColor ?? "") as System.Windows.Media.Brush;
-                    if (brush != null) this.Background = brush;
+                    if (brush != null && MainBorder != null) 
+                    {
+                        MainBorder.Background = brush;
+                    }
                 }
 
                 // Apply saved background opacity (stored as BackgroundOpacity)
@@ -214,7 +217,10 @@ public partial class MainWindow : Window
                     {
                         var conv = new System.Windows.Media.BrushConverter();
                         var brush = conv.ConvertFromString(bgColor ?? "") as System.Windows.Media.Brush;
-                        if (brush != null) this.Background = brush;
+                        if (brush != null && MainBorder != null) 
+                        {
+                            MainBorder.Background = brush;
+                        }
                     }
                 }
                 catch { }

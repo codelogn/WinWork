@@ -6,12 +6,13 @@
         xmlns:local="clr-namespace:WinWork.UI.Views"
         mc:Ignorable="d"
         Title="Settings - WinWork" 
-    Height="600" Width="900"
-    MinHeight="500" MinWidth="700"
-    WindowStartupLocation="CenterOwner"
-    ResizeMode="CanResize"
-    WindowStyle="SingleBorderWindow"
-    Background="#222">
+        Height="600" Width="900"
+        MinHeight="500" MinWidth="700"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        AllowsTransparency="True"
+        WindowStyle="None"
+        Background="Transparent">
     
     <Window.Resources>
         <!-- TreeView Item Style for Settings Navigation -->
@@ -117,7 +118,8 @@
         </Style>
     </Window.Resources>
     
-    <Border Background="#E6000000" 
+    <Border x:Name="MainBorder"
+            Background="#E6000000" 
             CornerRadius="12" 
             BorderBrush="#33FFFFFF" 
             BorderThickness="1">
@@ -214,7 +216,7 @@
                         Margin="8,8,4,8">
                     
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <TreeView Name="SettingsTreeView"
+                        <TreeView x:Name="SettingsTreeView"
                                   Background="Transparent"
                                   BorderThickness="0"
                                   Margin="8"
