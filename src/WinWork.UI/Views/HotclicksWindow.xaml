@@ -61,63 +61,29 @@
                         
                         <!-- Minimize Button -->
                         <Button x:Name="MinimizeButton"
-                                Content="−"
-                                Click="MinimizeButton_Click"
-                                Background="Transparent"
-                                Foreground="White"
-                                BorderThickness="0"
-                                Width="40" Height="40"
-                                FontSize="16"
-                                HorizontalContentAlignment="Center"
-                                VerticalContentAlignment="Center">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="Transparent"/>
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#66FFFFFF"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
+                                Content="🗕"
+                                Style="{StaticResource WindowControlButtonStyle}"
+                                Click="MinimizeButton_Click"/>
+                        
+                        <!-- Maximize Button -->
+                        <Button x:Name="MaximizeButton"
+                                Content="{Binding RelativeSource={RelativeSource Self}, Path=Tag}"
+                                Tag="🗖"
+                                Style="{StaticResource WindowControlButtonStyle}"
+                                Click="MaximizeButton_Click"/>
                         
                         <!-- Close Button -->
                         <Button x:Name="CloseButton"
                                 Content="✕"
-                                Click="CloseButton_Click"
-                                Background="Transparent"
-                                Foreground="White"
-                                BorderThickness="0"
-                                Width="40" Height="40"
-                                FontSize="14"
-                                HorizontalContentAlignment="Center"
-                                VerticalContentAlignment="Center">
+                                Click="CloseButton_Click">
                             <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="Transparent"/>
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}" 
-                                                        CornerRadius="0,12,0,0">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
+                                <Style TargetType="Button" BasedOn="{StaticResource WindowControlButtonStyle}">
                                     <Style.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
                                             <Setter Property="Background" Value="#E81123"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter Property="Background" Value="#C50E1F"/>
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>

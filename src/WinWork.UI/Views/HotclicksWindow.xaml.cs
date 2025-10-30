@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using WinWork.UI.ViewModels;
 using WinWork.UI.Utils;
 
@@ -43,6 +44,24 @@ namespace WinWork.UI.Views
         private void MinimizeButton_Click(object sender, RoutedEventArgs e)
         {
             WindowState = WindowState.Minimized;
+        }
+
+        private void MaximizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            ToggleMaximize();
+        }
+
+        private void ToggleMaximize()
+        {
+            WindowState = WindowState == WindowState.Maximized 
+                ? WindowState.Normal 
+                : WindowState.Maximized;
+                
+            var maximizeButton = this.FindName("MaximizeButton") as Button;
+            if (maximizeButton != null)
+            {
+                maximizeButton.Tag = WindowState == WindowState.Maximized ? "🗗" : "🗖";
+            }
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)

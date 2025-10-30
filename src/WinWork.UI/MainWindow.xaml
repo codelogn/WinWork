@@ -554,13 +554,13 @@
                             <!-- Top-right Save button for quicker access -->
                             <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                                 <Button Content="Save" 
-                                        Command="{Binding SaveEditCommand}"
-                                        Style="{StaticResource ModernButtonStyle}"
-                                        Width="90" Height="36"
-                                        VerticalAlignment="Center"
-                                        Margin="0,0,0,0"
-                                        Background="#059862"
-                                        BorderBrush="#0A7A4F"/>
+                                            Command="{Binding SaveEditCommand}"
+                                            Style="{StaticResource ModernButtonStyle}"
+                                            Width="90" Height="36"
+                                            VerticalAlignment="Center"
+                                            Margin="0,0,0,0"
+                                            Background="#059862"
+                                            BorderBrush="#0A7A4F"/>
                             </StackPanel>
                         </Grid>
 
@@ -853,6 +853,28 @@
                                              BorderBrush="#66FFFFFF"
                                              BorderThickness="1"
                                              FontSize="14"/>
+                        <!-- Inline browse buttons (show for File/Folder/Application edit types) -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0"
+                            Visibility="{Binding ShowBrowseControlsEdit, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Button Content="..." 
+                            ToolTip="Browse Folder"
+                            Command="{Binding BrowseFolderForEditCommand}"
+                            Style="{StaticResource ModernButtonStyle}"
+                            Width="36" Height="32" Margin="4,0"
+                            Visibility="{Binding EditType, Converter={StaticResource LinkTypeToVisibilityConverter}, ConverterParameter=FolderPath}" />
+                        <Button Content="📄"
+                            ToolTip="Browse File"
+                            Command="{Binding BrowseFileForEditCommand}"
+                            Style="{StaticResource ModernButtonStyle}"
+                            Width="36" Height="32" Margin="4,0"
+                            Visibility="{Binding EditType, Converter={StaticResource LinkTypeToVisibilityConverter}, ConverterParameter=FilePath}" />
+                        <Button Content="🔧"
+                            ToolTip="Browse Application"
+                            Command="{Binding BrowseApplicationForEditCommand}"
+                            Style="{StaticResource ModernButtonStyle}"
+                            Width="36" Height="32" Margin="4,0"
+                            Visibility="{Binding EditType, Converter={StaticResource LinkTypeToVisibilityConverter}, ConverterParameter=Application}" />
+                        </StackPanel>
                                 </StackPanel>
                                 
                                 <!-- Parent Folder Field -->

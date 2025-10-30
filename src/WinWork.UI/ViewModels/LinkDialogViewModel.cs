@@ -53,8 +53,15 @@ public class LinkDialogViewModel : ViewModelBase
             string itemType = _selectedLinkType switch
             {
                 LinkType.Folder => "Folder",
-                LinkType.Notes => "Note",
-                _ => "Link"
+                LinkType.Notes => "Note", 
+                LinkType.WebUrl => "Web Link",
+                LinkType.FilePath => "File",
+                LinkType.Application => "Application",
+                LinkType.FolderPath => "Folder Link",
+                LinkType.WindowsStoreApp => "Store App",
+                LinkType.SystemLocation => "System Location",
+                LinkType.Terminal => "Terminal Command",
+                _ => "Item"
             };
             
             if (_parentItem != null)
@@ -186,6 +193,11 @@ public class LinkDialogViewModel : ViewModelBase
                 OnPropertyChanged(nameof(TerminalPanelVisibility));
                 OnPropertyChanged(nameof(UrlPanelVisibility));
                 OnPropertyChanged(nameof(RequiresUrl));
+                // Notify browse button visibility properties so buttons update immediately
+                OnPropertyChanged(nameof(BrowseFileVisibility));
+                OnPropertyChanged(nameof(BrowseFolderVisibility));
+                OnPropertyChanged(nameof(BrowseApplicationVisibility));
+                OnPropertyChanged(nameof(ShowBrowseControls));
                 OnPropertyChanged(nameof(DialogTitle));
                 Console.WriteLine($"DEBUG: IsNotesType is now {IsNotesType}");
                 // If user switched to Terminal while in the Add form, ensure a default terminal type is selected
@@ -212,9 +224,19 @@ public class LinkDialogViewModel : ViewModelBase
         }
     }
 
+    // Visibility helpers for Browse buttons (keeps UI logic simple and works in Add and Edit modes)
+    public Visibility BrowseFileVisibility => SelectedLinkType == LinkType.FilePath ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility BrowseFolderVisibility => SelectedLinkType == LinkType.FolderPath ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility BrowseApplicationVisibility => SelectedLinkType == LinkType.Application ? Visibility.Visible : Visibility.Collapsed;
+
     public bool IsTerminalType => SelectedLinkType == LinkType.Terminal;
     public Visibility TerminalPanelVisibility => IsTerminalType ? Visibility.Visible : Visibility.Collapsed;
     public Visibility UrlPanelVisibility => (RequiresUrl && !IsTerminalType) ? Visibility.Visible : Visibility.Collapsed;
+
+    // Combined helper to control the browse buttons container visibility
+    public bool ShowBrowseControls =>
+        (SelectedLinkType == LinkType.FilePath || SelectedLinkType == LinkType.FolderPath || SelectedLinkType == LinkType.Application)
+        && UrlPanelVisibility == Visibility.Visible;
 
     // SelectedLinkTypeItem removed. The UI ComboBox should bind SelectedValue to SelectedLinkType (enum).
 
@@ -398,6 +420,12 @@ public class LinkDialogViewModel : ViewModelBase
         var settingTypeMessage = $"DEBUG: Setting SelectedLinkType to {link.Type}";
         FileLogger.Log(settingTypeMessage);
         SelectedLinkType = link.Type;
+
+    // Ensure browse visibility properties are also refreshed and log their values for diagnostics
+    OnPropertyChanged(nameof(BrowseFileVisibility));
+    OnPropertyChanged(nameof(BrowseFolderVisibility));
+    OnPropertyChanged(nameof(BrowseApplicationVisibility));
+    FileLogger.Log($"DEBUG: BrowseFileVisibility={BrowseFileVisibility}, BrowseFolderVisibility={BrowseFolderVisibility}, BrowseApplicationVisibility={BrowseApplicationVisibility}");
 
         // Now populate fields that depend on type
         Name = link.Name;

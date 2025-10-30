@@ -50,7 +50,7 @@
                     
               <StackPanel Grid.Column="0" Orientation="Vertical">
                <TextBlock
-                   Text="Add New"
+                   Text="{Binding DialogTitle}"
                    Foreground="White"
                    FontSize="14"
                    FontWeight="Medium"
@@ -67,12 +67,13 @@
               </StackPanel>
                     
             <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-            <!-- Save button (top-right) -->
+            <!-- Save button (top-right) - only visible in Edit mode -->
             <Button Content="💾 Save"
                 Command="{Binding SaveCommand}"
                 Width="92" Height="30"
                 Margin="8,8,4,8"
-                ToolTip="Save (Ctrl+S)">
+                ToolTip="Save (Ctrl+S)"
+                Visibility="{Binding IsEditMode, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Button.Style>
                     <Style TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
                         <Setter Property="Background" Value="#FF0078D4"/>
@@ -571,32 +572,33 @@
                                 </TextBox.Style>
                             </TextBox>
                             
-                            <StackPanel Grid.Column="1" 
-                                        Orientation="Horizontal">
-                                <Button Content="..." 
-                                        Command="{Binding BrowseFolderCommand}"
-                                        Style="{StaticResource ModernButtonStyle}"
-                                        Width="40" Height="40"
-                                        Margin="1,0,0,0"
-                                        ToolTip="Browse Folder"
-                                        Visibility="{Binding SelectedLinkType, Converter={StaticResource LinkTypeToVisibilityConverter}, ConverterParameter=FolderPath}"/>
+                                        <StackPanel Grid.Column="1" 
+                                                    Orientation="Horizontal"
+                                                    Visibility="{Binding ShowBrowseControls, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Button x:Name="BrowseFolderButton" Content="..." 
+                                Command="{Binding BrowseFolderCommand}"
+                                Style="{StaticResource ModernButtonStyle}"
+                                Width="40" Height="40"
+                                Margin="1,0,0,0"
+                                ToolTip="Browse Folder"
+                                Visibility="{Binding BrowseFolderVisibility}"/>
                                 
-                <Button Content="📄"
-                                        Command="{Binding BrowseFileCommand}"
-                                        Style="{StaticResource ModernButtonStyle}"
-                                        Width="40" Height="40"
-                                        Margin="1,0,0,0"
-                                        ToolTip="Browse File"
-                                        Visibility="{Binding SelectedLinkType, Converter={StaticResource LinkTypeToVisibilityConverter}, ConverterParameter=FilePath}"/>
+                            <Button x:Name="BrowseFileButton" Content="📄"
+                                                    Command="{Binding BrowseFileCommand}"
+                                                    Style="{StaticResource ModernButtonStyle}"
+                                                    Width="40" Height="40"
+                                                    Margin="1,0,0,0"
+                                                    ToolTip="Browse File"
+                                                    Visibility="{Binding BrowseFileVisibility}"/>
                                 
-                                <Button Content="🔧" 
-                                        Command="{Binding BrowseApplicationCommand}"
-                                        Style="{StaticResource ModernButtonStyle}"
-                                        Width="40" Height="40"
-                                        Margin="1,0,0,0"
-                                        ToolTip="Browse Application"
-                                        Visibility="{Binding SelectedLinkType, Converter={StaticResource LinkTypeToVisibilityConverter}, ConverterParameter=Application}"/>
-                            </StackPanel>
+                            <Button x:Name="BrowseApplicationButton" Content="🔧" 
+                                Command="{Binding BrowseApplicationCommand}"
+                                Style="{StaticResource ModernButtonStyle}"
+                                Width="40" Height="40"
+                                Margin="1,0,0,0"
+                                ToolTip="Browse Application"
+                                Visibility="{Binding BrowseApplicationVisibility}"/>
+                                        </StackPanel>
                         </Grid>
                     </StackPanel>
                     

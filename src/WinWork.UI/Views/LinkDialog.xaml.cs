@@ -106,6 +106,9 @@ public partial class LinkDialog : Window
             // Use FindName to safely get the panels
             var terminalPanel = FindName("TerminalPanel") as FrameworkElement;
             var urlPanel = FindName("UrlPanel") as FrameworkElement;
+            var browseFolderBtn = FindName("BrowseFolderButton") as FrameworkElement;
+            var browseFileBtn = FindName("BrowseFileButton") as FrameworkElement;
+            var browseAppBtn = FindName("BrowseApplicationButton") as FrameworkElement;
             
             var msg1 = $"LinkDialog: TerminalPanel.Visibility={terminalPanel?.Visibility ?? Visibility.Collapsed}";
             var msg2 = $"LinkDialog: UrlPanel.Visibility={urlPanel?.Visibility ?? Visibility.Collapsed}";
@@ -119,6 +122,11 @@ public partial class LinkDialog : Window
                 var vmMsg = $"VM: SelectedLinkType={vm.SelectedLinkType}, TerminalType='{vm.TerminalType}', Url='{vm.Url}', Command='{vm.Command}'";
                 System.Diagnostics.Debug.WriteLine(vmMsg);
                 FileLogger.Log(vmMsg);
+                // Log the viewmodel browse properties and actual UI button visibility (if found)
+                var vmBrowseMsg = $"VM BrowseVisibilities: BrowseFile={vm.BrowseFileVisibility}, BrowseFolder={vm.BrowseFolderVisibility}, BrowseApp={vm.BrowseApplicationVisibility}";
+                FileLogger.Log(vmBrowseMsg);
+                var btnMsg = $"Buttons: BrowseFileBtn={browseFileBtn?.Visibility ?? Visibility.Collapsed}, BrowseFolderBtn={browseFolderBtn?.Visibility ?? Visibility.Collapsed}, BrowseAppBtn={browseAppBtn?.Visibility ?? Visibility.Collapsed}";
+                FileLogger.Log(btnMsg);
             }
         }
         catch { }

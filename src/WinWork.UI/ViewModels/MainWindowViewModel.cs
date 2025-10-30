@@ -102,6 +102,10 @@ public class MainWindowViewModel : ViewModelBase
     public ICommand CancelEditCommand { get; }
     public ICommand DeleteEditCommand { get; }
     public ICommand TestEditCommand { get; }
+    // Inline edit browse commands
+    public ICommand BrowseFileForEditCommand { get; }
+    public ICommand BrowseFolderForEditCommand { get; }
+    public ICommand BrowseApplicationForEditCommand { get; }
     public ICommand ExportDataCommand { get; }
     public ICommand ImportDataCommand { get; }
 
@@ -140,6 +144,9 @@ public class MainWindowViewModel : ViewModelBase
     TestEditCommand = new RelayCommand(async () => await RunTestForEditAsync(), () => CanRunTestForEdit());
         ExportDataCommand = new AsyncRelayCommand(ExportDataAsync);
         ImportDataCommand = new AsyncRelayCommand(ImportDataAsync);
+    BrowseFileForEditCommand = new RelayCommand(BrowseFileForEdit);
+    BrowseFolderForEditCommand = new RelayCommand(BrowseFolderForEdit);
+    BrowseApplicationForEditCommand = new RelayCommand(BrowseApplicationForEdit);
         
         _ = LoadDataAsync();
     }
@@ -168,6 +175,11 @@ public class MainWindowViewModel : ViewModelBase
         }
     }
 
+    // Helper property used by MainWindow.xaml to show inline browse controls for edit panel
+    public bool ShowBrowseControlsEdit =>
+        (EditType == LinkType.FilePath || EditType == LinkType.FolderPath || EditType == LinkType.Application)
+        && (EditType != LinkType.Folder && EditType != LinkType.Notes && EditType != LinkType.Terminal);
+
     public LinkTreeItemViewModel? SelectedLink
     {
         get => _selectedLink;
@@ -191,6 +203,68 @@ public class MainWindowViewModel : ViewModelBase
     {
         get => _editUrl;
         set => SetProperty(ref _editUrl, value);
+    }
+
+    private void BrowseFileForEdit()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Select File",
+            Filter = "All Files (*.*)|*.*"
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            EditUrl = dialog.FileName;
+            if (string.IsNullOrWhiteSpace(EditName))
+            {
+                EditName = System.IO.Path.GetFileNameWithoutExtension(dialog.FileName);
+            }
+        }
+    }
+
+    private void BrowseFolderForEdit()
+    {
+        try
+        {
+            using var dialog = new Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog
+            {
+                Title = "Select Folder",
+                IsFolderPicker = true
+            };
+
+            if (dialog.ShowDialog() == Microsoft.WindowsAPICodePack.Dialogs.CommonFileDialogResult.Ok)
+            {
+                EditUrl = dialog.FileName;
+                if (string.IsNullOrWhiteSpace(EditName))
+                {
+                    EditName = System.IO.Path.GetFileName(dialog.FileName);
+                }
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+    }
+
+    private void BrowseApplicationForEdit()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Select Application",
+            Filter = "Executable Files (*.exe)|*.exe|Batch Files (*.bat)|*.bat|Command Files (*.cmd)|*.cmd|All Files (*.*)|*.*",
+            FilterIndex = 1
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            EditUrl = dialog.FileName;
+            if (string.IsNullOrWhiteSpace(EditName))
+            {
+                EditName = System.IO.Path.GetFileNameWithoutExtension(dialog.FileName);
+            }
+        }
     }
 
     public string EditCommand
@@ -262,6 +336,8 @@ public class MainWindowViewModel : ViewModelBase
             if (SetProperty(ref _editType, value))
             {
                 System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+                // Notify dependent computed properties so the UI updates (e.g., ShowBrowseControlsEdit)
+                OnPropertyChanged(nameof(ShowBrowseControlsEdit));
             }
         }
     }

@@ -755,6 +755,9 @@ public partial class MainWindow : Window
             var treeView = FindName("LinksTreeView") as TreeView;
             var selectedItem = treeView?.SelectedItem as LinkTreeItemViewModel;
             
+            // Log selection to persistent debug log to trace Edit invocations
+            FileLogger.Log($"Edit_Click invoked - selectedItem: {selectedItem?.Name ?? "null"} (ID: {selectedItem?.Link?.Id ?? 0})");
+            
             if (selectedItem != null)
             {
                 viewModel.EditLinkCommand.Execute(selectedItem);
