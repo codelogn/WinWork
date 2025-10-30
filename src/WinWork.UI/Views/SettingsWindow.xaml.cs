@@ -1659,9 +1659,7 @@ public partial class SettingsWindow : Window
         var browseButton = new Button
         {
             Content = "📂 Browse",
-            Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 0, 120, 215)),
-            Foreground = GetForegroundBrush(),
-            BorderBrush = _isLightTheme ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 0, 0, 0)) : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 255, 255, 255)),
+            Style = (Style)FindResource("ModernButtonStyle"),
             Padding = new Thickness(12, 6, 12, 6),
             Margin = new Thickness(8, 0, 0, 0),
             FontSize = 14
@@ -1782,9 +1780,8 @@ public partial class SettingsWindow : Window
         var button = new Button
         {
             Content = text,
-            Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 0, 120, 215)),
-            Foreground = GetForegroundBrush(),
-            BorderBrush = _isLightTheme ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 0, 0, 0)) : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 255, 255, 255)),
+            // Use Success for action-like buttons (Save/Add). Default to Modern otherwise.
+            Style = (Style)FindResource("SuccessButtonStyle"),
             Padding = new Thickness(16, 8, 16, 8),
             Margin = new Thickness(0, 0, 0, 12),
             FontSize = 14,
@@ -2131,9 +2128,7 @@ public partial class SettingsWindow : Window
         var browseButton = new Button
         {
             Content = "📁 Browse",
-            Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 0, 120, 215)),
-            Foreground = System.Windows.Media.Brushes.White,
-            BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(102, 255, 255, 255)),
+            Style = (Style)FindResource("ModernButtonStyle"),
             Padding = new Thickness(12, 6, 12, 6),
             Margin = new Thickness(8, 0, 0, 0),
             FontSize = 14

@@ -67,33 +67,6 @@
               </StackPanel>
                     
             <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-            <!-- Save button (top-right) - only visible in Edit mode -->
-            <Button Content="💾 Save"
-                Command="{Binding SaveCommand}"
-                Width="92" Height="30"
-                Margin="8,8,4,8"
-                ToolTip="Save (Ctrl+S)"
-                Visibility="{Binding IsEditMode, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <Button.Style>
-                    <Style TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
-                        <Setter Property="Background" Value="#FF0078D4"/>
-                        <Setter Property="FontWeight" Value="Medium"/>
-                        <Style.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#FF106EBE"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#FF005A9E"/>
-                            </Trigger>
-                            <DataTrigger Binding="{Binding Path=CanSave, Mode=OneWay}" Value="False">
-                                <Setter Property="Background" Value="#66666666"/>
-                                <Setter Property="Foreground" Value="#AAFFFFFF"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
-            </Button>
-
             <Button Content="✕"
                 Style="{StaticResource WindowControlButtonStyle}"
                 Width="30" Height="30"
@@ -729,36 +702,26 @@
                             VerticalAlignment="Center"
                             Margin="20,0">
                     
-                    <Button Content="Cancel"
-                            Command="{Binding CancelCommand}"
-                            Style="{StaticResource ModernButtonStyle}"
-                            Margin="0,0,12,0"
-                            Padding="20,8"
-                            Background="#33666666"/>
+            <Button Content="Cancel"
+                Command="{Binding CancelCommand}"
+                Style="{StaticResource ModernButtonStyle}"
+                Margin="0,0,12,0"
+                Padding="20,8"/>
                     
                     <!-- Delete Button (between Cancel and Save, only in edit mode) -->
-                    <Button Content="🗑️ Delete"
-                            Command="{Binding DeleteCommand}"
-                            Style="{StaticResource ModernButtonStyle}"
-                            Margin="0,0,12,0"
-                            Padding="20,8"
-                            Background="#33D32F2F"
-                            Visibility="{Binding DeleteButtonVisibility}"/>
+            <Button Content="🗑️ Delete"
+                Command="{Binding DeleteCommand}"
+                Style="{StaticResource DangerButtonStyle}"
+                Margin="0,0,12,0"
+                Padding="20,8"
+                Visibility="{Binding DeleteButtonVisibility}"/>
                     
-                    <Button Content="{Binding IsEditMode, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Update|💾 Save'}"
-                            Command="{Binding SaveCommand}"
-                            Padding="20,8">
+            <Button Content="{Binding IsEditMode, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Update|💾 Save'}"
+                Command="{Binding SaveCommand}"
+                Padding="20,8">
                         <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
-                                <Setter Property="Background" Value="#FF0078D4"/>
-                                <Setter Property="FontWeight" Value="Medium"/>
+                            <Style TargetType="Button" BasedOn="{StaticResource SuccessButtonStyle}">
                                 <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="#FF106EBE"/>
-                                    </Trigger>
-                                    <Trigger Property="IsPressed" Value="True">
-                                        <Setter Property="Background" Value="#FF005A9E"/>
-                                    </Trigger>
                                     <DataTrigger Binding="{Binding Path=CanSave, Mode=OneWay}" Value="False">
                                         <Setter Property="Background" Value="#66666666"/>
                                         <Setter Property="Foreground" Value="#AAFFFFFF"/>

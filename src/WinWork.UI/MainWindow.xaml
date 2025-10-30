@@ -239,8 +239,8 @@
                                     Margin="8,0,8,8"
                                     HorizontalAlignment="Right">
                             
-                            <Button Content="➕ Add New" 
-                                    Style="{StaticResource ModernButtonStyle}"
+                <Button Content="➕ Add New" 
+                    Style="{StaticResource SuccessButtonStyle}"
                                     Margin="4,0"
                                     ToolTip="Add New Item"
                                     Click="AddNew_Click"/>
@@ -555,12 +555,10 @@
                             <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                                 <Button Content="Save" 
                                             Command="{Binding SaveEditCommand}"
-                                            Style="{StaticResource ModernButtonStyle}"
+                                            Style="{StaticResource SuccessButtonStyle}"
                                             Width="90" Height="36"
                                             VerticalAlignment="Center"
-                                            Margin="0,0,0,0"
-                                            Background="#059862"
-                                            BorderBrush="#0A7A4F"/>
+                                            Margin="0,0,0,0"/>
                             </StackPanel>
                         </Grid>
 
@@ -1110,29 +1108,23 @@
                                 <StackPanel Orientation="Horizontal" 
                                             HorizontalAlignment="Right"
                                             Margin="0,16,0,0">
-                                    <Button Content="Cancel" 
-                                            Command="{Binding CancelEditCommand}"
-                                            Style="{StaticResource ModernButtonStyle}"
-                                            Width="80" 
-                                            Height="36"
-                                            Margin="0,0,10,0"
-                                            Background="#66666666"
-                                            BorderBrush="#88888888"/>
-                                    <Button Content="🗑️ Delete" 
-                                            Command="{Binding DeleteEditCommand}"
-                                            Style="{StaticResource ModernButtonStyle}"
-                                            Width="90" 
-                                            Height="36"
-                                            Margin="0,0,10,0"
-                                            Background="#33D32F2F"
-                                            BorderBrush="#D32F2F"/>
-                                    <Button Content="Save" 
-                                            Command="{Binding SaveEditCommand}"
-                                            Style="{StaticResource ModernButtonStyle}"
-                                            Width="80" 
-                                            Height="36"
-                                            Background="#059862"
-                                            BorderBrush="#0A7A4F"/>
+                    <Button Content="Cancel" 
+                        Command="{Binding CancelEditCommand}"
+                        Style="{StaticResource ModernButtonStyle}"
+                        Width="80" 
+                        Height="36"
+                        Margin="0,0,10,0"/>
+                    <Button Content="🗑️ Delete" 
+                        Command="{Binding DeleteEditCommand}"
+                        Style="{StaticResource DangerButtonStyle}"
+                        Width="90" 
+                        Height="36"
+                        Margin="0,0,10,0"/>
+                    <Button Content="Save" 
+                        Command="{Binding SaveEditCommand}"
+                        Style="{StaticResource SuccessButtonStyle}"
+                        Width="80" 
+                        Height="36"/>
                                 </StackPanel>
                             </StackPanel>
                         </ScrollViewer>

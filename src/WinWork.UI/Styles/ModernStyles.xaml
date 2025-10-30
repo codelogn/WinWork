@@ -2,10 +2,21 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
-    <!-- Modern Button Style -->
+    <!-- Button color tokens (centralized) -->
+    <Color x:Key="ButtonBackgroundColor">#33FFFFFF</Color>
+    <Color x:Key="ButtonForegroundColor">#FFFFFFFF</Color>
+    <Color x:Key="ButtonHoverBackgroundColor">#4DFFFFFF</Color>
+    <Color x:Key="ButtonPressedBackgroundColor">#66FFFFFF</Color>
+
+    <SolidColorBrush x:Key="ButtonBackground" Color="{StaticResource ButtonBackgroundColor}"/>
+    <SolidColorBrush x:Key="ButtonForeground" Color="{StaticResource ButtonForegroundColor}"/>
+    <SolidColorBrush x:Key="ButtonHoverBackground" Color="{StaticResource ButtonHoverBackgroundColor}"/>
+    <SolidColorBrush x:Key="ButtonPressedBackground" Color="{StaticResource ButtonPressedBackgroundColor}"/>
+
+    <!-- Modern Button Style (uses centralized tokens). Buttons can still override Background/Foreground per instance or via BasedOn styles. -->
     <Style x:Key="ModernButtonStyle" TargetType="Button">
-        <Setter Property="Background" Value="#33FFFFFF"/>
-        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Background" Value="{DynamicResource ButtonBackground}"/>
+        <Setter Property="Foreground" Value="{DynamicResource ButtonForeground}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding" Value="12,6"/>
         <Setter Property="FontSize" Value="14"/>
@@ -22,10 +33,10 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="#4DFFFFFF"/>
+                            <Setter Property="Background" Value="{DynamicResource ButtonHoverBackground}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter Property="Background" Value="#66FFFFFF"/>
+                            <Setter Property="Background" Value="{DynamicResource ButtonPressedBackground}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -175,5 +186,48 @@
 
     <!-- Boolean to Visibility Converter -->
     <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+    <!-- Button variants (use tokens so appearance is centralized and adaptive) -->
+    <!-- Updated palette tokens: tweak these to recolor buttons app-wide -->
+    <Color x:Key="PrimaryColor">#FF0A84FF</Color>       <!-- brighter azure -->
+    <Color x:Key="PrimaryHoverColor">#FF007ACC</Color>
+    <Color x:Key="PrimaryPressedColor">#FF005AB4</Color>
+
+    <Color x:Key="SuccessColor">#FF28A745</Color>       <!-- lively success (bootstrap-like) -->
+    <Color x:Key="DangerColor">#FFDC3545</Color>        <!-- vivid danger (bootstrap-like) -->
+
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
+    <SolidColorBrush x:Key="PrimaryHoverBrush" Color="{StaticResource PrimaryHoverColor}"/>
+    <SolidColorBrush x:Key="PrimaryPressedBrush" Color="{StaticResource PrimaryPressedColor}"/>
+
+    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
+    <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}"/>
+
+    <!-- BasedOn variants for common button types -->
+    <Style x:Key="PrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+        <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource PrimaryHoverBrush}"/>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{DynamicResource PrimaryPressedBrush}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="SuccessButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+        <Setter Property="Background" Value="{DynamicResource SuccessBrush}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+    </Style>
+
+    <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+        <Setter Property="Background" Value="{DynamicResource DangerBrush}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+    </Style>
 
 </ResourceDictionary>

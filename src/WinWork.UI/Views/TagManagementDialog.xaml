@@ -229,25 +229,25 @@
                         <StackPanel Orientation="Horizontal" 
                                     HorizontalAlignment="Right">
                             
-                            <Button Content="Cancel"
-                                    Command="{Binding CancelEditCommand}"
-                                    Style="{StaticResource ModernButtonStyle}"
-                                    Margin="0,0,8,0"
-                                    Padding="16,6"
-                                    Background="#33666666"
-                                    Visibility="{Binding IsEditMode, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                <Button Content="Cancel"
+                    Command="{Binding CancelEditCommand}"
+                    Style="{StaticResource ModernButtonStyle}"
+                    Margin="0,0,8,0"
+                    Padding="16,6"
+                    Visibility="{Binding IsEditMode, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                             
-                            <Button Padding="16,6"
-                                    Background="#334CAF50"
-                                    x:Name="ActionButton">
+                <Button Padding="16,6"
+                    x:Name="ActionButton">
                                 <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+                                    <Style TargetType="Button" BasedOn="{StaticResource SuccessButtonStyle}">
                                         <Setter Property="Content" Value="Add"/>
                                         <Setter Property="Command" Value="{Binding AddTagCommand}"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsEditMode}" Value="True">
                                                 <Setter Property="Content" Value="Save"/>
                                                 <Setter Property="Command" Value="{Binding SaveEditCommand}"/>
+                                                <!-- Keep Success appearance when saving in tag management -->
+                                                <Setter Property="Foreground" Value="White"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
