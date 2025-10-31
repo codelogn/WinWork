@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 using WinWork.UI.Utils;
+using WinWork.Core.Interfaces;
 
 namespace WinWork.UI.Views
 {
@@ -1024,7 +1025,33 @@ public partial class SettingsWindow : Window
 
     // Browse and Create Backup actions
     AddButton("📂 Choose Backup Folder", () => ChooseBackupFolder());
-    AddButton("🛟 Create Backup Now", () => CreateBackupNow());
+    AddButton("🛟 Create Backup Now", async () => {
+        await Task.Run(() => CreateBackupNow());
+        // Refresh the backup settings UI to show updated last backup timestamp
+        LoadBackupSettings();
+    });
+
+    // Show last backup timestamp (if available)
+    try
+    {
+        var lastBackupUtc = settingsService != null ? settingsService.GetSettingAsync("LastBackupUtc").Result : null;
+        if (!string.IsNullOrWhiteSpace(lastBackupUtc))
+        {
+            if (DateTime.TryParse(lastBackupUtc, null, System.Globalization.DateTimeStyles.RoundtripKind, out var dt))
+            {
+                AddInfoSection("Last Backup:", dt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"));
+            }
+            else
+            {
+                AddInfoSection("Last Backup:", lastBackupUtc ?? "Unknown");
+            }
+        }
+        else
+        {
+            AddInfoSection("Last Backup:", "Never");
+        }
+    }
+    catch { }
     }
 
     private void LoadImportExportSettings()
@@ -2379,33 +2406,22 @@ public partial class SettingsWindow : Window
             var mainWindow = Application.Current.MainWindow as MainWindow;
             var settingsService = mainWindow?.ViewModel?.SettingsService;
 
-            // Determine backup folder: priority - saved setting, default Documents\WinWork\Backups
-            string backupFolder = settingsService != null ? (settingsService.GetSettingAsync("BackupFolder").Result ?? "") : "";
-            if (string.IsNullOrWhiteSpace(backupFolder))
+            var result = BackupHelper.CreateBackupAsync().GetAwaiter().GetResult();
+            if (!string.IsNullOrWhiteSpace(result))
             {
-                backupFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "WinWork", "Backups");
-            }
+                // Record last backup time in settings
+                try
+                {
+                    settingsService?.SetSettingAsync("LastBackupUtc", DateTime.UtcNow.ToString("o")).Wait();
+                }
+                catch { }
 
-            if (!Directory.Exists(backupFolder))
+                MessageBox.Show($"Backup created:\n{result}", "Backup Created", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
             {
-                Directory.CreateDirectory(backupFolder);
+                MessageBox.Show("Failed to create backup. See logs for details.", "Backup Failed", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-
-            // Locate current DB
-            var dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "WinWork", "winwork.db");
-            if (!File.Exists(dbPath))
-            {
-                MessageBox.Show($"Database file not found: {dbPath}", "Backup Failed", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var destFile = Path.Combine(backupFolder, $"winwork_backup_{timestamp}.db");
-
-            // Copy the DB file (overwrite if exists)
-            File.Copy(dbPath, destFile, overwrite: true);
-
-            MessageBox.Show($"Backup created:\n{destFile}", "Backup Created", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {

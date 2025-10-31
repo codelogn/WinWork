@@ -1163,7 +1163,8 @@
                     Visibility="{Binding ShowSuccessMessage, Converter={StaticResource BooleanToVisibilityConverter}}"
                     Padding="15,10">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="?" 
+                    <!-- Replaced placeholder '?' with a checkmark emoji for successful operations -->
+                    <TextBlock Text="✅" 
                                Foreground="White" 
                                FontWeight="Bold" 
                                FontSize="16"
@@ -1183,7 +1184,8 @@
                     Visibility="{Binding ShowErrorMessage, Converter={StaticResource BooleanToVisibilityConverter}}"
                     Padding="15,10">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="?" 
+                    <!-- Replaced placeholder '?' with a cross mark emoji for error messages -->
+                    <TextBlock Text="❌" 
                                Foreground="White" 
                                FontWeight="Bold" 
                                FontSize="16"

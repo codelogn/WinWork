@@ -6,7 +6,7 @@ using WinWork.Data;
 using WinWork.Core;
 using WinWork.UI.Services;
 using WinWork.UI.ViewModels;
-using WinWork.Core.Interfaces;
+using WinWork.Core.Services;
 using System.Runtime.InteropServices;
 
 namespace WinWork.UI;
@@ -68,6 +68,51 @@ public partial class App : Application
             // Show main window after database is ready
             var mainWindow = _host.Services.GetRequiredService<MainWindow>();
             mainWindow.Show();
+
+            // Start auto-backup background task
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var settingsService = _host.Services.GetRequiredService<ISettingsService>();
+                    while (true)
+                    {
+                        try
+                        {
+                            var enabled = await settingsService.GetSettingAsync<bool>("AutoBackup") ?? true;
+                            if (enabled)
+                            {
+                                // BackupInterval stored as hours (default 24)
+                                var intervalHours = await settingsService.GetSettingAsync<int>("AutoBackupInterval") ?? 24;
+                                // LastBackupUtc stored as ISO string
+                                var lastBackupStr = await settingsService.GetSettingAsync("LastBackupUtc");
+                                DateTime? lastBackup = null;
+                                if (!string.IsNullOrWhiteSpace(lastBackupStr) && DateTime.TryParse(lastBackupStr, out var parsed))
+                                    lastBackup = parsed.ToUniversalTime();
+
+                                var due = false;
+                                if (!lastBackup.HasValue) due = true;
+                                else due = (DateTime.UtcNow - lastBackup.Value) > TimeSpan.FromHours(Math.Max(1, intervalHours));
+
+                                if (due)
+                                {
+                                    // Perform backup and record last time if successful
+                                    var backupResult = await WinWork.UI.Utils.BackupHelper.CreateBackupAsync();
+                                    if (!string.IsNullOrWhiteSpace(backupResult))
+                                    {
+                                        try { await settingsService.SetSettingAsync("LastBackupUtc", DateTime.UtcNow.ToString("o")); } catch { }
+                                    }
+                                }
+                            }
+                        }
+                        catch { }
+
+                        // Sleep a moderate amount before next check
+                        await Task.Delay(TimeSpan.FromMinutes(30));
+                    }
+                }
+                catch { }
+            });
 
             base.OnStartup(e);
         }
