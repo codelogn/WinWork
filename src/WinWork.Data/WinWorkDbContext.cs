@@ -17,6 +17,8 @@ public class WinWorkDbContext : DbContext
     public DbSet<Tag> Tags { get; set; }
     public DbSet<LinkTag> LinkTags { get; set; }
     public DbSet<AppSettings> AppSettings { get; set; }
+    public DbSet<WinWork.Models.HotNav> HotNavs { get; set; }
+    public DbSet<WinWork.Models.HotNavRoot> HotNavRoots { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -155,6 +157,17 @@ public class WinWorkDbContext : DbContext
                 CreatedAt = seedDateTime,
                 UpdatedAt = seedDateTime
             }
+        );
+
+        // Seed HotNav groups and roots (basic paths)
+        modelBuilder.Entity<HotNav>().HasData(
+            new HotNav { Id = 1, Name = "Projects", IncludeFiles = true, MaxDepth = 4, SortOrder = 1, CreatedAt = seedDateTime, UpdatedAt = seedDateTime },
+            new HotNav { Id = 2, Name = "Utilities", IncludeFiles = false, MaxDepth = 3, SortOrder = 2, CreatedAt = seedDateTime, UpdatedAt = seedDateTime }
+        );
+
+        modelBuilder.Entity<HotNavRoot>().HasData(
+            new HotNavRoot { Id = 1, HotNavId = 1, Path = "C:\\Users\\Public\\Documents", SortOrder = 1, CreatedAt = seedDateTime, UpdatedAt = seedDateTime },
+            new HotNavRoot { Id = 2, HotNavId = 2, Path = "C:\\ProgramData", SortOrder = 1, CreatedAt = seedDateTime, UpdatedAt = seedDateTime }
         );
     }
 }

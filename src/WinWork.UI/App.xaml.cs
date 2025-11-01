@@ -18,6 +18,11 @@ public partial class App : Application
 {
     private IHost? _host;
 
+    /// <summary>
+    /// Expose IServiceProvider from the Host so other parts of the app can resolve services.
+    /// </summary>
+    public IServiceProvider? Services => _host?.Services;
+
     // Removed AllocConsole import for production GUI-only build
 
     protected override async void OnStartup(StartupEventArgs e)
@@ -68,6 +73,40 @@ public partial class App : Application
             // Show main window after database is ready
             var mainWindow = _host.Services.GetRequiredService<MainWindow>();
             mainWindow.Show();
+
+            // Initialize HotNavs tray service (separate tray icon)
+            try
+            {
+                var hotNavsTray = _host.Services.GetService<WinWork.Core.Services.HotNavsTrayService>();
+                if (hotNavsTray != null)
+                {
+                    // Provide a simple action that opens the HotNavsWindow via DI
+                    Action openMgr = () =>
+                    {
+                        try
+                        {
+                            // Ensure window creation/showing happens on the WPF UI thread
+                            Application.Current?.Dispatcher.Invoke(() =>
+                            {
+                                try
+                                {
+                                    var win = _host.Services.GetRequiredService<WinWork.UI.Views.HotNavsWindow>();
+                                    win.Show();
+                                }
+                                catch (Exception ex)
+                                {
+                                    // Surface any errors
+                                    ShowErrorDialog("HotNavs Manager Error", "Failed to open HotNavs manager.", ex.ToString());
+                                }
+                            });
+                        }
+                        catch { }
+                    };
+
+                    await hotNavsTray.InitializeAsync(System.Drawing.SystemIcons.Application, openMgr);
+                }
+            }
+            catch { }
 
             // Start auto-backup background task
             _ = Task.Run(async () =>
@@ -151,6 +190,7 @@ public partial class App : Application
                 // Register main window
                 services.AddTransient<MainWindow>();
                 services.AddTransient<MainWindowViewModel>();
+                services.AddTransient<WinWork.UI.Views.HotNavsWindow>();
             })
             .Build();
     }

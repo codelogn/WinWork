@@ -18,10 +18,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<WinWork.Core.Interfaces.ILinkService, LinkService>();
         services.AddScoped<ITagService, TagService>();
         services.AddScoped<ISettingsService, SettingsService>();
+    services.AddScoped<IHotNavService, HotNavService>();
         services.AddScoped<ILinkOpenerService, LinkOpenerService>();
         services.AddScoped<IImportExportService, ImportExportService>();
         services.AddSingleton<ISystemTrayService, SystemTrayService>();
         services.AddSingleton<IGlobalHotkeysService, GlobalHotkeysService>();
+    services.AddSingleton<HotNavsTrayService>();
 
         return services;
     }

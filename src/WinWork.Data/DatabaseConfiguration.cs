@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using WinWork.Data.Repositories;
 
 namespace WinWork.Data;
@@ -52,21 +53,26 @@ public static class DatabaseConfiguration
     public static IServiceCollection AddWinWorkDatabase(this IServiceCollection services, string? connectionString = null)
     {
         connectionString ??= $"Data Source={GetDefaultDatabasePath()}";
+    services.AddDbContext<WinWorkDbContext>(options =>
+    {
+        options.UseSqlite(connectionString);
 
-        services.AddDbContext<WinWorkDbContext>(options =>
-        {
-            options.UseSqlite(connectionString);
-            
 #if DEBUG
-            options.EnableSensitiveDataLogging();
-            options.LogTo(Console.WriteLine, LogLevel.Information);
+        options.EnableSensitiveDataLogging();
+        options.LogTo(Console.WriteLine, LogLevel.Information);
 #endif
-        });
+    });
+
+    // Make sure EF logs pending model changes (so we can see them in logs) but
+    // do not let that warning abort startup. The migration application code will
+    // attempt to run migrations and will handle failures gracefully.
+    services.AddDbContext<WinWorkDbContext>(options => { options.ConfigureWarnings(w => w.Log(RelationalEventId.PendingModelChangesWarning)); });
 
         // Register repositories
         services.AddScoped<ILinkRepository, LinkRepository>();
         services.AddScoped<ITagRepository, TagRepository>();
         services.AddScoped<ISettingsRepository, SettingsRepository>();
+    services.AddScoped<IHotNavRepository, HotNavRepository>();
 
         return services;
     }
@@ -89,42 +95,90 @@ public static class DatabaseConfiguration
             bool dbExists = await context.Database.CanConnectAsync();
             Console.WriteLine($"Can connect to database: {dbExists}");
             
-            if (!dbExists)
+            // Use migrations to bring database up-to-date without destructive operations
+            Console.WriteLine("Checking migrations available in assembly...");
+            try
             {
-                Console.WriteLine("Database does not exist, creating new database...");
-                // Create database directory if it doesn't exist
-                var dbDir = Path.GetDirectoryName(dbPath);
-                if (!Directory.Exists(dbDir))
-                {
-                    Console.WriteLine($"Creating database directory: {dbDir}");
-                    Directory.CreateDirectory(dbDir!);
-                }
-
-                // Create database and schema
-                Console.WriteLine("Creating database schema...");
-                await context.Database.EnsureCreatedAsync();
-                
-                // Add initial seed data
-                Console.WriteLine("Adding initial seed data...");
-                await SeedInitialDataAsync(context);
-                Console.WriteLine("Seed data added successfully.");
+                var allMigrations = context.Database.GetMigrations();
+                var pending = context.Database.GetPendingMigrations();
+                Console.WriteLine($"All migrations: {string.Join(", ", allMigrations)}");
+                Console.WriteLine($"Pending migrations: {string.Join(", ", pending)}");
             }
-            else
+            catch (Exception ex)
             {
-                Console.WriteLine("Database exists, verifying schema...");
-                // Database exists, verify schema
-                bool hasSchema = await VerifySchemaAsync(context);
-                Console.WriteLine($"Schema verification result: {hasSchema}");
+                Console.WriteLine($"Warning: failed to enumerate migrations: {ex.Message}");
+            }
 
-                if (!hasSchema)
+            Console.WriteLine("Applying pending migrations (if any)...");
+
+            // Acquire a short file-based exclusive lock to avoid multiple app instances
+            // trying to apply migrations concurrently on the same DB file. This is a
+            // soft lock used only during startup migration application.
+            var dbDir = Path.GetDirectoryName(dbPath) ?? Path.GetTempPath();
+            var lockPath = Path.Combine(dbDir, "winwork_migrate.lock");
+            const int maxAttempts = 6;
+            const int delayMs = 2000;
+            var migrated = false;
+
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                FileStream? lockFs = null;
+                try
                 {
-                    Console.WriteLine("Schema invalid, recreating database...");
-                    // Recreate schema if missing
-                    await context.Database.EnsureDeletedAsync();
-                    await context.Database.EnsureCreatedAsync();
-                    await SeedInitialDataAsync(context);
-                    Console.WriteLine("Database recreated successfully.");
+                    // Ensure directory exists
+                    if (!Directory.Exists(dbDir)) Directory.CreateDirectory(dbDir);
+
+                    lockFs = new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+                    Console.WriteLine($"Acquired migration lock (attempt {attempt}). Running MigrateAsync...");
+
+                    // Run migrations non-destructively. If migrations fail, we log and continue
+                    // so the user does not lose data. However, failures here should be investigated.
+                    await context.Database.MigrateAsync();
+                    migrated = true;
+                    Console.WriteLine("Migrations applied successfully.");
+                    break;
                 }
+                catch (IOException)
+                {
+                    Console.WriteLine($"Migration lock busy (attempt {attempt}). Waiting {delayMs}ms...");
+                    await Task.Delay(delayMs);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Warning: failed to apply migrations on attempt {attempt}: {ex.Message}");
+                    // Don't throw here — we prefer the app to try to continue without data loss.
+                    break;
+                }
+                finally
+                {
+                    try { lockFs?.Dispose(); } catch { }
+                }
+            }
+
+            if (!migrated)
+            {
+                Console.WriteLine("Migrations were not applied (lock contention or error). Continuing startup without destructive changes.");
+            }
+
+            // Optionally seed initial data only when key tables are empty
+            try
+            {
+                var anySettings = await context.AppSettings.AnyAsync();
+                var anyLinks = await context.Links.AnyAsync();
+                if (!anySettings && !anyLinks)
+                {
+                    Console.WriteLine("Database appears new or empty; seeding initial data...");
+                    await SeedInitialDataAsync(context);
+                    Console.WriteLine("Seed data added successfully.");
+                }
+                else
+                {
+                    Console.WriteLine("Existing data detected; skipping initial seed.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Warning: failed to probe database contents for seeding: {ex.Message}");
             }
             Console.WriteLine("Database initialization completed successfully.");
         }
@@ -154,6 +208,9 @@ public static class DatabaseConfiguration
             _ = await context.Tags.FirstOrDefaultAsync();
             _ = await context.LinkTags.FirstOrDefaultAsync();
             _ = await context.AppSettings.FirstOrDefaultAsync();
+            // Verify HotNav tables exist as well (added in later schema versions)
+            _ = await context.Set<WinWork.Models.HotNav>().FirstOrDefaultAsync();
+            _ = await context.Set<WinWork.Models.HotNavRoot>().FirstOrDefaultAsync();
             return true;
         }
         catch

@@ -154,11 +154,17 @@
                                 Orientation="Horizontal" 
                                 VerticalAlignment="Center"
                                 Margin="0,0,16,0">
-            <Button Content="🔥 Hotclicks" 
+                    <Button Content="🔥 Hotclicks" 
                 Style="{StaticResource ModernButtonStyle}"
                 Margin="4,0"
                 ToolTip="Open Hotclicks manager"
                 Click="Hotclicks_Click"/>
+
+                    <Button Content="📁 Hot Navs"
+                        Style="{StaticResource ModernButtonStyle}"
+                        Margin="4,0"
+                        ToolTip="Manage Hot Navs"
+                        Click="HotNavs_Click"/>
 
             <Button Content="⚙️ Settings" 
                 Style="{StaticResource ModernButtonStyle}"

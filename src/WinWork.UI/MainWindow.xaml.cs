@@ -11,6 +11,7 @@ using WinWork.Core.Interfaces;
 using WinWork.Models;
 using System.ComponentModel;
 using System.Drawing;
+using Microsoft.Extensions.DependencyInjection;
 using System.Linq;
 using System;
 using System.Collections.ObjectModel;
@@ -156,6 +157,31 @@ public partial class MainWindow : Window
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
         Close();
+    }
+
+    private void HotNavs_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var services = (App.Current as App)?.Services;
+            if (services != null)
+            {
+                // Create a scope so scoped services (DbContext) are tied to the window lifetime
+                var scope = services.CreateScope();
+                var win = scope.ServiceProvider.GetService(typeof(WinWork.UI.Views.HotNavsWindow)) as WinWork.UI.Views.HotNavsWindow;
+                if (win != null)
+                {
+                    // Dispose the scope when the window closes
+                    win.Closed += (s, args) => scope.Dispose();
+                    win.Show();
+                }
+                else
+                {
+                    scope.Dispose();
+                }
+            }
+        }
+        catch { }
     }
 
     #endregion

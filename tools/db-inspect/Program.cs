@@ -1,6 +1,8 @@
 using System;
 using System.Data;
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using WinWork.Data;
 
 // Simple inspector for the WinWork SQLite DB
 // Usage: dotnet run --project tools/db-inspect
@@ -32,6 +34,51 @@ using (var cmd = conn.CreateCommand())
         if (name.Equals("Command", StringComparison.OrdinalIgnoreCase)) hasCommand = true;
     }
     Console.WriteLine($"\nLinks.Command column present: {hasCommand}\n");
+}
+
+// Check HotNavs table
+using (var cmdHot = conn.CreateCommand())
+{
+    cmdHot.CommandText = "PRAGMA table_info('HotNavs');";
+    using var readerHot = cmdHot.ExecuteReader();
+    Console.WriteLine("HotNavs table columns:");
+    var anyHot = false;
+    while (readerHot.Read())
+    {
+        anyHot = true;
+        var name = readerHot.GetString(1);
+        var type = readerHot.GetString(2);
+        Console.WriteLine($" - {name} ({type})");
+    }
+    if (!anyHot) Console.WriteLine(" - (HotNavs table not found)");
+}
+
+using (var cmdHotCount = conn.CreateCommand())
+{
+    cmdHotCount.CommandText = "SELECT COUNT(1) FROM sqlite_master WHERE type='table' AND name='HotNavs';";
+    var exists = Convert.ToInt32(cmdHotCount.ExecuteScalar() ?? 0) > 0;
+    Console.WriteLine($"\nHotNavs table present: {exists}");
+}
+
+using (var cmdHotData = conn.CreateCommand())
+{
+    try
+    {
+        cmdHotData.CommandText = "SELECT Id, Name, IncludeFiles, MaxDepth, SortOrder FROM HotNavs ORDER BY SortOrder LIMIT 10;";
+        using var r = cmdHotData.ExecuteReader();
+        Console.WriteLine("\nHotNavs rows (up to 10):");
+        var any = false;
+        while (r.Read())
+        {
+            any = true;
+            Console.WriteLine($" - Id={r.GetInt32(0)}, Name='{r.GetString(1)}', IncludeFiles={r.GetInt32(2)}, MaxDepth={(r.IsDBNull(3)?"null":r.GetInt32(3).ToString())}, SortOrder={r.GetInt32(4)}");
+        }
+        if (!any) Console.WriteLine(" - (no rows)");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Could not query HotNavs table: {ex.Message}");
+    }
 }
 
 // Query AppSettings for terminal keys and appearance settings
@@ -101,6 +148,49 @@ using (var cmdAll = conn.CreateCommand())
         Console.WriteLine($" - {k} = '{v}' (UpdatedAt: {u})");
     }
     if (!anyAll) Console.WriteLine(" - (none)");
+}
+// Show EF Migrations history table if present
+using (var cmdHist = conn.CreateCommand())
+{
+    try
+    {
+        cmdHist.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='__EFMigrationsHistory';";
+        var exists = Convert.ToInt32(cmdHist.ExecuteScalar() ?? 0) > 0;
+        Console.WriteLine($"\n__EFMigrationsHistory present: {exists}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Could not check migrations history table: {ex.Message}");
+    }
+}
+
+// Create a WinWorkDbContext using the same SQLite file and enumerate migrations via EF
+try
+{
+    var options = new DbContextOptionsBuilder<WinWorkDbContext>()
+        .UseSqlite(connStr)
+        .Options;
+
+    using var efCtx = new WinWorkDbContext(options);
+    Console.WriteLine("\nEF Core - migrations visible to DbContext:");
+    try
+    {
+        var all = efCtx.Database.GetMigrations();
+        var applied = efCtx.Database.GetAppliedMigrations();
+        var pending = efCtx.Database.GetPendingMigrations();
+        Console.WriteLine($"All migrations: {string.Join(", ", all)}");
+        Console.WriteLine($"Applied migrations: {string.Join(", ", applied)}");
+        Console.WriteLine($"Pending migrations: {string.Join(", ", pending)}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"EF migration enumeration failed: {ex.Message}");
+    }
+
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Failed to create WinWorkDbContext for inspection: {ex.Message}");
 }
 
 conn.Close();
