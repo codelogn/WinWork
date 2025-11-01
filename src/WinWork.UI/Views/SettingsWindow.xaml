@@ -119,10 +119,11 @@
     </Window.Resources>
     
     <Border x:Name="MainBorder"
-            Background="#E6000000" 
-            CornerRadius="12" 
-            BorderBrush="#33FFFFFF" 
-            BorderThickness="1">
+        Background="#E6000000" 
+        CornerRadius="12" 
+        BorderBrush="#33FFFFFF" 
+        BorderThickness="1"
+        Padding="10">
         
         <!-- Window Chrome Effect -->
         <Border.Effect>
@@ -161,13 +162,8 @@
                                Margin="16,0,0,0"/>
                     
                     <!-- Window Controls -->
-                    <StackPanel Grid.Column="1" 
-                                Orientation="Horizontal">
-                        
-                        <Button Name="CloseButton"
-                                Content="✕"
-                                Style="{StaticResource WindowControlButtonStyle}"
-                                Click="CloseButton_Click"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button Name="CloseButton" Content="✕" Style="{StaticResource WindowControlButtonStyle}" Click="CloseButton_Click"/>
                     </StackPanel>
                 </Grid>
             </Border>

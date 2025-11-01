@@ -73,22 +73,7 @@
                                 Click="MaximizeButton_Click"/>
                         
                         <!-- Close Button -->
-                        <Button x:Name="CloseButton"
-                                Content="✕"
-                                Click="CloseButton_Click">
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource WindowControlButtonStyle}">
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#E81123"/>
-                                        </Trigger>
-                                        <Trigger Property="IsPressed" Value="True">
-                                            <Setter Property="Background" Value="#C50E1F"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
+                        <Button x:Name="CloseButton" Content="✕" Style="{StaticResource WindowControlButtonStyle}" Click="CloseButton_Click"/>
                     </StackPanel>
                 </Grid>
             </Border>

@@ -1,19 +1,64 @@
 <Window x:Class="WinWork.UI.Views.HotNavsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Hot Navs" Height="400" Width="600">
-    <Grid Margin="8">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+        Title="Hot Navs" Height="460" Width="640"
+        WindowStartupLocation="CenterOwner"
+        AllowsTransparency="True"
+        WindowStyle="None"
+        Background="Transparent">
 
-        <StackPanel Orientation="Horizontal" Grid.Row="0" HorizontalAlignment="Right" Margin="0,0,0,8">
-            <Button Content="Add" Width="80" Click="Add_Click" Margin="4"/>
-            <Button Content="Edit" Width="80" Click="Edit_Click" Margin="4"/>
-            <Button Content="Delete" Width="80" Click="Delete_Click" Margin="4"/>
-        </StackPanel>
+    <WindowChrome.WindowChrome>
+        <WindowChrome ResizeBorderThickness="6" CaptionHeight="0" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" NonClientFrameEdges="None"/>
+    </WindowChrome.WindowChrome>
 
-        <ListView x:Name="HotNavsListView" Grid.Row="1" DisplayMemberPath="Name"/>
-    </Grid>
+    <Border x:Name="MainBorder"
+            Background="#E6000000"
+            CornerRadius="12"
+            BorderBrush="#33FFFFFF"
+            BorderThickness="1"
+            Padding="10">
+
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="20" ShadowDepth="0" Color="Black" Opacity="0.3"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="40"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Title Bar -->
+            <Border Grid.Row="0" Background="#33FFFFFF" CornerRadius="12,12,0,0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" Text="📁 Hot Navs" Foreground="White" FontSize="14" FontWeight="Medium" VerticalAlignment="Center" Margin="12,0,0,0"/>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button Content="✕" Style="{StaticResource WindowControlButtonStyle}" Click="CloseButton_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Content -->
+            <Grid Grid.Row="1" Margin="4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Orientation="Horizontal" Grid.Row="0" HorizontalAlignment="Right" Margin="0,0,0,8">
+                    <Button Content="Add" Width="80" Click="Add_Click" Margin="4" Style="{StaticResource ModernButtonStyle}"/>
+                    <Button Content="Edit" Width="80" Click="Edit_Click" Margin="4" Style="{StaticResource ModernButtonStyle}"/>
+                    <Button Content="Delete" Width="80" Click="Delete_Click" Margin="4" Style="{StaticResource DangerButtonStyle}"/>
+                </StackPanel>
+
+                <ListView x:Name="HotNavsListView" Grid.Row="1" DisplayMemberPath="Name" Background="Transparent" Foreground="White"/>
+            </Grid>
+        </Grid>
+    </Border>
 </Window>

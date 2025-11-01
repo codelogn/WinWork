@@ -241,4 +241,15 @@ CREATE INDEX IF NOT EXISTS ""IX_HotNavRoots_HotNavId"" ON ""HotNavRoots""(""HotN
             }
         }
     }
+
+    // Allow dragging the window by the custom title bar
+    private void TitleBar_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        try { this.DragMove(); } catch { }
+    }
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        this.Close();
+    }
 }

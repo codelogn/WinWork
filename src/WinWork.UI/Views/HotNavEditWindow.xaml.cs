@@ -65,6 +65,12 @@ public partial class HotNavEditWindow : Window
     public HotNav HotNav { get; private set; }
     private List<HotNavRootRow> _rows = new();
 
+    // Safe accessors for named controls (use FindName so file can be edited without generated fields)
+    private System.Windows.Controls.DataGrid? RootsDataGridCtrl => this.FindName("RootsDataGrid") as System.Windows.Controls.DataGrid;
+    private System.Windows.Controls.TextBox? NameTextBoxCtrl => this.FindName("NameTextBox") as System.Windows.Controls.TextBox;
+    private System.Windows.Controls.CheckBox? IncludeFilesCheckBoxCtrl => this.FindName("IncludeFilesCheckBox") as System.Windows.Controls.CheckBox;
+    private System.Windows.Controls.TextBox? MaxDepthTextBoxCtrl => this.FindName("MaxDepthTextBox") as System.Windows.Controls.TextBox;
+
     public HotNavEditWindow(HotNav hotNav)
     {
         InitializeComponent();
@@ -74,9 +80,9 @@ public partial class HotNavEditWindow : Window
 
     private void HotNavEditWindow_Loaded(object sender, RoutedEventArgs e)
     {
-        NameTextBox.Text = HotNav.Name ?? string.Empty;
-        IncludeFilesCheckBox.IsChecked = HotNav.IncludeFiles;
-        MaxDepthTextBox.Text = HotNav.MaxDepth?.ToString() ?? string.Empty;
+    if (NameTextBoxCtrl != null) NameTextBoxCtrl.Text = HotNav.Name ?? string.Empty;
+    if (IncludeFilesCheckBoxCtrl != null) IncludeFilesCheckBoxCtrl.IsChecked = HotNav.IncludeFiles;
+    if (MaxDepthTextBoxCtrl != null) MaxDepthTextBoxCtrl.Text = HotNav.MaxDepth?.ToString() ?? string.Empty;
 
         _rows = (HotNav.Roots?.OrderBy(r => r.SortOrder).Select(r => new HotNavRootRow
         {
@@ -91,7 +97,7 @@ public partial class HotNavEditWindow : Window
         // ensure validation on load
         foreach (var row in _rows) row.Path = row.Path;
 
-        RootsDataGrid.ItemsSource = _rows;
+        if (RootsDataGridCtrl != null) RootsDataGridCtrl.ItemsSource = _rows;
     }
 
     private void AddRoot_Click(object sender, RoutedEventArgs e)
@@ -104,13 +110,13 @@ public partial class HotNavEditWindow : Window
             var newRow = new HotNavRootRow { Path = dlg.SelectedPath, SortOrder = max + 1, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
             _rows.Add(newRow);
             RefreshGrid();
-            RootsDataGrid.SelectedItem = newRow;
+            if (RootsDataGridCtrl != null) RootsDataGridCtrl.SelectedItem = newRow;
         }
     }
 
     private void EditRoot_Click(object sender, RoutedEventArgs e)
     {
-        if (RootsDataGrid.SelectedItem is HotNavRootRow sel)
+        if (RootsDataGridCtrl != null && RootsDataGridCtrl.SelectedItem is HotNavRootRow sel)
         {
             var newPath = Interaction.InputBox("Edit root path:", "Edit Root", sel.Path);
             if (!string.IsNullOrWhiteSpace(newPath) && !string.Equals(newPath, sel.Path, StringComparison.OrdinalIgnoreCase))
@@ -118,14 +124,41 @@ public partial class HotNavEditWindow : Window
                 sel.Path = newPath;
                 sel.UpdatedAt = DateTime.UtcNow;
                 RefreshGrid();
-                RootsDataGrid.SelectedItem = sel;
+                RootsDataGridCtrl.SelectedItem = sel;
             }
+        }
+    }
+
+    private void BrowseRoot_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // Find the data context (HotNavRootRow) for the button that was clicked
+            if (sender is System.Windows.Controls.Button btn)
+            {
+                if (btn.DataContext is HotNavRootRow row)
+                {
+                    var dlg = new System.Windows.Forms.FolderBrowserDialog();
+                    var res = dlg.ShowDialog();
+                    if (res == System.Windows.Forms.DialogResult.OK)
+                    {
+                        row.Path = dlg.SelectedPath;
+                        row.UpdatedAt = DateTime.UtcNow;
+                        RefreshGrid();
+                        if (RootsDataGridCtrl != null) RootsDataGridCtrl.SelectedItem = row;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Failed to pick folder: {ex.Message}");
         }
     }
 
     private void MoveUp_Click(object sender, RoutedEventArgs e)
     {
-        if (RootsDataGrid.SelectedItem is HotNavRootRow sel)
+        if (RootsDataGridCtrl != null && RootsDataGridCtrl.SelectedItem is HotNavRootRow sel)
         {
             var idx = _rows.IndexOf(sel);
             if (idx > 0)
@@ -134,14 +167,14 @@ public partial class HotNavEditWindow : Window
                 _rows.Insert(idx - 1, sel);
                 ReassignOrders();
                 RefreshGrid();
-                RootsDataGrid.SelectedItem = sel;
+                RootsDataGridCtrl.SelectedItem = sel;
             }
         }
     }
 
     private void MoveDown_Click(object sender, RoutedEventArgs e)
     {
-        if (RootsDataGrid.SelectedItem is HotNavRootRow sel)
+        if (RootsDataGridCtrl != null && RootsDataGridCtrl.SelectedItem is HotNavRootRow sel)
         {
             var idx = _rows.IndexOf(sel);
             if (idx >= 0 && idx < _rows.Count - 1)
@@ -150,14 +183,14 @@ public partial class HotNavEditWindow : Window
                 _rows.Insert(idx + 1, sel);
                 ReassignOrders();
                 RefreshGrid();
-                RootsDataGrid.SelectedItem = sel;
+                RootsDataGridCtrl.SelectedItem = sel;
             }
         }
     }
 
     private void RemoveRoot_Click(object sender, RoutedEventArgs e)
     {
-        if (RootsDataGrid.SelectedItem is HotNavRootRow sel)
+        if (RootsDataGridCtrl != null && RootsDataGridCtrl.SelectedItem is HotNavRootRow sel)
         {
             _rows.Remove(sel);
             ReassignOrders();
@@ -172,8 +205,11 @@ public partial class HotNavEditWindow : Window
 
     private void RefreshGrid()
     {
-        RootsDataGrid.ItemsSource = null;
-        RootsDataGrid.ItemsSource = _rows;
+        if (RootsDataGridCtrl != null)
+        {
+            RootsDataGridCtrl.ItemsSource = null;
+            RootsDataGridCtrl.ItemsSource = _rows;
+        }
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e)
@@ -182,11 +218,23 @@ public partial class HotNavEditWindow : Window
         Close();
     }
 
+    // Allow dragging the window by the custom title bar
+    private void TitleBar_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        try { this.DragMove(); } catch { }
+    }
+
+    // Close button behavior maps to cancel
+    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        Cancel_Click(sender, e);
+    }
+
     private void Save_Click(object sender, RoutedEventArgs e)
     {
         // commit any pending edits in the DataGrid
-        RootsDataGrid.CommitEdit();
-        RootsDataGrid.CommitEdit();
+    RootsDataGridCtrl?.CommitEdit();
+    RootsDataGridCtrl?.CommitEdit();
 
         // validate rows
         var invalid = _rows.FirstOrDefault(r => r.HasErrors);
@@ -196,9 +244,9 @@ public partial class HotNavEditWindow : Window
             return;
         }
 
-        HotNav.Name = NameTextBox.Text?.Trim() ?? HotNav.Name;
-        HotNav.IncludeFiles = IncludeFilesCheckBox.IsChecked == true;
-        if (int.TryParse(MaxDepthTextBox.Text, out var md))
+        if (NameTextBoxCtrl != null) HotNav.Name = NameTextBoxCtrl.Text?.Trim() ?? HotNav.Name;
+        if (IncludeFilesCheckBoxCtrl != null) HotNav.IncludeFiles = IncludeFilesCheckBoxCtrl.IsChecked == true;
+        if (MaxDepthTextBoxCtrl != null && int.TryParse(MaxDepthTextBoxCtrl.Text, out var md))
             HotNav.MaxDepth = md;
         else
             HotNav.MaxDepth = null;

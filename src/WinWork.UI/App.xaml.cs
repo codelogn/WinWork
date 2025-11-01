@@ -103,7 +103,29 @@ public partial class App : Application
                         catch { }
                     };
 
-                    await hotNavsTray.InitializeAsync(System.Drawing.SystemIcons.Application, openMgr);
+                    // Try to load the application's bundled icon (winwork-logo.ico) and use it for the tray
+                    System.Drawing.Icon trayIcon = System.Drawing.SystemIcons.Application;
+                    try
+                    {
+                        // The icon is included in the WinWork.UI project as a Resource (winwork-logo.ico)
+                        // Use Pack URI to read it from application resources
+                        var uri = new System.Uri("pack://application:,,,/winwork-logo.ico", System.UriKind.Absolute);
+                        var info = Application.GetResourceStream(uri);
+                        if (info != null)
+                        {
+                            using (var s = info.Stream)
+                            {
+                                trayIcon = new System.Drawing.Icon(s);
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // fallback to default icon on any failure
+                        trayIcon = System.Drawing.SystemIcons.Application;
+                    }
+
+                    await hotNavsTray.InitializeAsync(trayIcon, openMgr);
                 }
             }
             catch { }
@@ -471,7 +493,7 @@ public partial class App : Application
             // Debug: $"Total root links: {totalRootLinks}, Total child links: {totalChildLinks}"
             // Debug: $"Google ParentId: {googleLink.ParentId}, GitHub ParentId: {githubLink.ParentId}"
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // Ignore seed data errors silently
         }
